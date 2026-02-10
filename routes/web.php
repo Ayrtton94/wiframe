@@ -1,17 +1,45 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use Laravel\Fortify\Features;
+use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\StoreController;
+use App\Http\Controllers\CustomerController;
+use App\Http\Controllers\EmployeesController;
+use App\Http\Controllers\SuppliersController;
 
 Route::get('/', function () {
-    return Inertia::render('Welcome', [
-        'canRegister' => Features::enabled(Features::registration()),
-    ]);
+    if (auth()->check()) {
+        return Inertia::render('Dashboard');
+    } else {
+        return redirect('/login');
+    }
 })->name('home');
 
 Route::get('dashboard', function () {
     return Inertia::render('Dashboard');
 })->middleware(['auth', 'verified'])->name('dashboard');
+
+Route::middleware('auth')->group(function () {
+    // ADMIN: Acceso a proveedores y empleados
+    Route::middleware('role:admin')->group(function () {
+        Route::resource('suppliers', SuppliersController::class);
+        Route::resource('employees', EmployeesController::class);
+    });
+
+    // VENDEDOR, ALMACEN: Acceso a clientes y productos
+    Route::middleware('role:vendedor,almacen')->group(function () {
+        Route::resource('customers', CustomerController::class);
+        Route::resource('stores', StoreController::class);
+    });
+
+    // ADMIN: Todos pueden ver clientes (con control de permisos específicos)
+    Route::resource('customers', CustomerController::class)
+        ->middleware('permission:view_customers');
+
+    // ADMIN: Todos pueden ver productos (con control de permisos específicos)
+    Route::resource('stores', StoreController::class)
+        ->middleware('permission:view_products');
+});
 
 require __DIR__.'/settings.php';
