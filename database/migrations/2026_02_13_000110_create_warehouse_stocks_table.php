@@ -1,0 +1,35 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        Schema::create('warehouse_stocks', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('warehouse_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('store_id')->constrained('stores')->cascadeOnDelete();
+            $table->decimal('kilos_available', 12, 3)->default(0);
+            $table->decimal('metros_available', 12, 3)->default(0);
+            $table->decimal('kilos_reserved', 12, 3)->default(0);
+            $table->decimal('metros_reserved', 12, 3)->default(0);
+            $table->timestamps();
+
+            $table->unique(['warehouse_id', 'store_id']);
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::dropIfExists('warehouse_stocks');
+    }
+};

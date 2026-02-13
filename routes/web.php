@@ -7,6 +7,8 @@ use App\Http\Controllers\StoreController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\EmployeesController;
 use App\Http\Controllers\SuppliersController;
+use App\Http\Controllers\UserRoleController;
+use App\Http\Controllers\TransferController;
 
 Route::get('/', function () {
     if (auth()->check()) {
@@ -25,6 +27,18 @@ Route::middleware('auth')->group(function () {
     Route::middleware('role:admin')->group(function () {
         Route::resource('suppliers', SuppliersController::class);
         Route::resource('employees', EmployeesController::class);
+
+        Route::get('users/roles', [UserRoleController::class, 'index'])->name('users.roles.index');
+        Route::patch('users/{user}/roles', [UserRoleController::class, 'update'])->name('users.roles.update');
+    });
+
+
+    Route::middleware('role:admin,almacen')->group(function () {
+        Route::get('transfers', [TransferController::class, 'index'])->name('transfers.index');
+        Route::post('transfers', [TransferController::class, 'store'])->name('transfers.store');
+        Route::get('transfers/{transfer}', [TransferController::class, 'show'])->name('transfers.show');
+        Route::post('transfers/{transfer}/ship', [TransferController::class, 'ship'])->name('transfers.ship');
+        Route::post('transfers/{transfer}/receive', [TransferController::class, 'receive'])->name('transfers.receive');
     });
 
     // VENDEDOR, ALMACEN: Acceso a clientes y productos
