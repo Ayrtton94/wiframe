@@ -7,6 +7,7 @@ use App\Http\Controllers\StoreController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\EmployeesController;
 use App\Http\Controllers\SuppliersController;
+use App\Http\Controllers\UserRoleController;
 
 Route::get('/', function () {
     if (auth()->check()) {
@@ -25,6 +26,9 @@ Route::middleware('auth')->group(function () {
     Route::middleware('role:admin')->group(function () {
         Route::resource('suppliers', SuppliersController::class);
         Route::resource('employees', EmployeesController::class);
+
+        Route::get('users/roles', [UserRoleController::class, 'index'])->name('users.roles.index');
+        Route::patch('users/{user}/roles', [UserRoleController::class, 'update'])->name('users.roles.update');
     });
 
     // VENDEDOR, ALMACEN: Acceso a clientes y productos
