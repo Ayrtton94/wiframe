@@ -10,7 +10,6 @@ use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use Laravel\Fortify\Features;
 
-
 Route::get('/', function () {
     if (auth()->check()) {
         return Inertia::render('Dashboard');
@@ -32,8 +31,6 @@ Route::middleware('auth')->group(function () {
 
         Route::get('users/roles', [UserRoleController::class, 'index'])->name('users.roles.index');
         Route::patch('users/{user}/roles', [UserRoleController::class, 'update'])->name('users.roles.update');
-
-    });
 
     // VENDEDOR, ALMACEN: Acceso a clientes y productos
     Route::middleware('role:vendedor,almacen')->group(function () {
