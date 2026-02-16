@@ -21,8 +21,6 @@ import {
     Factory,
     ShoppingCart,
     ShieldCheck,
-    Building2,
-    PackageSearch,
     User,
     Users,
 } from 'lucide-vue-next';
@@ -30,7 +28,6 @@ import {
 const page = usePage();
 const roles = (page.props.auth?.roles ?? []) as string[];
 const isAdmin = roles.includes('admin');
-const canManageWarehouse = roles.includes('admin') || roles.includes('almacen');
 
 const mainNavItems: NavItem[] = [
     {
@@ -68,25 +65,6 @@ const mainNavItems: NavItem[] = [
         href: '/reports',
         icon: BarChart3,
     },
-    ...(canManageWarehouse
-        ? [
-              {
-                  title: 'Almacenes',
-                  href: '/warehouses',
-                  icon: Building2,
-              },
-              {
-                  title: 'Stock por almacén',
-                  href: '/warehouse-stocks',
-                  icon: PackageSearch,
-              },
-              {
-                  title: 'Traslados',
-                  href: '/transfers',
-                  icon: Boxes,
-              },
-          ]
-        : []),
     ...(isAdmin
         ? [
               {

@@ -48,7 +48,7 @@ const submit = () => {
 </script>
 <template>
     <Head title="Crear Proveedor" />
-
+    
     <AppLayout :breadcrumbs="breadcrumbs">
         <div class="space-y-8 px-4 py-6 sm:px-6 lg:px-8">
             <form @submit.prevent="submit" class="space-y-8">
