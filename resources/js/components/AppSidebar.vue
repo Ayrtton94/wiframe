@@ -30,7 +30,7 @@ const roles = (page.props.auth?.roles ?? []) as string[];
 const isAdmin = roles.includes('admin');
 
 const mainNavItems: NavItem[] = [
-    {
+  {
         title: 'Dashboard',
         href: '/dashboard',
         icon: LayoutGrid,
@@ -43,11 +43,6 @@ const mainNavItems: NavItem[] = [
     {
         title: 'Almacén',
         href: '/stores',
-        icon: Boxes,
-    },
-    {
-        title: 'Traslados',
-        href: '/transfers',
         icon: Boxes,
     },
     {
@@ -70,6 +65,25 @@ const mainNavItems: NavItem[] = [
         href: '/reports',
         icon: BarChart3,
     },
+    ...(isAdmin
+        ? [
+              {
+                  title: 'Almacenes',
+                  href: '/warehouses',
+                  icon: Boxes,
+              },
+              {
+                  title: 'Stock por almacén',
+                  href: '/warehouse-stocks',
+                  icon: Boxes,
+              },
+              {
+                  title: 'Traslados',
+                  href: '/transfers',
+                  icon: Boxes,
+              },
+          ]
+        : []),
     ...(isAdmin
         ? [
               {
