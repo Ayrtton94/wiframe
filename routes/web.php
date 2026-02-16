@@ -1,13 +1,14 @@
 <?php
 
-use Inertia\Inertia;
-use Laravel\Fortify\Features;
-use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\StoreController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\EmployeesController;
+use App\Http\Controllers\StoreController;
 use App\Http\Controllers\SuppliersController;
+use App\Http\Controllers\TransferController;
 use App\Http\Controllers\UserRoleController;
+use Illuminate\Support\Facades\Route;
+use Inertia\Inertia;
+use Laravel\Fortify\Features;
 
 
 Route::get('/', function () {
@@ -27,6 +28,7 @@ Route::middleware('auth')->group(function () {
     Route::middleware('role:admin')->group(function () {
         Route::resource('suppliers', SuppliersController::class);
         Route::resource('employees', EmployeesController::class);
+        Route::resource('transfers', TransferController::class);
 
         Route::get('users/roles', [UserRoleController::class, 'index'])->name('users.roles.index');
         Route::patch('users/{user}/roles', [UserRoleController::class, 'update'])->name('users.roles.update');

@@ -46,6 +46,11 @@ const mainNavItems: NavItem[] = [
         icon: Boxes,
     },
     {
+        title: 'Traslados',
+        href: '/transfers',
+        icon: Boxes,
+    },
+    {
         title: 'Clientes',
         href: '/customers',
         icon: Users,
