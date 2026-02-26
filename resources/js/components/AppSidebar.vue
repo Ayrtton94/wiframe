@@ -41,7 +41,7 @@ const mainNavItems: NavItem[] = [
         icon: ShoppingCart,
     },
     {
-        title: 'Almacén',
+        title: 'Productos',
         href: '/stores',
         icon: Boxes,
     },

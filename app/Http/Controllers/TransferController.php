@@ -7,6 +7,7 @@ use App\Http\Requests\ShipTransferRequest;
 use App\Http\Requests\StoreTransferRequest;
 use App\Models\Transfer;
 use App\Models\TransferItem;
+use App\Models\Store;
 use App\Models\Warehouse;
 use App\Models\WarehouseStock;
 use Illuminate\Http\Request;
@@ -32,9 +33,14 @@ class TransferController extends Controller
             ->orderBy('name')
             ->get(['id', 'name', 'code']);
 
+        $products = Store::query()
+            ->orderBy('name_product')
+            ->get(['id', 'code_product', 'name_product']);
+
         return Inertia::render('Transfers/Index', [
             'transfers' => $transfers,
             'warehouses' => $warehouses,
+            'products' => $products,
             'filters' => $request->only(['status']),
         ]);
     }
