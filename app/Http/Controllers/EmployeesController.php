@@ -3,8 +3,8 @@
 namespace App\Http\Controllers;
 
 use Inertia\Inertia;
-use App\Models\Employees;
 use Illuminate\Http\Request;
+use App\Models\Employees;
 use App\Http\Requests\EmployeeRequest;
 
 class EmployeesController extends Controller
@@ -35,11 +35,11 @@ class EmployeesController extends Controller
     public function store(EmployeeRequest $request)
     {
         $validated = $request->validated();
-
-        if ($request->hasFile('foto')) {
-            $validated['foto'] = $request->file('foto')
-                ->store('employees', 'public');
-        }
+        unset($validated['foto']);
+        $photo = $request->file('foto');
+            if ($photo) {
+                $validated['foto'] = $photo->store('employees', 'public');
+            }
 
         Employees::create($validated);
 
@@ -59,6 +59,8 @@ class EmployeesController extends Controller
      */
     public function edit(Employees $employee)
     {
+        $employee->foto_url = $employee->foto ? asset('storage/' . $employee->foto) : null;
+
         return Inertia::render("Employees/Edit", ['employee' => $employee]);
     }
 
@@ -69,13 +71,13 @@ class EmployeesController extends Controller
     {
         $validated = $request->validated();
 
-        if ($request->hasFile('foto')) {
+        $photo = $request->file('foto');
+        if ($photo) {
             // Eliminar foto anterior si existe
             if ($employee->foto) {
                 \Storage::disk('public')->delete($employee->foto);
             }
-            $validated['foto'] = $request->file('foto')
-                ->store('employees', 'public');
+            $validated['foto'] = $photo->store('employees', 'public');
         }
 
         $employee->update($validated);
