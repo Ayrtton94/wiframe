@@ -35,11 +35,11 @@ class EmployeesController extends Controller
     public function store(EmployeeRequest $request)
     {
         $validated = $request->validated();
-        unset($validated['foto']);
-        $photo = $request->file('foto');
-            if ($photo) {
-                $validated['foto'] = $photo->store('employees', 'public');
-            }
+
+        if ($request->hasFile('foto')) {
+
+            $validated['foto'] = $request->file('foto')->store('employees', 'public');
+        }
 
         Employees::create($validated);
 

@@ -21,6 +21,7 @@ const form = useForm({
     area: '',
     phone: '',
     foto: null as File | null,
+    foto_url: null as string | null,
 });
 
 const handleImage = (event: Event) => {
@@ -79,7 +80,7 @@ const submit = () => {
                                 <Input
                                     id="dni"
                                     v-model="form.dni"
-                                    type="text"
+                                    type="number"
                                     class="w-full
                                            bg-white dark:bg-transparent
                                            text-gray-800 dark:text-white
@@ -129,7 +130,7 @@ const submit = () => {
                                 <Input
                                     id="phone"
                                     v-model="form.phone"
-                                    type="text"
+                                    type="number"
                                     class="w-full
                                            bg-white dark:bg-transparent
                                            text-gray-800 dark:text-white
