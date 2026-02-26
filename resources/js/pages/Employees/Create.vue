@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import AppLayout from '@/layouts/AppLayout.vue';
-import { dashboard } from '@/routes';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link, useForm } from '@inertiajs/vue3';
 import InputError from '@/components/InputError.vue';
@@ -21,15 +20,13 @@ const form = useForm({
     area: '',
     phone: '',
     foto: null as File | null,
-    foto_url: null as string | null,
 });
-
 const handleImage = (event: Event) => {
     const target = event.target as HTMLInputElement;
-    const file = target.files ? target.files[0] : null;
-    form.setData('foto', file);
+    if (target.files && target.files[0]) {
+        form.foto = target.files[0];
+    }
 };
-
 const submit = () => {
     form.post('/employees', {
         preserveScroll: true,
