@@ -37,7 +37,6 @@ class EmployeesController extends Controller
         $validated = $request->validated();
 
         if ($request->hasFile('foto')) {
-
             $validated['foto'] = $request->file('foto')->store('employees', 'public');
         }
 
@@ -70,6 +69,7 @@ class EmployeesController extends Controller
     public function update(EmployeeRequest $request, Employees $employee)
     {
         $validated = $request->validated();
+        unset($validated['foto']);
 
         $photo = $request->file('foto');
         if ($photo) {

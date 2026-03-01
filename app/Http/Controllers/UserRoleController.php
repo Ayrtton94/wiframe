@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\UserRoleUpdateRequest;
 use App\Models\Role;
 use App\Models\User;
+use App\Models\Warehouse;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -16,6 +17,7 @@ class UserRoleController extends Controller
     public function index(): Response
     {
         $users = User::query()
+            ->with('warehouses:id,name,code')
             ->orderBy('name')
             ->get(['id', 'name', 'email'])
             ->map(fn (User $user) => [
@@ -23,6 +25,7 @@ class UserRoleController extends Controller
                 'name' => $user->name,
                 'email' => $user->email,
                 'role' => $user->getRoleNames()->first(),
+                'warehouse_ids' => $user->warehouses->pluck('id')->values(),
             ]);
 
         $roles = Role::query()
@@ -30,9 +33,15 @@ class UserRoleController extends Controller
             ->pluck('name')
             ->values();
 
+        $warehouses = Warehouse::query()
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get(['id', 'name', 'code']);
+
         return Inertia::render('Users/Roles', [
             'users' => $users,
             'roles' => $roles,
+            'warehouses' => $warehouses,
         ]);
     }
 
@@ -41,8 +50,11 @@ class UserRoleController extends Controller
      */
     public function update(UserRoleUpdateRequest $request, User $user)
     {
-        $user->syncRoles([$request->validated('role')]);
+        $validated = $request->validated();
 
-        return back()->with('success', 'Rol actualizado correctamente.');
+        $user->syncRoles([$validated['role']]);
+        $user->warehouses()->sync($validated['warehouse_ids'] ?? []);
+
+        return back()->with('success', 'Rol y almacenes actualizados correctamente.');
     }
 }
