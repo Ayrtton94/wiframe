@@ -28,6 +28,20 @@ class UserRoleUpdateRequest extends FormRequest
                 'string',
                 Rule::exists('roles', 'name')->where('guard_name', 'web'),
             ],
+            'warehouse_ids' => ['nullable', 'array'],
+            'warehouse_ids.*' => ['integer', 'distinct', 'exists:warehouses,id'],
         ];
+    }
+
+    public function withValidator($validator): void
+    {
+        $validator->after(function ($validator): void {
+            $role = $this->input('role');
+            $warehouseIds = $this->input('warehouse_ids', []);
+
+            if (in_array($role, ['almacen', 'tienda'], true) && empty($warehouseIds)) {
+                $validator->errors()->add('warehouse_ids', 'Debes asignar al menos un almacén para este rol.');
+            }
+        });
     }
 }

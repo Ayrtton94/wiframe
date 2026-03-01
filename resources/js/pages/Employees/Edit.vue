@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import AppLayout from '@/layouts/AppLayout.vue';
-import { dashboard } from '@/routes';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link, useForm } from '@inertiajs/vue3';
 import InputError from '@/components/InputError.vue';
@@ -38,12 +37,16 @@ const form = useForm({
 const handleImage = (event: Event) => {
     const target = event.target as HTMLInputElement;
     const file = target.files ? target.files[0] : null;
-    form.foto = file;
+    form.setData('foto', file);
 };
 
 const submit = () => {
-    form.put(`/employees/${props.employee.id}`, {
+    form.transform((data) => ({
+        ...data,
+        _method: 'put',
+    })).post(`/employees/${props.employee.id}`, {
         preserveScroll: true,
+        forceFormData: true,
     });
 };
 
