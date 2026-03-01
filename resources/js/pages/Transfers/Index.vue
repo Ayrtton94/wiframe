@@ -13,6 +13,9 @@ const props = defineProps<{
             to_warehouse: { name: string };
         }>;
     };
+    warehouses: Array<{ id: number; name: string; code: string }>;
+    products: Array<{ id: number; code_product: string; name_product: string }>;
+}>();
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
