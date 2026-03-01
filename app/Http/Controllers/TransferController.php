@@ -56,6 +56,10 @@ class TransferController extends Controller
             ->orderBy('name_product')
             ->get(['id', 'code_product', 'name_product']);
 
+        $products = Store::query()
+            ->orderBy('name_product')
+            ->get(['id', 'code_product', 'name_product']);
+
         return Inertia::render('Transfers/Index', [
             'transfers' => $transfers,
             'warehouses' => $warehouses,
