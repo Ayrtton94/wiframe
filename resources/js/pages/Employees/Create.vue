@@ -21,13 +21,12 @@ const form = useForm({
     phone: '',
     foto: null as File | null,
 });
-
 const handleImage = (event: Event) => {
     const target = event.target as HTMLInputElement;
-    const file = target.files ? target.files[0] : null;
-    form.setData('foto', file);
+    if (target.files && target.files[0]) {
+        form.foto = target.files[0];
+    }
 };
-
 const submit = () => {
     form.post('/employees', {
         preserveScroll: true,
@@ -78,7 +77,7 @@ const submit = () => {
                                 <Input
                                     id="dni"
                                     v-model="form.dni"
-                                    type="text"
+                                    type="number"
                                     class="w-full
                                            bg-white dark:bg-transparent
                                            text-gray-800 dark:text-white
@@ -128,7 +127,7 @@ const submit = () => {
                                 <Input
                                     id="phone"
                                     v-model="form.phone"
-                                    type="text"
+                                    type="number"
                                     class="w-full
                                            bg-white dark:bg-transparent
                                            text-gray-800 dark:text-white

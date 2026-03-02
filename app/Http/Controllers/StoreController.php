@@ -14,7 +14,6 @@ class StoreController extends Controller
      */
     public function index(Request $request)
     {
-        $products = Store::paginate(10);
         $products->getCollection()->transform(function ($product) {
             $imagePath = $product->image_path ?? $product->image ?? null;
             $product->image_url = $imagePath ? asset('storage/' . $imagePath) : null;
@@ -41,7 +40,13 @@ class StoreController extends Controller
      */
     public function store(StoreRequest $request)
     {
-        Store::create($request->validated());
+        $validated = $request->validated();
+
+        if ($request->hasFile('image_path')) {
+            $validated['image_path'] = $request->file('image_path')->store('stores', 'public');
+        }
+
+        Store::create($validated);
 
         return redirect()->route('stores.index')->with('success', 'Producto creado exitosamente.');
     }

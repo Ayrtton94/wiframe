@@ -17,6 +17,7 @@ class Store extends Model
         'fabric_type',
         'color',
         'proveedor',
+        'image_path',
         'kilos',
         'metros',
         'minimum_stock',

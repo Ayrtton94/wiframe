@@ -29,6 +29,7 @@ class StoreTransferRequest extends FormRequest
             'items.*.store_id' => ['required', 'integer', 'exists:stores,id', 'distinct'],
             'items.*.kilos' => ['nullable', 'numeric', 'min:0'],
             'items.*.metros' => ['nullable', 'numeric', 'min:0'],
+            'image_path' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
         ];
     }
 

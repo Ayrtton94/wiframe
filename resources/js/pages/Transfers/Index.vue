@@ -151,9 +151,6 @@ const submit = () => {
                     <p v-if="form.errors.items" class="text-sm text-red-600">{{ form.errors.items }}</p>
                     <p v-if="form.errors.from_warehouse_id" class="text-sm text-red-600">{{ form.errors.from_warehouse_id }}</p>
                     <p v-if="form.errors.to_warehouse_id" class="text-sm text-red-600">{{ form.errors.to_warehouse_id }}</p>
-                    <p v-if="form.errors.warehouse" class="text-sm text-red-600">{{ form.errors.warehouse }}</p>
-                </form>
-            </div>
 
             <div class="overflow-x-auto rounded border bg-white">
                 <table class="min-w-full divide-y divide-gray-200">

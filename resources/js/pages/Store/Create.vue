@@ -31,8 +31,16 @@ const form = useForm({
     price_roll: 0,
     special_price: 0,
     location: '',
-    description: ''
+    description: '',
+    image_path: null as File | null,
 });
+
+const handleImage = (event: Event) => {
+    const target = event.target as HTMLInputElement;
+    if (target.files && target.files[0]) {
+        form.image_path = target.files[0];
+    }
+};
 
 const submit = () => {
     form.post('/stores', {
@@ -153,6 +161,13 @@ const submit = () => {
                         <Input id="location" v-model="form.location" type="text" class="w-full" />
                         <InputError :message="form.errors.location" class="mt-1" />
                     </div>
+                    <!-- Foto -->
+                    <div>
+                        <Label  for="image_path" class="mb-1 block text-gray-700 dark:text-white">Foto</Label>
+                        <input  id="image_path" type="file" accept="image/*" @change="handleImage"  class="w-full rounded-lg border border-gray-300 dark:border-gray-500 bg-white dark:bg-transparent text-gray-800 dark:text-white" />
+                        <InputError :message="form.errors.image_path" class="mt-2" />
+                    </div>
+
 
                     <div>
                         <Label for="description" class="mb-1 block font-medium text-gray-700">Descripción</Label>

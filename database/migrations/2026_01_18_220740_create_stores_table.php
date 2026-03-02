@@ -17,6 +17,7 @@ return new class extends Migration
             $table->string('name_product');
             $table->string('fabric_type');
             $table->string('color');
+            $table->string('image_path')->nullable();
            ///Proveedor y Stock
             $table->string('proveedor');
             $table->string('kilos');
