@@ -7,6 +7,7 @@ use App\Http\Requests\ShipTransferRequest;
 use App\Http\Requests\StoreTransferRequest;
 use App\Models\Transfer;
 use App\Models\TransferItem;
+use App\Models\Store;
 use App\Models\Warehouse;
 use App\Models\WarehouseStock;
 use Illuminate\Http\Request;
@@ -21,20 +22,44 @@ class TransferController extends Controller
      */
     public function index(Request $request)
     {
-        $transfers = Transfer::query()
+        $user = $request->user();
+        $assignedWarehouseIds = $user->hasRole('admin')
+            ? null
+            : $user->warehouses()->pluck('warehouses.id');
+
+        $transfersQuery = Transfer::query()
             ->with(['fromWarehouse:id,name', 'toWarehouse:id,name'])
-            ->latest()
+            ->latest();
+
+        if ($assignedWarehouseIds !== null) {
+            $transfersQuery->where(function ($query) use ($assignedWarehouseIds) {
+                $query->whereIn('from_warehouse_id', $assignedWarehouseIds)
+                    ->orWhereIn('to_warehouse_id', $assignedWarehouseIds);
+            });
+        }
+
+        $transfers = $transfersQuery
             ->paginate(15)
             ->withQueryString();
 
-        $warehouses = Warehouse::query()
+        $warehousesQuery = Warehouse::query()
             ->where('is_active', true)
-            ->orderBy('name')
-            ->get(['id', 'name', 'code']);
+            ->orderBy('name');
+
+        if ($assignedWarehouseIds !== null) {
+            $warehousesQuery->whereIn('id', $assignedWarehouseIds);
+        }
+
+        $warehouses = $warehousesQuery->get(['id', 'name', 'code']);
+
+        $products = Store::query()
+            ->orderBy('name_product')
+            ->get(['id', 'code_product', 'name_product']);
 
         return Inertia::render('Transfers/Index', [
             'transfers' => $transfers,
             'warehouses' => $warehouses,
+            'products' => $products,
             'filters' => $request->only(['status']),
         ]);
     }
@@ -45,6 +70,17 @@ class TransferController extends Controller
     public function store(StoreTransferRequest $request)
     {
         $validated = $request->validated();
+
+        $user = $request->user();
+        if (! $user->hasRole('admin')) {
+            $assignedWarehouseIds = $user->warehouses()->pluck('warehouses.id');
+
+            if (! $assignedWarehouseIds->contains($validated['from_warehouse_id']) || ! $assignedWarehouseIds->contains($validated['to_warehouse_id'])) {
+                throw ValidationException::withMessages([
+                    'warehouse' => 'Solo puedes crear traslados usando almacenes asignados a tu usuario.',
+                ]);
+            }
+        }
 
         $transfer = DB::transaction(function () use ($validated, $request) {
             $transfer = Transfer::create([

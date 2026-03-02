@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import AppLayout from '@/layouts/AppLayout.vue';
-import { dashboard } from '@/routes';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link, useForm } from '@inertiajs/vue3';
 import InputError from '@/components/InputError.vue';
@@ -20,7 +19,7 @@ const form = useForm({
     name: '',
     area: '',
     phone: '',
-    foto: null,
+    foto: null as File | null,
 });
 
 const handleImage = (event: Event) => {
@@ -32,6 +31,7 @@ const handleImage = (event: Event) => {
 const submit = () => {
     form.post('/employees', {
         preserveScroll: true,
+        forceFormData: true,
         onSuccess: () => form.reset(),
     });
 };

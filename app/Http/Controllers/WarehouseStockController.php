@@ -6,6 +6,7 @@ use App\Http\Requests\WarehouseStockRequest;
 use App\Models\Store;
 use App\Models\Warehouse;
 use App\Models\WarehouseStock;
+use Illuminate\Http\Request;
 use Inertia\Inertia;
 
 class WarehouseStockController extends Controller
@@ -13,18 +14,34 @@ class WarehouseStockController extends Controller
     /**
      * Display a listing of warehouse stocks.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $stocks = WarehouseStock::query()
+        $user = $request->user();
+        $assignedWarehouseIds = $user->hasRole('admin')
+            ? null
+            : $user->warehouses()->pluck('warehouses.id');
+
+        $stocksQuery = WarehouseStock::query()
             ->with(['warehouse:id,name,code', 'store:id,code_product,name_product'])
-            ->latest()
+            ->latest();
+
+        if ($assignedWarehouseIds !== null) {
+            $stocksQuery->whereIn('warehouse_id', $assignedWarehouseIds);
+        }
+
+        $stocks = $stocksQuery
             ->paginate(20)
             ->withQueryString();
 
-        $warehouses = Warehouse::query()
+        $warehousesQuery = Warehouse::query()
             ->where('is_active', true)
-            ->orderBy('name')
-            ->get(['id', 'name', 'code']);
+            ->orderBy('name');
+
+        if ($assignedWarehouseIds !== null) {
+            $warehousesQuery->whereIn('id', $assignedWarehouseIds);
+        }
+
+        $warehouses = $warehousesQuery->get(['id', 'name', 'code']);
 
         $products = Store::query()
             ->orderBy('name_product')
@@ -43,6 +60,14 @@ class WarehouseStockController extends Controller
     public function store(WarehouseStockRequest $request)
     {
         $validated = $request->validated();
+
+        $user = $request->user();
+        if (! $user->hasRole('admin')) {
+            $assignedWarehouseIds = $user->warehouses()->pluck('warehouses.id');
+            if (! $assignedWarehouseIds->contains($validated['warehouse_id'])) {
+                abort(403, 'No puedes gestionar stock en almacenes no asignados.');
+            }
+        }
 
         WarehouseStock::updateOrCreate(
             [
@@ -67,6 +92,14 @@ class WarehouseStockController extends Controller
     {
         $validated = $request->validated();
 
+        $user = $request->user();
+        if (! $user->hasRole('admin')) {
+            $assignedWarehouseIds = $user->warehouses()->pluck('warehouses.id');
+            if (! $assignedWarehouseIds->contains($validated['warehouse_id'])) {
+                abort(403, 'No puedes gestionar stock en almacenes no asignados.');
+            }
+        }
+
         $warehouseStock->update([
             'warehouse_id' => $validated['warehouse_id'],
             'store_id' => $validated['store_id'],
@@ -82,8 +115,16 @@ class WarehouseStockController extends Controller
     /**
      * Remove the specified stock row.
      */
-    public function destroy(WarehouseStock $warehouseStock)
+    public function destroy(Request $request, WarehouseStock $warehouseStock)
     {
+        $user = $request->user();
+        if (! $user->hasRole('admin')) {
+            $assignedWarehouseIds = $user->warehouses()->pluck('warehouses.id');
+            if (! $assignedWarehouseIds->contains($warehouseStock->warehouse_id)) {
+                abort(403, 'No puedes eliminar stock de almacenes no asignados.');
+            }
+        }
+
         $warehouseStock->delete();
 
         return back()->with('success', 'Stock eliminado correctamente.');
