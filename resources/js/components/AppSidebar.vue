@@ -30,6 +30,86 @@ const roles = (page.props.auth?.roles ?? []) as string[];
 const isAdmin = roles.includes('admin');
 const isAlmacen = roles.includes('almacen');
 const isTienda = roles.includes('tienda');
+const isVendedor = roles.includes('vendedor');
+
+const mainNavItems: NavItem[] = [
+    {
+        title: 'Dashboard',
+        href: '/dashboard',
+        icon: LayoutGrid,
+    },
+    ...(isAdmin || isTienda || isVendedor
+        ? [
+              {
+                  title: 'Ventas',
+                  href: '/sales',
+                  icon: ShoppingCart,
+              },
+          ]
+        : []),
+    ...(isAdmin || isVendedor
+        ? [
+              {
+                  title: 'Productos',
+                  href: '/stores',
+                  icon: Boxes,
+              },
+              {
+                  title: 'Clientes',
+                  href: '/customers',
+                  icon: Users,
+              },
+          ]
+        : []),
+    ...(isAdmin
+        ? [
+              {
+                  title: 'Proveedores',
+                  href: '/suppliers',
+                  icon: Factory,
+              },
+              {
+                  title: 'Personal',
+                  href: '/employees',
+                  icon: User,
+              },
+              {
+                  title: 'Reportes',
+                  href: '/reports',
+                  icon: BarChart3,
+              },
+              {
+                  title: 'Almacenes',
+                  href: '/warehouses',
+                  icon: Boxes,
+              },
+              {
+                  title: 'Stock por almacén',
+                  href: '/warehouse-stocks',
+                  icon: Boxes,
+              },
+              {
+                  title: 'Traslados',
+                  href: '/transfers',
+                  icon: Boxes,
+              },
+              {
+                  title: 'Roles de usuarios',
+                  href: '/users/roles',
+                  icon: ShieldCheck,
+              },
+          ]
+        : []),
+    ...(isAlmacen
+        ? [
+              {
+                  title: 'Stock por almacén',
+                  href: '/warehouse-stocks',
+                  icon: Boxes,
+              },
+          ]
+        : []),
+];
 
 const mainNavItems: NavItem[] = [
 

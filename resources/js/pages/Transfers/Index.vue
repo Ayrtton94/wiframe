@@ -65,7 +65,6 @@ const submit = () => {
             form.reset('from_warehouse_id', 'to_warehouse_id', 'notes', 'items'),
     });
 };
-
 </script>
 
 <template>
