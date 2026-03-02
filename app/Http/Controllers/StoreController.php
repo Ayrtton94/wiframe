@@ -14,6 +14,7 @@ class StoreController extends Controller
      */
     public function index(Request $request)
     {
+        $products = Store::paginate(10);
         $products->getCollection()->transform(function ($product) {
             $imagePath = $product->image_path ?? $product->image ?? null;
             $product->image_url = $imagePath ? asset('storage/' . $imagePath) : null;
