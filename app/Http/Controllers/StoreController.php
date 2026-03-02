@@ -14,11 +14,11 @@ class StoreController extends Controller
      */
     public function index(Request $request)
     {
-        $products = Store::paginate(10);
-        return Inertia::render("Store/Index", [
-            'products' => $products,
-            'filters' => $request->only(['search'])
-        ]);
+       $products = Store::all()->map(function ($product) {
+            $product->image_path = $product->image_path ? asset('storage/' . $product->image_path) : null;
+            return $product;
+        });
+        return Inertia::render("Store/Index", ['products' => $products]);
     }
 
     /**
@@ -34,7 +34,13 @@ class StoreController extends Controller
      */
     public function store(StoreRequest $request)
     {
-        Store::create($request->validated());
+        $validated = $request->validated();
+
+        if ($request->hasFile('image_path')) {
+            $validated['image_path'] = $request->file('image_path')->store('stores', 'public');
+        }
+
+        Store::create($validated);
 
         return redirect()->route('stores.index')->with('success', 'Producto creado exitosamente.');
     }

@@ -52,7 +52,8 @@ const props = defineProps<{
 
                 <table class="min-w-full divide-y divide-gray-200">
                     <thead class="bg-gray-50">
-                        <tr>
+                        <tr>                            
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Foto</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Código</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nombre</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tipo de Tela</th>
@@ -66,6 +67,10 @@ const props = defineProps<{
                     </thead>
                     <tbody class="bg-white divide-y divide-gray-200">
                         <tr v-for="product in products.data" :key="product.id">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                <img v-if="product.image_path" :src="product.image_path" alt="Foto" class="w-10 h-10 rounded-full object-cover">
+                                <img v-else src="/default-avatar.png" alt="Foto por defecto" class="w-10 h-10 rounded-full object-cover">
+                            </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ product.code_product }}</td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ product.name_product }}</td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ product.fabric_type }}</td>
