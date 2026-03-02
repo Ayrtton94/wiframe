@@ -14,11 +14,17 @@ class StoreController extends Controller
      */
     public function index(Request $request)
     {
-       $products = Store::all()->map(function ($product) {
-            $product->image_path = $product->image_path ? asset('storage/' . $product->image_path) : null;
+       $products = Store::paginate(10);
+        $products->getCollection()->transform(function ($product) {
+            $imagePath = $product->image_path ?? $product->image ?? null;
+            $product->image_url = $imagePath ? asset('storage/' . $imagePath) : null;
+
             return $product;
         });
-        return Inertia::render("Store/Index", ['products' => $products]);
+        return Inertia::render("Store/Index", [
+            'products' => $products,
+            'filters' => $request->only(['search'])
+        ]);
     }
 
     /**
