@@ -31,6 +31,8 @@ const props = defineProps<{
         price_roll: number | null;
         special_price: number | null;
         description: string | null;
+        image_path: string | null;
+        image_url: string | null;
     };
 }>();
 
@@ -48,11 +50,19 @@ const form = useForm({
     price_roll: props.product.price_roll,
     special_price: props.product.special_price,
     description: props.product.description,
+    image_path: null as File | null,
 });
+
+const handleImage = (event: Event) => {
+    const target = event.target as HTMLInputElement;
+    const file = target.files ? target.files[0] : null;
+    form.setData('image_path', file);
+};  
 
 const submit = () => {
     form.put(`/stores/${props.product.id}`, {
         preserveScroll: true,
+        forceFormData: true,
     });
 };
 </script>
@@ -69,120 +79,90 @@ const submit = () => {
             </div>
 
             <form @submit.prevent="submit">
-                <table class="min-w-full divide-y divide-gray-200">
-                <tbody class="bg-white divide-y divide-gray-200">
+              <div class="grid grid-cols-2 gap-6 bg-white p-6 rounded-2xl shadow">
 
-                    <!-- Fila 1 -->
-                    <tr>
-                        <td class="px-6 py-4 align-top text-sm font-medium text-black">
-                            Código de Producto
-                            <Input v-model="form.code_product" class="w-full" />
-                            <InputError :message="form.errors.code_product" />
-                        </td>
-
-                        <td class="px-6 py-4 align-top text-sm font-medium text-gray-900">
-                            Nombre del Producto
-                            <Input v-model="form.name_product" class="w-full" />
-                            <InputError :message="form.errors.name_product" />
-                        </td>
-                    </tr>
-
-                    <!-- Fila 2 -->
-                    <tr>
-                        <td class="px-6 py-4 align-top text-sm font-medium text-black">
-                            Tipo de Tela
-                            <Input v-model="form.fabric_type" class="w-full" />
-                            <InputError :message="form.errors.fabric_type" />
-                        </td>
-
-                        <td class="px-6 py-4 align-top text-sm font-medium text-black">
-                            Color
-                            <Input v-model="form.color" class="w-full" />
-                            <InputError :message="form.errors.color" />
-                        </td>
-                    </tr>
-
-                    <!-- Fila 3 -->
-                    <tr>
-                        <td class="px-6 py-4 align-top text-sm font-medium text-black">
-                            Stock
-                            <Input v-model="form.stock" type="number" class="w-full" />
-                            <InputError :message="form.errors.stock" />
-                        </td>
-
-                        <td class="px-6 py-4 align-top text-sm font-medium text-black">
-                            Proveedor
-                            <Input v-model="form.proveedor" class="w-full" />
-                            <InputError :message="form.errors.proveedor" />
-                        </td>
-                    </tr>
-
-                    <!-- Fila 4 -->
-                    <tr>
-                        <td class="px-6 py-4 align-top text-sm font-medium text-black">
-                            Precio
-                            <Input v-model="form.price" type="number" step="0.01" class="w-full" />
-                            <InputError :message="form.errors.price" />
-                        </td>
-
-                        <td class="px-6 py-4 align-top text-sm font-medium text-black">
-                            Stock Mínimo
-                            <Input v-model="form.stock_minimum" type="number" class="w-full" />
-                            <InputError :message="form.errors.stock_minimum" />
-                        </td>
-                    </tr>
-
-                    <!-- Fila PRECIOS (4 alineados) -->
-                    <tr>
-                        <td colspan="2" class="px-6 py-4">
-                            <div class="grid grid-cols-4 gap-4">
-                                <div>
-                                    <label for="Precio Mayorista" class="text-black">Precio Mayorista</label>
-                                    <Input v-model="form.wholesale_price" type="number" step="0.01" class="w-full" />
-                                    <InputError :message="form.errors.wholesale_price" />
-                                </div>
-
-                                <div>
-                                    <label for="Precio Minorista" class="text-black">Precio Minorista</label>
-                                    <Input v-model="form.retail_price" type="number" step="0.01" class="w-full" />
-                                    <InputError :message="form.errors.retail_price" />
-                                </div>
-
-                                <div>
-                                    <label for="Precio por Rollo" class="text-black">Precio por Rollo</label>
-                                    <Input v-model="form.price_roll" type="number" step="0.01" class="w-full" />
-                                    <InputError :message="form.errors.price_roll" />
-                                </div>
-
-                                <div>
-                                    <label for="Precio Especial" class="text-black">Precio Especial</label>
-                                    <Input v-model="form.special_price" type="number" step="0.01" class="w-full" />
-                                    <InputError :message="form.errors.special_price" />
-                                </div>
-                            </div>
-                        </td>
-                    </tr>
-
-                    <!-- Descripción -->
-                    <tr>
-                        <td colspan="2" class="px-6 py-4 align-top text-sm font-medium text-black">
-                            Descripción
-                            <textarea
-                                v-model="form.description"
-                                class="w-full border border-gray-300 rounded px-3 py-2"
-                            ></textarea>
-                            <InputError :message="form.errors.description" />
-                        </td>
-                    </tr>
-
-                </tbody>
-                </table>
-
-                <div class="mt-4">
-                    <Button type="submit" :disabled="form.processing" class="rounded bg-green-500 px-4 py-2 text-white hover:bg-green-600 disabled:opacity-50">
-                        Actualizar Producto
-                    </Button>
+                <div>
+                    <Label>Código de Producto</Label>
+                    <Input v-model="form.code_product" />
+                    <InputError :message="form.errors.code_product" />
                 </div>
+
+                <div>
+                    <Label>Nombre del Producto</Label>
+                    <Input v-model="form.name_product" />
+                    <InputError :message="form.errors.name_product" />
+                </div>
+
+                <div>
+                    <Label>Tipo de Tela</Label>
+                    <Input v-model="form.fabric_type" />
+                    <InputError :message="form.errors.fabric_type" />
+                </div>
+
+                <div>
+                    <Label>Color</Label>
+                    <Input v-model="form.color" />
+                    <InputError :message="form.errors.color" />
+                </div>
+
+                <div>
+                    <Label>Stock</Label>
+                    <Input v-model="form.stock" type="number" />
+                    <InputError :message="form.errors.stock" />
+                </div>
+
+                <div>
+                    <Label>Proveedor</Label>
+                    <Input v-model="form.proveedor" />
+                    <InputError :message="form.errors.proveedor" />
+                </div>
+
+                <div>
+                    <Label>Precio</Label>
+                    <Input v-model="form.price" type="number" step="0.01" />
+                    <InputError :message="form.errors.price" />
+                </div>
+
+                <div>
+                    <Label>Stock Mínimo</Label>
+                    <Input v-model="form.stock_minimum" type="number" />
+                    <InputError :message="form.errors.stock_minimum" />
+                </div>
+
+                <div class="col-span-2">
+                    <Label>Descripción</Label>
+                    <textarea
+                        v-model="form.description"
+                        class="w-full rounded-lg border p-2"
+                    ></textarea>
+                    <InputError :message="form.errors.description" />
+                </div>
+
+                <div class="col-span-2">
+                    <Label>Foto</Label>
+
+                    <div v-if="props.product.image_url" class="mb-3">
+                        <img
+                            :src="props.product.image_url"
+                            class="h-24 w-24 rounded-xl object-cover shadow"
+                        />
+                    </div>
+
+                    <input type="file" @change="handleImage" />
+                    <InputError :message="form.errors.image_path" />
+                </div>
+
+            </div>
+
+                <div class="mt-6">
+                <Button
+                    type="submit"
+                    :disabled="form.processing"
+                    class="bg-green-600 hover:bg-green-700"
+                >
+                    Actualizar Producto
+                </Button>
+            </div>
             </form>
 
         </div>

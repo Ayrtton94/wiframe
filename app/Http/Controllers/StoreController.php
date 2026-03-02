@@ -6,6 +6,7 @@ use Inertia\Inertia;
 use App\Models\Store;
 use Illuminate\Http\Request;
 use App\Http\Requests\StoreRequest;
+use Illuminate\Support\Facades\Storage;
 
 class StoreController extends Controller
 {
@@ -65,18 +66,36 @@ class StoreController extends Controller
      */
     public function edit(Store $store)
     {
+        $store->image_url = $store->image_path ? asset('storage/' . $store->image_path) : null;
         return Inertia::render("Store/Edit", ['product' => $store]);
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(StoreRequest $request, Store $store)
-    {
-        $store->update($request->validated());
+public function update(StoreRequest $request, Store $store)
+{
+    $validated = $request->validated();
 
-        return redirect()->route('stores.index')->with('success', 'Producto actualizado exitosamente.');
+    if ($request->hasFile('image_path')) {
+
+        // 🔥 Eliminar imagen anterior si existe
+        if ($store->image_path && Storage::disk('public')->exists($store->image_path)) {
+            Storage::disk('public')->delete($store->image_path);
+        }
+
+        // Guardar nueva imagen
+        $validated['image_path'] = $request
+            ->file('image_path')
+            ->store('stores', 'public');
     }
+
+    $store->update($validated);
+
+    return redirect()
+        ->route('stores.index')
+        ->with('success', 'Producto actualizado exitosamente.');
+}
 
     /**
      * Remove the specified resource from storage.
