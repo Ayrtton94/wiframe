@@ -1,16 +1,17 @@
 <?php
 
-use Inertia\Inertia;
-use Laravel\Fortify\Features;
-use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\StoreController;
+use App\Http\Controllers\CatalogController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\EmployeesController;
+use App\Http\Controllers\StoreController;
 use App\Http\Controllers\SuppliersController;
-use App\Http\Controllers\UserRoleController;
 use App\Http\Controllers\TransferController;
-use App\Http\Controllers\WarehouseStockController;
+use App\Http\Controllers\UserRoleController;
 use App\Http\Controllers\WarehouseController;
+use App\Http\Controllers\WarehouseStockController;
+use Illuminate\Support\Facades\Route;
+use Inertia\Inertia;
+use Laravel\Fortify\Features;
 
 Route::get('/', function () {
     if (auth()->check()) {
@@ -68,7 +69,9 @@ Route::middleware('auth')->group(function () {
 
     // ADMIN: Todos pueden ver productos (con control de permisos específicos)
     Route::resource('stores', StoreController::class)
-        ->middleware('permission:view_products');
+        ->middleware('permission:view_products');   
+    Route::resource('catalog', CatalogController::class);
+
 });
 
 require __DIR__.'/settings.php';

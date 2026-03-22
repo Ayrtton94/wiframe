@@ -45,6 +45,11 @@ const mainNavItems: NavItem[] = [
                   href: '/sales',
                   icon: ShoppingCart,
               },
+              {
+                  title: 'Catalogo',
+                  href: '/catalog',
+                  icon: Boxes,
+              },
           ]
         : []),
     ...(isAdmin || isVendedor
