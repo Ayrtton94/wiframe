@@ -9,6 +9,7 @@ use App\Http\Controllers\TransferController;
 use App\Http\Controllers\UserRoleController;
 use App\Http\Controllers\WarehouseController;
 use App\Http\Controllers\WarehouseStockController;
+use App\Http\Controllers\SaleController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use Laravel\Fortify\Features;
@@ -73,6 +74,11 @@ Route::middleware('auth')->group(function () {
     
     Route::resource('catalog', CatalogController::class);
     Route::get('/catalog/{id}', [CatalogController::class, 'show']);
+
+    Route::middleware('role:admin,vendedor,tienda')->group(function () {
+        Route::resource('sales', SaleController::class)->only(['index', 'store', 'show']);
+    });
+
 
 
 });
