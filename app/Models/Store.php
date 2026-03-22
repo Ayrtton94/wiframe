@@ -17,7 +17,6 @@ class Store extends Model
         'fabric_type',
         'color',
         'proveedor',
-        'image_path',
         'kilos',
         'metros',
         'minimum_stock',
@@ -28,6 +27,8 @@ class Store extends Model
         'special_price',
         'location',
         'description',
+        'image_path',
+        'image',
     ];
 
     public function warehouseStocks(): HasMany

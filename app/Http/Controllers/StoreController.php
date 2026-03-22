@@ -5,8 +5,9 @@ namespace App\Http\Controllers;
 use Inertia\Inertia;
 use App\Models\Store;
 use Illuminate\Http\Request;
-use App\Http\Requests\StoreRequest;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
+use App\Http\Requests\StoreRequest;
 
 class StoreController extends Controller
 {
@@ -66,7 +67,8 @@ class StoreController extends Controller
      */
     public function edit(Store $store)
     {
-        $store->image_url = $store->image_path ? asset('storage/' . $store->image_path) : null;
+        $imagePath = $store->image_path ?? $store->image ?? null;
+        $store->image_url = $imagePath ? asset('storage/' . $imagePath) : null;
         return Inertia::render("Store/Edit", ['product' => $store]);
     }
 
@@ -77,20 +79,20 @@ public function update(StoreRequest $request, Store $store)
 {
     $validated = $request->validated();
 
-    if ($request->hasFile('image_path')) {
+        $imageColumn = Schema::hasColumn('stores', 'image_path')
+            ? 'image_path'
+            : (Schema::hasColumn('stores', 'image') ? 'image' : null);
 
-        // 🔥 Eliminar imagen anterior si existe
-        if ($store->image_path && Storage::disk('public')->exists($store->image_path)) {
-            Storage::disk('public')->delete($store->image_path);
+        if ($imageColumn !== null && $request->hasFile('image')) {
+            $existingPath = $store->{$imageColumn};
+            if ($existingPath) {
+                Storage::disk('public')->delete($existingPath);
+            }
+
+            $validated[$imageColumn] = $request->file('image')->store('products', 'public');
         }
 
-        // Guardar nueva imagen
-        $validated['image_path'] = $request
-            ->file('image_path')
-            ->store('stores', 'public');
-    }
-
-    $store->update($validated);
+        $store->update($validated);
 
     return redirect()
         ->route('stores.index')

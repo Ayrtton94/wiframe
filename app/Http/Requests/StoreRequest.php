@@ -43,6 +43,7 @@ class StoreRequest extends FormRequest
             'special_price' => 'nullable|numeric|min:0|max:999999.99',
             'location' => 'nullable|string|max:255',
             'description' => 'nullable|string|max:1000',
+            'image' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
         ];
     }
 
@@ -66,6 +67,9 @@ class StoreRequest extends FormRequest
             'wholesale_price.required' => 'El precio al por mayor es obligatorio.',
             'kilos.numeric' => 'Los kilos deben ser un número válido.',
             'metros.numeric' => 'Los metros deben ser un número válido.',
+            'image.image' => 'El archivo debe ser una imagen válida.',
+            'image.mimes' => 'La imagen debe ser JPG, PNG o WebP.',
+            'image.max' => 'La imagen no debe superar 2MB.',
         ];
     }
 }

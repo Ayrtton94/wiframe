@@ -28,11 +28,11 @@ const props = defineProps<{
         stock_minimum: number;
         wholesale_price: number;
         retail_price: number;
-        price_roll: number | null;
-        special_price: number | null;
-        description: string | null;
-        image_path: string | null;
-        image_url: string | null;
+        price_roll?: number;
+        special_price?: number;
+        location?: string;
+        description?: string;
+        image_url?: string | null;
     };
 }>();
 
@@ -44,23 +44,28 @@ const form = useForm({
     stock: props.product.stock,
     proveedor: props.product.proveedor,
     price: props.product.price,
-    stock_minimum: props.product.stock_minimum,
+    minimum_stock: props.product.stock_minimum,
     wholesale_price: props.product.wholesale_price,
-    retail_price: props.product.retail_price,
-    price_roll: props.product.price_roll,
-    special_price: props.product.special_price,
-    description: props.product.description,
-    image_path: null as File | null,
+    public_price: props.product.retail_price,
+    price_roll: props.product.price_roll || null,
+    special_price: props.product.special_price || null,
+    location: props.product.location || null,
+    description: props.product.description || null,
+    
 });
 
 const handleImage = (event: Event) => {
     const target = event.target as HTMLInputElement;
     const file = target.files ? target.files[0] : null;
-    form.setData('image_path', file);
-};  
+    form.setData('image', file);
+};
+  
 
 const submit = () => {
-    form.put(`/stores/${props.product.id}`, {
+    form.transform((data) => ({
+        ...data,
+        _method: 'put',
+    })).post(`/stores/${props.product.id}`, {
         preserveScroll: true,
         forceFormData: true,
     });
@@ -78,91 +83,116 @@ const submit = () => {
                 </Link>
             </div>
 
-            <form @submit.prevent="submit">
-              <div class="grid grid-cols-2 gap-6 bg-white p-6 rounded-2xl shadow">
-
-                <div>
-                    <Label>Código de Producto</Label>
-                    <Input v-model="form.code_product" />
-                    <InputError :message="form.errors.code_product" />
-                </div>
-
-                <div>
-                    <Label>Nombre del Producto</Label>
-                    <Input v-model="form.name_product" />
-                    <InputError :message="form.errors.name_product" />
-                </div>
-
-                <div>
-                    <Label>Tipo de Tela</Label>
-                    <Input v-model="form.fabric_type" />
-                    <InputError :message="form.errors.fabric_type" />
-                </div>
-
-                <div>
-                    <Label>Color</Label>
-                    <Input v-model="form.color" />
-                    <InputError :message="form.errors.color" />
-                </div>
-
-                <div>
-                    <Label>Stock</Label>
-                    <Input v-model="form.stock" type="number" />
-                    <InputError :message="form.errors.stock" />
-                </div>
-
-                <div>
-                    <Label>Proveedor</Label>
-                    <Input v-model="form.proveedor" />
-                    <InputError :message="form.errors.proveedor" />
-                </div>
-
-                <div>
-                    <Label>Precio</Label>
-                    <Input v-model="form.price" type="number" step="0.01" />
-                    <InputError :message="form.errors.price" />
-                </div>
-
-                <div>
-                    <Label>Stock Mínimo</Label>
-                    <Input v-model="form.stock_minimum" type="number" />
-                    <InputError :message="form.errors.stock_minimum" />
-                </div>
-
-                <div class="col-span-2">
-                    <Label>Descripción</Label>
-                    <textarea
-                        v-model="form.description"
-                        class="w-full rounded-lg border p-2"
-                    ></textarea>
-                    <InputError :message="form.errors.description" />
-                </div>
-
-                <div class="col-span-2">
-                    <Label>Foto</Label>
-
-                    <div v-if="props.product.image_url" class="mb-3">
-                        <img
-                            :src="props.product.image_url"
-                            class="h-24 w-24 rounded-xl object-cover shadow"
-                        />
+            <form class="space-y-4" @submit.prevent="submit">
+                <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+                    <div>
+                        <Label for="code_product">Código de Producto</Label>
+                        <Input id="code_product" v-model="form.code_product" class="w-full" />
+                        <InputError :message="form.errors.code_product" />
                     </div>
 
-                    <input type="file" @change="handleImage" />
-                    <InputError :message="form.errors.image_path" />
+                    <div>
+                        <Label for="name_product">Nombre del Producto</Label>
+                        <Input id="name_product" v-model="form.name_product" class="w-full" />
+                        <InputError :message="form.errors.name_product" />
+                    </div>
+
+                    <div>
+                        <Label for="fabric_type">Tipo de Tela</Label>
+                        <Input id="fabric_type" v-model="form.fabric_type" class="w-full" />
+                        <InputError :message="form.errors.fabric_type" />
+                    </div>
+
+                    <div>
+                        <Label for="color">Color</Label>
+                        <Input id="color" v-model="form.color" class="w-full" />
+                        <InputError :message="form.errors.color" />
+                    </div>
+
+                    <div>
+                        <Label for="proveedor">Proveedor</Label>
+                        <Input id="proveedor" v-model="form.proveedor" class="w-full" />
+                        <InputError :message="form.errors.proveedor" />
+                    </div>
+
+                    <div>
+                        <Label for="minimum_stock">Stock Mínimo</Label>
+                        <Input id="minimum_stock" v-model="form.minimum_stock" type="number" class="w-full" />
+                        <InputError :message="form.errors.minimum_stock" />
+                    </div>
+
+                    <div>
+                        <Label for="kilos">Kilos</Label>
+                        <Input id="kilos" v-model="form.kilos" type="number" step="0.01" class="w-full" />
+                        <InputError :message="form.errors.kilos" />
+                    </div>
+
+                    <div>
+                        <Label for="metros">Metros</Label>
+                        <Input id="metros" v-model="form.metros" type="number" step="0.01" class="w-full" />
+                        <InputError :message="form.errors.metros" />
+                    </div>
+
+                    <div>
+                        <Label for="price">Precio</Label>
+                        <Input id="price" v-model="form.price" type="number" step="0.01" class="w-full" />
+                        <InputError :message="form.errors.price" />
+                    </div>
+
+                    <div>
+                        <Label for="public_price">Precio Público</Label>
+                        <Input id="public_price" v-model="form.public_price" type="number" step="0.01" class="w-full" />
+                        <InputError :message="form.errors.public_price" />
+                    </div>
+
+                    <div>
+                        <Label for="wholesale_price">Precio Mayorista</Label>
+                        <Input id="wholesale_price" v-model="form.wholesale_price" type="number" step="0.01" class="w-full" />
+                        <InputError :message="form.errors.wholesale_price" />
+                    </div>
+
+                    <div>
+                        <Label for="price_roll">Precio por Rollo</Label>
+                        <Input id="price_roll" v-model="form.price_roll" type="number" step="0.01" class="w-full" />
+                        <InputError :message="form.errors.price_roll" />
+                    </div>
+
+                    <div>
+                        <Label for="special_price">Precio Especial</Label>
+                        <Input id="special_price" v-model="form.special_price" type="number" step="0.01" class="w-full" />
+                        <InputError :message="form.errors.special_price" />
+                    </div>
+
+                    <div>
+                        <Label for="location">Ubicación</Label>
+                        <Input id="location" v-model="form.location" class="w-full" />
+                        <InputError :message="form.errors.location" />
+                    </div>
+
+                    <div>
+                        <Label for="image">Imagen del producto</Label>
+                        <div v-if="props.product.image_url" class="mb-2">
+                            <img :src="props.product.image_url" alt="Imagen actual" class="h-20 w-20 rounded object-cover" />
+                        </div>
+                        <Input id="image" type="file" accept="image/*" @change="handleImage" class="w-full" />
+                        <InputError :message="form.errors.image" />
+                    </div>
                 </div>
 
-            </div>
-
-                <div class="mt-6">
-                <Button
-                    type="submit"
-                    :disabled="form.processing"
-                    class="bg-green-600 hover:bg-green-700"
-                >
-                    Actualizar Producto
-                </Button>
-            </div>
+                <div>
+                    <Label for="description">Descripción</Label>
+                    <textarea
+                        id="description"
+                        v-model="form.description"
+                        class="w-full rounded border border-gray-300 px-3 py-2"
+                    />
+                    <InputError :message="form.errors.description" />
+                </div>
+                <div class="mt-4">
+                    <Button type="submit" :disabled="form.processing" class="rounded bg-green-500 px-4 py-2 text-white hover:bg-green-600 disabled:opacity-50">
+                        Actualizar Producto
+                    </Button>
+                </div>
             </form>
 
         </div>

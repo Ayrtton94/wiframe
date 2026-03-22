@@ -72,28 +72,41 @@ const submit = () => {
 
     <AppLayout :breadcrumbs="breadcrumbs">
         <div class="flex h-full flex-1 flex-col gap-4 rounded-xl p-4">
+
             <h1 class="text-xl font-semibold">Traslados entre almacenes</h1>
 
+            <!-- FORMULARIO -->
             <div class="rounded border bg-white p-4">
                 <h2 class="mb-3 text-lg font-semibold">Crear traslado</h2>
 
                 <form class="space-y-3" @submit.prevent="submit">
+
+                    <!-- Almacenes -->
                     <div class="grid gap-3 md:grid-cols-2">
                         <select v-model="form.from_warehouse_id" class="rounded border px-3 py-2" required>
                             <option disabled value="">Almacén origen</option>
-                            <option v-for="warehouse in props.warehouses" :key="warehouse.id" :value="String(warehouse.id)">
+                            <option
+                                v-for="warehouse in props.warehouses"
+                                :key="warehouse.id"
+                                :value="String(warehouse.id)"
+                            >
                                 {{ warehouse.code }} - {{ warehouse.name }}
                             </option>
                         </select>
 
                         <select v-model="form.to_warehouse_id" class="rounded border px-3 py-2" required>
                             <option disabled value="">Almacén destino</option>
-                            <option v-for="warehouse in props.warehouses" :key="warehouse.id" :value="String(warehouse.id)">
+                            <option
+                                v-for="warehouse in props.warehouses"
+                                :key="warehouse.id"
+                                :value="String(warehouse.id)"
+                            >
                                 {{ warehouse.code }} - {{ warehouse.name }}
                             </option>
                         </select>
                     </div>
 
+                    <!-- ITEMS -->
                     <div class="space-y-2">
                         <div
                             v-for="(item, index) in form.items"
@@ -102,56 +115,86 @@ const submit = () => {
                         >
                             <select v-model="item.store_id" class="rounded border px-3 py-2" required>
                                 <option disabled value="">Producto</option>
-                                <option v-for="product in props.products" :key="product.id" :value="String(product.id)">
+                                <option
+                                    v-for="product in props.products"
+                                    :key="product.id"
+                                    :value="String(product.id)"
+                                >
                                     {{ product.code_product }} - {{ product.name_product }}
                                 </option>
                             </select>
 
                             <input
                                 v-model.number="item.kilos"
-                                class="rounded border px-3 py-2"
-                                min="0"
-                                placeholder="Kilos"
-                                step="0.001"
                                 type="number"
+                                min="0"
+                                step="0.001"
+                                placeholder="Kilos"
+                                class="rounded border px-3 py-2"
                             />
 
                             <input
                                 v-model.number="item.metros"
-                                class="rounded border px-3 py-2"
-                                min="0"
-                                placeholder="Metros"
-                                step="0.001"
                                 type="number"
+                                min="0"
+                                step="0.001"
+                                placeholder="Metros"
+                                class="rounded border px-3 py-2"
                             />
 
                             <button
-                                class="rounded bg-red-100 px-3 py-2 text-red-600"
                                 type="button"
                                 @click="removeItem(index)"
+                                class="rounded bg-red-100 px-3 py-2 text-red-600"
                             >
                                 Quitar
                             </button>
                         </div>
                     </div>
 
+                    <!-- BOTONES -->
                     <div class="flex flex-wrap gap-2">
-                        <button class="rounded bg-slate-600 px-3 py-2 text-white" type="button" @click="addItem">Agregar item</button>
-                        <button class="rounded bg-blue-600 px-3 py-2 text-white" :disabled="form.processing" type="submit">Crear traslado</button>
+                        <button
+                            type="button"
+                            @click="addItem"
+                            class="rounded bg-slate-600 px-3 py-2 text-white"
+                        >
+                            Agregar item
+                        </button>
+
+                        <button
+                            type="submit"
+                            :disabled="form.processing"
+                            class="rounded bg-blue-600 px-3 py-2 text-white"
+                        >
+                            Crear traslado
+                        </button>
                     </div>
 
+                    <!-- NOTAS -->
                     <textarea
                         v-model="form.notes"
-                        class="w-full rounded border px-3 py-2"
+                        rows="2"
                         maxlength="1000"
                         placeholder="Notas (opcional)"
-                        rows="2"
+                        class="w-full rounded border px-3 py-2"
                     />
 
-                    <p v-if="form.errors.items" class="text-sm text-red-600">{{ form.errors.items }}</p>
-                    <p v-if="form.errors.from_warehouse_id" class="text-sm text-red-600">{{ form.errors.from_warehouse_id }}</p>
-                    <p v-if="form.errors.to_warehouse_id" class="text-sm text-red-600">{{ form.errors.to_warehouse_id }}</p>
+                    <!-- ERRORES -->
+                    <p v-if="form.errors.items" class="text-sm text-red-600">
+                        {{ form.errors.items }}
+                    </p>
+                    <p v-if="form.errors.from_warehouse_id" class="text-sm text-red-600">
+                        {{ form.errors.from_warehouse_id }}
+                    </p>
+                    <p v-if="form.errors.to_warehouse_id" class="text-sm text-red-600">
+                        {{ form.errors.to_warehouse_id }}
+                    </p>
 
+                </form>
+            </div>
+
+            <!-- TABLA -->
             <div class="overflow-x-auto rounded border bg-white">
                 <table class="min-w-full divide-y divide-gray-200">
                     <thead class="bg-gray-50">
@@ -163,6 +206,7 @@ const submit = () => {
                             <th class="px-4 py-3 text-left text-xs font-medium uppercase">Acción</th>
                         </tr>
                     </thead>
+
                     <tbody class="divide-y divide-gray-200">
                         <tr v-for="transfer in props.transfers.data" :key="transfer.id">
                             <td class="px-4 py-3 text-sm">{{ transfer.code }}</td>
@@ -170,12 +214,19 @@ const submit = () => {
                             <td class="px-4 py-3 text-sm">{{ transfer.to_warehouse.name }}</td>
                             <td class="px-4 py-3 text-sm">{{ transfer.status }}</td>
                             <td class="px-4 py-3 text-sm">
-                                <Link :href="`/transfers/${transfer.id}`" class="text-blue-600">Ver detalle</Link>
+                                <Link
+                                    :href="`/transfers/${transfer.id}`"
+                                    class="text-blue-600"
+                                >
+                                    Ver detalle
+                                </Link>
                             </td>
                         </tr>
                     </tbody>
                 </table>
             </div>
+
         </div>
     </AppLayout>
 </template>
+
