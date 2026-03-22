@@ -11,9 +11,10 @@ use App\Http\Requests\StoreRequest;
 
 class StoreController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
+    public function getRouteKeyName()
+    {
+        return 'code_product';
+    }
     public function index(Request $request)
     {
         $products = Store::paginate(10);

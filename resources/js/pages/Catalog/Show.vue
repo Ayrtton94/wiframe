@@ -3,6 +3,7 @@ import AppLayout from '@/layouts/AppLayout.vue';
 import { dashboard } from '@/routes';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link } from '@inertiajs/vue3';
+import { ref } from 'vue';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -11,7 +12,7 @@ const breadcrumbs: BreadcrumbItem[] = [
     },
 ];
 
-defineProps<{
+const { product, stock_summary, stock_locations } = defineProps<{
   product: {
     id: number;
     code_product: string;
@@ -46,6 +47,7 @@ defineProps<{
   }>;
 }>();
 
+const showImage = ref(false);
 
 </script>
 
@@ -60,21 +62,36 @@ defineProps<{
           <p class="text-sm text-gray-500">{{ product.code_product }}</p>
         </div>
 
-        <Link href="/stores" class="rounded bg-blue-600 px-4 py-2 text-white">
+        <Link href="/catalog" class="rounded bg-blue-600 px-4 py-2 text-white">
           Volver
         </Link>
       </div>
 
       <div class="grid gap-6 md:grid-cols-2">
         <div class="rounded border bg-white p-4">
-          <img
-            v-if="product.image_url"
-            :src="product.image_url"
-            class="h-64 w-full rounded object-cover"
-          />
-          <div v-else class="flex h-64 items-center justify-center rounded bg-gray-100">
-            Sin imagen
-          </div>
+            <img
+                v-if="product.image_url"
+                :src="product.image_url"
+                class="h-64 w-full rounded object-cover cursor-pointer transition hover:scale-105"
+                @click="showImage = true"
+            />
+
+            <div
+                v-else
+                class="flex h-64 items-center justify-center rounded bg-gray-100"
+            >
+                Sin imagen
+            </div>
+        </div>
+        <div
+            v-if="showImage"
+            class="fixed inset-0 z-50 flex items-center justify-center bg-black/80"
+            @click="showImage = false"
+            >
+            <img
+                :src="product.image_url"
+                class="max-h-[90%] max-w-[90%] rounded shadow-lg"
+            />
         </div>
 
         <div class="rounded border bg-white p-4 space-y-2">
