@@ -1,247 +1,92 @@
 <script setup lang="ts">
 import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem } from '@/types';
-import { Head, Link, useForm } from '@inertiajs/vue3';
-import { computed } from 'vue';
+import { Head, Link } from '@inertiajs/vue3';
 
 const props = defineProps<{
-    sales: {
-        data: Array<{
+    sale: {
+        id: number;
+        code: string;
+        status: string;
+        subtotal: number;
+        total: number;
+        notes: string | null;
+        customer: { name: string; dni: string };
+        warehouse: { name: string; code: string };
+        seller: { name: string };
+        items: Array<{
             id: number;
-            code: string;
-            status: string;
-            total: number;
-            customer: { name: string };
-            warehouse: { name: string; code: string };
-            seller: { name: string };
-            created_at: string;
+            unit: string;
+            quantity: number;
+            unit_price: number;
+            line_total: number;
+            store: { code_product: string; name_product: string };
         }>;
     };
-    customers: Array<{ id: number; name: string; dni: string }>;
-    warehouses: Array<{ id: number; name: string; code: string }>;
-    products: Array<{
-        id: number;
-        code_product: string;
-        name_product: string;
-        public_price: number;
-    }>;
 }>();
 
-const breadcrumbs: BreadcrumbItem[] = [{ title: 'Ventas', href: '/sales' }];
-
-type SaleItemForm = {
-    store_id: string;
-    unit: 'kilos' | 'metros';
-    quantity: number;
-};
-
-const form = useForm({
-    customer_id: '',
-    warehouse_id: '',
-    notes: '',
-    items: [{ store_id: '', unit: 'metros', quantity: 1 }] as SaleItemForm[],
-});
-
-const addItem = () => {
-    form.items.push({ store_id: '', unit: 'metros', quantity: 1 });
-};
-
-const removeItem = (index: number) => {
-    if (form.items.length === 1) {
-        return;
-    }
-
-    form.items.splice(index, 1);
-};
-
-const submit = () => {
-    form.transform((data) => ({
-        ...data,
-        customer_id: Number(data.customer_id),
-        warehouse_id: Number(data.warehouse_id),
-        items: data.items.map((item) => ({
-            store_id: Number(item.store_id),
-            unit: item.unit,
-            quantity: Number(item.quantity),
-        })),
-    })).post('/sales', {
-        preserveScroll: true,
-        onSuccess: () =>
-            form.reset('customer_id', 'warehouse_id', 'notes', 'items'),
-    });
-};
-
-const productMap = computed(
-    () => new Map(props.products.map((product) => [product.id, product])),
-);
-
-const estimateLineTotal = (item: SaleItemForm) => {
-    const product = productMap.value.get(Number(item.store_id));
-    if (!product) {
-        return 0;
-    }
-
-    return (Number(item.quantity || 0) * Number(product.public_price)).toFixed(
-        2,
-    );
-};
+const breadcrumbs: BreadcrumbItem[] = [
+    { title: 'Ventas', href: '/sales' },
+    { title: props.sale.code, href: `/sales/${props.sale.id}` },
+];
 </script>
 
 <template>
-    <Head title="Ventas" />
+    <Head :title="`Venta ${props.sale.code}`" />
 
     <AppLayout :breadcrumbs="breadcrumbs">
         <div class="flex h-full flex-1 flex-col gap-6 rounded-xl p-4">
-            <h1 class="text-2xl font-semibold text-slate-900">
-                Ventas básicas
-            </h1>
-
-            <section class="rounded-xl border bg-white p-5 shadow-sm">
-                <h2 class="mb-4 text-lg font-semibold">Registrar venta</h2>
-
-                <form class="space-y-4" @submit.prevent="submit">
-                    <div class="grid gap-3 md:grid-cols-2">
-                        <select
-                            v-model="form.customer_id"
-                            class="rounded-lg border px-3 py-2"
-                            required
-                        >
-                            <option disabled value="">
-                                Selecciona cliente
-                            </option>
-                            <option
-                                v-for="customer in props.customers"
-                                :key="customer.id"
-                                :value="String(customer.id)"
-                            >
-                                {{ customer.dni }} - {{ customer.name }}
-                            </option>
-                        </select>
-
-                        <select
-                            v-model="form.warehouse_id"
-                            class="rounded-lg border px-3 py-2"
-                            required
-                        >
-                            <option disabled value="">
-                                Selecciona almacén / tienda
-                            </option>
-                            <option
-                                v-for="warehouse in props.warehouses"
-                                :key="warehouse.id"
-                                :value="String(warehouse.id)"
-                            >
-                                {{ warehouse.code }} - {{ warehouse.name }}
-                            </option>
-                        </select>
-                    </div>
-
-                    <div class="space-y-3">
-                        <div
-                            v-for="(item, index) in form.items"
-                            :key="index"
-                            class="grid gap-3 rounded-lg border p-4 md:grid-cols-[2fr_1fr_1fr_auto]"
-                        >
-                            <select
-                                v-model="item.store_id"
-                                class="rounded-lg border px-3 py-2"
-                                required
-                            >
-                                <option disabled value="">
-                                    Selecciona producto
-                                </option>
-                                <option
-                                    v-for="product in props.products"
-                                    :key="product.id"
-                                    :value="String(product.id)"
-                                >
-                                    {{ product.code_product }} -
-                                    {{ product.name_product }}
-                                </option>
-                            </select>
-
-                            <select
-                                v-model="item.unit"
-                                class="rounded-lg border px-3 py-2"
-                            >
-                                <option value="metros">Metros</option>
-                                <option value="kilos">Kilos</option>
-                            </select>
-
-                            <input
-                                v-model.number="item.quantity"
-                                type="number"
-                                min="0.001"
-                                step="0.001"
-                                placeholder="Cantidad"
-                                class="rounded-lg border px-3 py-2"
-                                required
-                            />
-
-                            <button
-                                type="button"
-                                class="rounded-lg bg-red-100 px-3 py-2 text-red-600"
-                                @click="removeItem(index)"
-                            >
-                                Quitar
-                            </button>
-
-                            <p class="text-sm text-slate-500 md:col-span-4">
-                                Estimado: S/ {{ estimateLineTotal(item) }}
-                            </p>
-                        </div>
-                    </div>
-
-                    <div class="flex flex-wrap gap-2">
-                        <button
-                            type="button"
-                            class="rounded-lg bg-slate-700 px-4 py-2 text-white"
-                            @click="addItem"
-                        >
-                            Agregar producto
-                        </button>
-                        <button
-                            type="submit"
-                            :disabled="form.processing"
-                            class="rounded-lg bg-blue-600 px-4 py-2 text-white"
-                        >
-                            Guardar venta
-                        </button>
-                    </div>
-
-                    <textarea
-                        v-model="form.notes"
-                        rows="3"
-                        maxlength="1000"
-                        placeholder="Notas de la venta (opcional)"
-                        class="w-full rounded-lg border px-3 py-2"
-                    />
-
-                    <p
-                        v-if="form.errors.customer_id"
-                        class="text-sm text-red-600"
-                    >
-                        {{ form.errors.customer_id }}
+            <section
+                class="flex items-center justify-between rounded-xl border bg-white p-5 shadow-sm"
+            >
+                <div>
+                    <h1 class="text-2xl font-semibold text-slate-900">
+                        {{ props.sale.code }}
+                    </h1>
+                    <p class="text-sm text-slate-500">
+                        {{ props.sale.customer.name }} ·
+                        {{ props.sale.warehouse.name }}
                     </p>
-                    <p
-                        v-if="form.errors.warehouse_id"
-                        class="text-sm text-red-600"
-                    >
-                        {{ form.errors.warehouse_id }}
+                </div>
+                <Link
+                    href="/sales"
+                    class="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white"
+                    >Volver</Link
+                >
+            </section>
+
+            <section class="grid gap-4 md:grid-cols-4">
+                <div class="rounded-xl border bg-white p-4 shadow-sm">
+                    <p class="text-xs text-slate-500 uppercase">Cliente</p>
+                    <p class="mt-2 text-sm font-medium">
+                        {{ props.sale.customer.dni }} -
+                        {{ props.sale.customer.name }}
                     </p>
-                    <p v-if="form.errors.items" class="text-sm text-red-600">
-                        {{ form.errors.items }}
+                </div>
+                <div class="rounded-xl border bg-white p-4 shadow-sm">
+                    <p class="text-xs text-slate-500 uppercase">Ubicación</p>
+                    <p class="mt-2 text-sm font-medium">
+                        {{ props.sale.warehouse.code }} -
+                        {{ props.sale.warehouse.name }}
                     </p>
-                </form>
+                </div>
+                <div class="rounded-xl border bg-white p-4 shadow-sm">
+                    <p class="text-xs text-slate-500 uppercase">Vendedor</p>
+                    <p class="mt-2 text-sm font-medium">
+                        {{ props.sale.seller.name }}
+                    </p>
+                </div>
+                <div class="rounded-xl border bg-white p-4 shadow-sm">
+                    <p class="text-xs text-slate-500 uppercase">Estado</p>
+                    <p class="mt-2 text-sm font-medium">
+                        {{ props.sale.status }}
+                    </p>
+                </div>
             </section>
 
             <section
                 class="overflow-hidden rounded-xl border bg-white shadow-sm"
             >
-                <div class="border-b px-5 py-4">
-                    <h2 class="text-lg font-semibold">Ventas registradas</h2>
-                </div>
-
                 <div class="overflow-x-auto">
                     <table class="min-w-full divide-y divide-slate-200">
                         <thead class="bg-slate-50">
@@ -249,71 +94,72 @@ const estimateLineTotal = (item: SaleItemForm) => {
                                 <th
                                     class="px-4 py-3 text-left text-xs font-semibold uppercase"
                                 >
-                                    Código
+                                    Producto
                                 </th>
                                 <th
                                     class="px-4 py-3 text-left text-xs font-semibold uppercase"
                                 >
-                                    Cliente
+                                    Unidad
                                 </th>
                                 <th
                                     class="px-4 py-3 text-left text-xs font-semibold uppercase"
                                 >
-                                    Ubicación
+                                    Cantidad
                                 </th>
                                 <th
                                     class="px-4 py-3 text-left text-xs font-semibold uppercase"
                                 >
-                                    Vendedor
+                                    Precio
                                 </th>
                                 <th
                                     class="px-4 py-3 text-left text-xs font-semibold uppercase"
                                 >
-                                    Total
-                                </th>
-                                <th
-                                    class="px-4 py-3 text-left text-xs font-semibold uppercase"
-                                >
-                                    Estado
-                                </th>
-                                <th
-                                    class="px-4 py-3 text-left text-xs font-semibold uppercase"
-                                >
-                                    Acción
+                                    Importe
                                 </th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100">
-                            <tr v-for="sale in props.sales.data" :key="sale.id">
+                            <tr v-for="item in props.sale.items" :key="item.id">
                                 <td class="px-4 py-3 text-sm">
-                                    {{ sale.code }}
+                                    {{ item.store.code_product }} -
+                                    {{ item.store.name_product }}
                                 </td>
                                 <td class="px-4 py-3 text-sm">
-                                    {{ sale.customer.name }}
+                                    {{ item.unit }}
                                 </td>
                                 <td class="px-4 py-3 text-sm">
-                                    {{ sale.warehouse.code }} -
-                                    {{ sale.warehouse.name }}
+                                    {{ item.quantity }}
                                 </td>
                                 <td class="px-4 py-3 text-sm">
-                                    {{ sale.seller.name }}
+                                    S/ {{ item.unit_price }}
                                 </td>
                                 <td class="px-4 py-3 text-sm">
-                                    S/ {{ sale.total }}
-                                </td>
-                                <td class="px-4 py-3 text-sm">
-                                    {{ sale.status }}
-                                </td>
-                                <td class="px-4 py-3 text-sm">
-                                    <Link
-                                        :href="`/sales/${sale.id}`"
-                                        class="text-blue-600"
-                                        >Ver detalle</Link
-                                    >
+                                    S/ {{ item.line_total }}
                                 </td>
                             </tr>
                         </tbody>
                     </table>
+                </div>
+            </section>
+
+            <section class="grid gap-4 md:grid-cols-3">
+                <div
+                    class="rounded-xl border bg-white p-4 shadow-sm md:col-span-2"
+                >
+                    <p class="text-xs text-slate-500 uppercase">Notas</p>
+                    <p class="mt-2 text-sm text-slate-700">
+                        {{ props.sale.notes || 'Sin notas registradas.' }}
+                    </p>
+                </div>
+                <div class="rounded-xl border bg-white p-4 shadow-sm">
+                    <p class="text-xs text-slate-500 uppercase">Subtotal</p>
+                    <p class="mt-2 text-lg font-semibold">
+                        S/ {{ props.sale.subtotal }}
+                    </p>
+                    <p class="mt-4 text-xs text-slate-500 uppercase">Total</p>
+                    <p class="mt-2 text-2xl font-bold">
+                        S/ {{ props.sale.total }}
+                    </p>
                 </div>
             </section>
         </div>

@@ -66,11 +66,11 @@ class SaleController extends Controller
      */
     public function store(StoreSaleRequest $request)
     {
-            $validated = $request->validated();
-            $user = $request->user();
+        $validated = $request->validated();
+        $user = $request->user();
 
-            if (! $user->hasRole('admin')) {
-                $assignedWarehouseIds = $user->warehouses()->pluck('warehouses.id');
+        if (! $user->hasRole('admin')) {
+            $assignedWarehouseIds = $user->warehouses()->pluck('warehouses.id');
 
                 if (! $assignedWarehouseIds->contains($validated['warehouse_id'])) {
                     throw ValidationException::withMessages([
@@ -155,8 +155,18 @@ class SaleController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(Sale $sale)
+    public function show(Request $request, Sale $sale)
     {
+        $user = $request->user();
+
+        if (! $user->hasRole('admin')) {
+            $assignedWarehouseIds = $user->warehouses()->pluck('warehouses.id');
+
+            if (! $assignedWarehouseIds->contains($sale->warehouse_id)) {
+                abort(403);
+            }
+        }
+
         $sale->load([
             'customer:id,name,dni',
             'warehouse:id,name,code',
@@ -164,7 +174,7 @@ class SaleController extends Controller
             'items.store:id,code_product,name_product',
         ]);
 
-        return Inertia::render('Sale/Show', [
+        return Inertia::render('Sales/Show', [
             'sale' => $sale,
         ]);
     }
