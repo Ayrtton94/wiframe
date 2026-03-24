@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import AppLayout from '@/layouts/AppLayout.vue';
-import { dashboard } from '@/routes';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link, useForm } from '@inertiajs/vue3';
 import InputError from '@/components/InputError.vue';
@@ -22,18 +21,23 @@ const props = defineProps<{
         name_product: string;
         fabric_type: string;
         color: string;
-        stock: number;
         proveedor: string;
+        kilos: number | string;
+        metros: number | string;
         price: number;
-        stock_minimum: number;
+        minimum_stock: number;
         wholesale_price: number;
-        retail_price: number;
+        public_price: number;
         price_roll?: number;
         special_price?: number;
         location?: string;
         description?: string;
         image_url?: string | null;
     };
+    suppliers: Array<{
+        id: number;
+        company_name: string;
+    }>;
 }>();
 
 const form = useForm({
@@ -41,12 +45,13 @@ const form = useForm({
     name_product: props.product.name_product,
     fabric_type: props.product.fabric_type,
     color: props.product.color,
-    stock: props.product.stock,
+    kilos: props.product.kilos,
+    metros: props.product.metros,
     proveedor: props.product.proveedor,
     price: props.product.price,
-    minimum_stock: props.product.stock_minimum,
+    minimum_stock: props.product.minimum_stock,
     wholesale_price: props.product.wholesale_price,
-    public_price: props.product.retail_price,
+    public_price: props.product.public_price,
     price_roll: props.product.price_roll || null,
     special_price: props.product.special_price || null,
     location: props.product.location || null,
@@ -111,7 +116,12 @@ const submit = () => {
 
                     <div>
                         <Label for="proveedor">Proveedor</Label>
-                        <Input id="proveedor" v-model="form.proveedor" class="w-full" />
+                        <select id="proveedor" v-model="form.proveedor" class="w-full rounded border px-3 py-2">
+                            <option value="" disabled>Selecciona un proveedor</option>
+                            <option v-for="supplier in props.suppliers" :key="supplier.id" :value="supplier.company_name">
+                                {{ supplier.company_name }}
+                            </option>
+                        </select>
                         <InputError :message="form.errors.proveedor" />
                     </div>
 
@@ -197,4 +207,5 @@ const submit = () => {
 
         </div>
     </AppLayout>
+    
 </template>

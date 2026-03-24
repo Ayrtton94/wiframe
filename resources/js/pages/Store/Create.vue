@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import AppLayout from '@/layouts/AppLayout.vue';
-import { dashboard } from '@/routes';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link, useForm } from '@inertiajs/vue3';
 import InputError from '@/components/InputError.vue';
@@ -8,6 +7,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
+
+defineProps<{
+    suppliers: Array<{
+        id: number;
+        company_name: string;
+    }>;
+}>();
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -96,7 +102,12 @@ const submit = () => {
                 <CardContent>
                             <div>
                                 <Label for="proveedor" class="mb-1 block font-medium text-gray-700">Proveedor</Label>
-                                <Input id="proveedor" v-model="form.proveedor" type="text" class="w-full" />
+                                <select id="proveedor" v-model="form.proveedor" class="w-full rounded border px-3 py-2">
+                                    <option value="" disabled>Selecciona un proveedor</option>
+                                    <option v-for="supplier in suppliers" :key="supplier.id" :value="supplier.company_name">
+                                        {{ supplier.company_name }}
+                                    </option>
+                                </select>
                                 <InputError :message="form.errors.proveedor" class="mt-1" />
                             </div>
 

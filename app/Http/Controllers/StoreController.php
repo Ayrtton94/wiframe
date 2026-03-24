@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Inertia\Inertia;
 use App\Models\Store;
+use App\Models\Suppliers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
@@ -36,7 +37,11 @@ class StoreController extends Controller
      */
     public function create()
     {
-         return Inertia::render("Store/Create");
+        return Inertia::render('Store/Create', [
+            'suppliers' => Suppliers::query()
+                ->orderBy('company_name')
+                ->get(['id', 'company_name']),
+        ]);
     }
 
     /**
@@ -70,7 +75,12 @@ class StoreController extends Controller
     {
         $imagePath = $store->image_path ?? $store->image ?? null;
         $store->image_url = $imagePath ? asset('storage/' . $imagePath) : null;
-        return Inertia::render("Store/Edit", ['product' => $store]);
+        return Inertia::render('Store/Edit', [
+            'product' => $store,
+            'suppliers' => Suppliers::query()
+                ->orderBy('company_name')
+                ->get(['id', 'company_name']),
+        ]);
     }
 
     /**
