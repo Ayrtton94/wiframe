@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\CatalogController;
 use App\Http\Controllers\CustomerController;
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\EmployeesController;
 use App\Http\Controllers\StoreController;
 use App\Http\Controllers\SuppliersController;
@@ -16,15 +17,15 @@ use Laravel\Fortify\Features;
 
 Route::get('/', function () {
     if (auth()->check()) {
-        return Inertia::render('Dashboard');
+        return redirect()->route('dashboard');
     } else {
         return redirect('/login');
     }
 })->name('home');
 
-Route::get('dashboard', function () {
-    return Inertia::render('Dashboard');
-})->middleware(['auth', 'verified'])->name('dashboard');
+Route::get('dashboard', DashboardController::class)
+    ->middleware(['auth', 'verified'])
+    ->name('dashboard');
 
 Route::middleware('auth')->group(function () {
     // ADMIN: Acceso a proveedores y empleados
