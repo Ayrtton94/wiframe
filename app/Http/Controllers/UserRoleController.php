@@ -49,12 +49,11 @@ class UserRoleController extends Controller
      * Update the selected role for the given user.
      */
     public function update(UserRoleUpdateRequest $request, User $user)
-    {
-        $validated = $request->validated();
-
-        $user->syncRoles([$validated['role']]);
-        $user->warehouses()->sync($validated['warehouse_ids'] ?? []);
-
-        return back()->with('success', 'Rol y almacenes actualizados correctamente.');
-    }
+{
+    $validated = $request->validated();
+    app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
+    $user->syncRoles([$validated['role']]);
+    $user->warehouses()->sync($validated['warehouse_ids'] ?? []);
+    return back()->with('success', 'Rol y almacenes actualizados correctamente.');
+}
 }

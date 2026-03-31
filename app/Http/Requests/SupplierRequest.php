@@ -7,75 +7,112 @@ use Illuminate\Validation\Rule;
 
 class SupplierRequest extends FormRequest
 {
-    /**
-     * Determine if the user is authorized to make this request.
-     */
     public function authorize(): bool
     {
         return true;
     }
 
-    /**
-     * Get the validation rules that apply to the request.
-     */
     public function rules(): array
     {
-        $supplierId = $this->route('supplier')?->id;
+        $supplier = $this->route('supplier');
+        $supplierId = is_object($supplier) ? $supplier->id : $supplier;
 
         return [
-            // Información General - REQUERIDO
+            // 🔹 Información General
             'ruc' => [
                 'required',
                 'string',
-                'regex:/^[0-9]{11}$/', // Validar formato RUC Perú (11 dígitos)
+                'regex:/^[0-9]{11}$/',
                 Rule::unique('suppliers', 'ruc')->ignore($supplierId),
             ],
+
             'company_name' => 'required|string|max:255',
             'category' => 'required|string|max:100',
-            'phone' => 'required|string|regex:/^[+]?[0-9]{7,15}$/', // Teléfono internacional
-            'email' => 'required|email|max:255',
 
-            // Datos del Beneficiario - REQUERIDO
+            'phone' => [
+                'required',
+                'string',
+                'regex:/^[+]?[0-9]{7,15}$/',
+            ],
+
+            'email' => [
+                'required',
+                'email',
+                'max:255',
+                Rule::unique('suppliers', 'email')->ignore($supplierId),
+            ],
+
+            // 🔹 Beneficiario
             'name' => 'required|string|max:255',
             'address' => 'required|string|max:255',
             'city' => 'required|string|max:100',
             'country' => 'required|string|max:100',
-            'account' => 'required|string|regex:/^[0-9]{10,34}$/', // IBAN/número de cuenta válido
 
-            // Datos del Banco Beneficiario - REQUERIDO
-            'cod_swift' => 'required|string|regex:/^[A-Z]{6}[A-Z0-9]{2}([A-Z0-9]{3})?$/', // SWIFT Code validation
+            'account' => [
+                'required',
+                'string',
+                'regex:/^[0-9]{10,34}$/',
+            ],
+
+            // 🔹 Banco principal
+            'cod_swift' => [
+                'required',
+                'string',
+                'regex:/^[A-Z]{6}[A-Z0-9]{2}([A-Z0-9]{3})?$/',
+            ],
+
             'bank_name' => 'required|string|max:255',
             'bank_address' => 'required|string|max:255',
             'bank_city' => 'required|string|max:100',
             'bank_country' => 'required|string|max:100',
-            'bank_cod_swift' => 'required|string|regex:/^[A-Z]{6}[A-Z0-9]{2}([A-Z0-9]{3})?$/',
 
-            // Banco Internacional (OPCIONAL)
-            'bank_name2' => 'sometimes|nullable|string|max:255',
-            'bank_address2' => 'sometimes|nullable|string|max:255',
-            'bank_cod_swift2' => 'sometimes|nullable|string|regex:/^[A-Z]{6}[A-Z0-9]{2}([A-Z0-9]{3})?$/',
+            'bank_cod_swift' => [
+                'required',
+                'string',
+                'regex:/^[A-Z]{6}[A-Z0-9]{2}([A-Z0-9]{3})?$/',
+            ],
 
-            // Información Adicional (OPCIONAL)
-            'others' => 'sometimes|nullable|string|max:500',
+            // 🔹 Banco opcional
+            'bank_name2' => 'nullable|string|max:255',
+            'bank_address2' => 'nullable|string|max:255',
+
+            'bank_cod_swift2' => [
+                'nullable',
+                'string',
+                'regex:/^[A-Z]{6}[A-Z0-9]{2}([A-Z0-9]{3})?$/',
+            ],
+
+            // 🔹 Otros
+            'others' => 'nullable|string|max:500',
         ];
     }
 
-    /**
-     * Get custom messages for validator errors.
-     */
     public function messages(): array
     {
         return [
             'ruc.required' => 'El RUC es obligatorio.',
-            'ruc.regex' => 'El RUC debe contener 11 dígitos.',
-            'ruc.unique' => 'El RUC ya está registrado en el sistema.',
+            'ruc.regex' => 'El RUC debe contener exactamente 11 dígitos.',
+            'ruc.unique' => 'El RUC ya está registrado.',
+
             'company_name.required' => 'La razón social es obligatoria.',
+
+            'phone.required' => 'El teléfono es obligatorio.',
             'phone.regex' => 'El teléfono no tiene un formato válido.',
-            'email.email' => 'El correo electrónico debe ser válido.',
-            'account.regex' => 'El número de cuenta debe tener entre 10 y 34 dígitos.',
-            'cod_swift.regex' => 'El código SWIFT no tiene un formato válido (ej: ABCDPEMX).',
-            'bank_cod_swift.regex' => 'El código SWIFT del banco no tiene un formato válido.',
-            'bank_cod_swift2.regex' => 'El código SWIFT del banco secundario no tiene un formato válido.',
+
+            'email.required' => 'El correo es obligatorio.',
+            'email.email' => 'El correo debe ser válido.',
+            'email.unique' => 'El correo ya está registrado.',
+
+            'account.required' => 'La cuenta bancaria es obligatoria.',
+            'account.regex' => 'Debe tener entre 10 y 34 dígitos.',
+
+            'cod_swift.required' => 'El código SWIFT es obligatorio.',
+            'cod_swift.regex' => 'Formato SWIFT inválido (ej: ABCDPEMX).',
+
+            'bank_cod_swift.required' => 'El SWIFT del banco es obligatorio.',
+            'bank_cod_swift.regex' => 'SWIFT del banco inválido.',
+
+            'bank_cod_swift2.regex' => 'SWIFT del banco secundario inválido.',
         ];
     }
 }

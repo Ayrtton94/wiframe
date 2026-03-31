@@ -38,50 +38,14 @@ const mainNavItems: NavItem[] = [
         href: '/dashboard',
         icon: LayoutGrid,
     },
-    ...(isAdmin || isTienda || isVendedor
-        ? [
-              {
-                  title: 'Ventas',
-                  href: '/sales',
-                  icon: ShoppingCart,
-              },
-              {
-                  title: 'Catalogo',
-                  href: '/catalog',
-                  icon: Boxes,
-              },
-          ]
-        : []),
-    ...(isAdmin || isVendedor
+
+    // 🔹 ADMIN
+    ...(isAdmin
         ? [
               {
                   title: 'Productos',
                   href: '/stores',
                   icon: Boxes,
-              },
-              {
-                  title: 'Clientes',
-                  href: '/customers',
-                  icon: Users,
-              },
-          ]
-        : []),
-    ...(isAdmin
-        ? [
-              {
-                  title: 'Proveedores',
-                  href: '/suppliers',
-                  icon: Factory,
-              },
-              {
-                  title: 'Personal',
-                  href: '/employees',
-                  icon: User,
-              },
-              {
-                  title: 'Reportes',
-                  href: '/reports',
-                  icon: BarChart3,
               },
               {
                   title: 'Almacenes',
@@ -99,17 +63,70 @@ const mainNavItems: NavItem[] = [
                   icon: Boxes,
               },
               {
+                  title: 'Ventas',
+                  href: '/sales',
+                  icon: ShoppingCart,
+              },
+              {
+                  title: 'Catálogo',
+                  href: '/catalog',
+                  icon: Boxes,
+              },
+              {
+                  title: 'Clientes',
+                  href: '/customers',
+                  icon: Users,
+              },
+              {
+                  title: 'Proveedores',
+                  href: '/suppliers',
+                  icon: Factory,
+              },
+              {
+                  title: 'Personal',
+                  href: '/employees',
+                  icon: User,
+              },
+              {
+                  title: 'Reportes',
+                  href: '/reports',
+                  icon: BarChart3,
+              },
+              {
                   title: 'Roles de usuarios',
                   href: '/users/roles',
                   icon: ShieldCheck,
               },
           ]
         : []),
+
+    // 🔹 ALMACÉN (solo gestión de stock)
     ...(isAlmacen
         ? [
               {
                   title: 'Stock por almacén',
                   href: '/warehouse-stocks',
+                  icon: Boxes,
+              },
+              {
+                  title: 'Catálogo',
+                  href: '/catalog',
+                  icon: Boxes,
+              },
+          ]
+        : []),
+
+    // 🔹 TIENDA / VENDEDOR (solo ventas)
+    ...(isTienda || isVendedor
+        ? [
+              {
+                  title: 'Ventas',
+                  href: '/sales',
+                  icon: ShoppingCart,
+              },
+              {
+                  title: 'Catálogo',
+                  href: '/catalog',
                   icon: Boxes,
               },
           ]

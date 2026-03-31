@@ -37,7 +37,7 @@ return new class extends Migration
             $table->string('bank_address2')->nullable();
             $table->string('bank_cod_swift2')->nullable();
             //
-            $table->string('others');
+            $table->string('others')->nullable();
             $table->softDeletes();
             $table->timestamps();
         });

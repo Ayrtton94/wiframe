@@ -39,9 +39,22 @@ const editableUsers = reactive(
     })),
 );
 
+const onRoleChange = (user: any) => {
+    if (!['almacen', 'tienda'].includes(user.selectedRole)) {
+        user.selectedWarehouses = [];
+    }
+};
+
 const updateUserAccess = (userId: number) => {
     const row = editableUsers.find((item) => item.id === userId);
-    if (!row || !row.selectedRole) {
+
+    if (!row || !row.selectedRole) return;
+
+    if (
+        ['almacen', 'tienda'].includes(row.selectedRole) &&
+        row.selectedWarehouses.length === 0
+    ) {
+        alert('Debes seleccionar al menos un almacén');
         return;
     }
 
@@ -49,13 +62,14 @@ const updateUserAccess = (userId: number) => {
         `/users/${userId}/roles`,
         {
             role: row.selectedRole,
-            warehouse_ids: row.selectedWarehouses.map((value) => Number(value)),
+            warehouse_ids: row.selectedWarehouses.map(Number),
         },
         {
             preserveScroll: true,
         },
     );
 };
+
 </script>
 
 <template>
@@ -87,6 +101,7 @@ const updateUserAccess = (userId: number) => {
                                 <select
                                     v-model="user.selectedRole"
                                     class="rounded border px-3 py-2"
+                                    @change="onRoleChange(user)"
                                 >
                                     <option value="" disabled>Seleccionar rol</option>
                                     <option v-for="role in props.roles" :key="role" :value="role">
