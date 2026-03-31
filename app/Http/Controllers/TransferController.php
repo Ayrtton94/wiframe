@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\ReceiveTransferRequest;
 use App\Http\Requests\ShipTransferRequest;
 use App\Http\Requests\StoreTransferRequest;
+use App\Http\Requests\ApproveTransferRequest;
 use App\Models\Transfer;
 use App\Models\TransferItem;
 use App\Models\Store;

@@ -113,6 +113,11 @@ const mainNavItems: NavItem[] = [
                   href: '/catalog',
                   icon: Boxes,
               },
+              {
+                  title: 'Traslados',
+                  href: '/transfers',
+                  icon: Boxes,
+              },
           ]
         : []),
 

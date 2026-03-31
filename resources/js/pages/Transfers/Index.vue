@@ -2,6 +2,12 @@
 import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link, useForm } from '@inertiajs/vue3';
+import { usePage } from '@inertiajs/vue3';
+
+const page = usePage();
+const roles = (page.props.auth?.roles ?? []) as string[];
+const isAdmin = roles.includes('admin');
+const isAlmacen = roles.includes('almacen');
 
 const props = defineProps<{
     transfers: {

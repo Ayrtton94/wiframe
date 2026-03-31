@@ -24,6 +24,7 @@ const props = defineProps<{
     };
 
     permissions: {
+        can_approve: boolean;
         can_ship: boolean;
         can_receive: boolean;
     };
@@ -42,6 +43,7 @@ const breadcrumbs: BreadcrumbItem[] = [
 ];
 
 const shipForm = useForm({ notes: '' });
+const approveForm = useForm({ notes: '' });
 
 const receiveForm = useForm({
     notes: '',
@@ -54,6 +56,12 @@ const receiveForm = useForm({
 
 const shipTransfer = () => {
     shipForm.post(`/transfers/${props.transfer.id}/ship`, {
+        preserveScroll: true,
+    });
+};
+
+const approveTransfer = () => {
+    approveForm.post(`/transfers/${props.transfer.id}/approve`, {
         preserveScroll: true,
     });
 };
@@ -105,6 +113,30 @@ const receiveTransfer = () => {
                     </tbody>
                 </table>
             </div>
+             <section
+                v-if="props.permissions.can_approve"
+                class="space-y-2 rounded border bg-white p-4"
+            >
+                <h2 class="text-lg font-semibold">Aprobar traslado (almacén destino)</h2>
+                <textarea
+                    v-model="approveForm.notes"
+                    rows="2"
+                    placeholder="Notas de aprobación (opcional)"
+                    class="w-full rounded border px-3 py-2"
+                />
+                <p v-if="approveForm.errors.transfer" class="text-sm text-red-600">
+                    {{ approveForm.errors.transfer }}
+                </p>
+                <button
+                    type="button"
+                    class="rounded bg-amber-600 px-3 py-2 text-white"
+                    :disabled="approveForm.processing"
+                    @click="approveTransfer"
+                >
+                    Aceptar traslado
+                </button>
+            </section>
+
             <section
                 v-if="props.permissions.can_ship"
                 class="space-y-2 rounded border bg-white p-4"
