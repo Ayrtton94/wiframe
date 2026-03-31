@@ -27,6 +27,8 @@ const breadcrumbs: BreadcrumbItem[] = [
 ];
 
 const form = useForm({
+    warehouse_id: '',
+    store_id: '',
     kilos_available: 0,
     metros_available: 0,
     kilos_reserved: 0,

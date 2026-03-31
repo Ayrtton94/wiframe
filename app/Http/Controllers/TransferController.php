@@ -76,9 +76,9 @@ class TransferController extends Controller
         if (! $user->hasRole('admin')) {
             $assignedWarehouseIds = $user->warehouses()->pluck('warehouses.id');
 
-            if (! $assignedWarehouseIds->contains($validated['from_warehouse_id']) || ! $assignedWarehouseIds->contains($validated['to_warehouse_id'])) {
+            if (! $assignedWarehouseIds->contains($validated['from_warehouse_id'])) {
                 throw ValidationException::withMessages([
-                    'warehouse' => 'Solo puedes crear traslados usando almacenes asignados a tu usuario.',
+                    'from_warehouse_id' => 'Solo puedes crear traslados desde un almacén asignado a tu usuario.',
                 ]);
             }
         }
@@ -112,8 +112,21 @@ class TransferController extends Controller
     /**
      * Display the specified transfer.
      */
-    public function show(Transfer $transfer)
+    public function show(Request $request, Transfer $transfer)
     {
+        $user = $request->user();
+        $assignedWarehouseIds = $user->hasRole('admin')
+            ? null
+            : $user->warehouses()->pluck('warehouses.id');
+
+        if (
+            $assignedWarehouseIds !== null
+            && ! $assignedWarehouseIds->contains($transfer->from_warehouse_id)
+            && ! $assignedWarehouseIds->contains($transfer->to_warehouse_id)
+        ) {
+            abort(403);
+        }
+
         $transfer->load([
             'fromWarehouse:id,name,code',
             'toWarehouse:id,name,code',
@@ -123,8 +136,24 @@ class TransferController extends Controller
             'receiver:id,name',
         ]);
 
+        $canShip = in_array($transfer->status, ['requested', 'approved'], true)
+            && (
+                $user->hasRole('admin')
+                || $assignedWarehouseIds?->contains($transfer->from_warehouse_id)
+            );
+
+        $canReceive = $transfer->status === 'shipped'
+            && (
+                $user->hasRole('admin')
+                || $assignedWarehouseIds?->contains($transfer->to_warehouse_id)
+            );
+
         return Inertia::render('Transfers/Show', [
             'transfer' => $transfer,
+            'permissions' => [
+                'can_ship' => $canShip,
+                'can_receive' => $canReceive,
+            ],
         ]);
     }
 
@@ -133,6 +162,17 @@ class TransferController extends Controller
      */
     public function ship(ShipTransferRequest $request, Transfer $transfer)
     {
+        $user = $request->user();
+        if (! $user->hasRole('admin')) {
+            $assignedWarehouseIds = $user->warehouses()->pluck('warehouses.id');
+
+            if (! $assignedWarehouseIds->contains($transfer->to_warehouse_id)) {
+                throw ValidationException::withMessages([
+                    'transfer' => 'Solo puedes recepcionar traslados hacia almacenes asignados a tu usuario.',
+                ]);
+            }
+        }
+
         if (! in_array($transfer->status, ['requested', 'approved'], true)) {
             throw ValidationException::withMessages([
                 'transfer' => 'Este traslado no se puede despachar en su estado actual.',
