@@ -37,8 +37,9 @@ const form = useForm({
 const handleImage = (event: Event) => {
     const target = event.target as HTMLInputElement;
     const file = target.files ? target.files[0] : null;
-    form.setData('foto', file);
+    form.foto = file;
 };
+
 
 const submit = () => {
     form.transform((data) => ({

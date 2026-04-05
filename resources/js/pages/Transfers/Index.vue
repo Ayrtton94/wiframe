@@ -52,7 +52,7 @@ const removeItem = (index: number) => {
         return;
     }
 
-    form.items.splice(index, 1);
+    form.items.splice(index, 1);    
 };
 
 const submit = () => {

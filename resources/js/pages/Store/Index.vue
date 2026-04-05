@@ -80,8 +80,7 @@ defineProps<{
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${{ product.wholesale_price }}</td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${{ product.public_price }}</td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                <Link :href="`/stores/${product.id}/edit`" class="text-blue-500 hover:text-blue-700 mr-2">Editar</Link>
-                                <Link :href="`/stores/${product.id}`" method="delete" as="button" class="text-red-500 hover:text-red-700">Eliminar</Link>
+                                <Link :href="`/stores/${product.id}/edit`" class="text-blue-500 hover:text-blue-700 mr-2">Editar</Link>                               
                             </td>
                         </tr>
                     </tbody>

@@ -6,6 +6,7 @@ import InputError from '@/components/InputError.vue';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
+import { computed } from 'vue';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -32,6 +33,7 @@ const props = defineProps<{
         special_price?: number;
         location?: string;
         description?: string;
+        image_path?: string | null;
         image_url?: string | null;
     };
     suppliers: Array<{
@@ -56,14 +58,26 @@ const form = useForm({
     special_price: props.product.special_price || null,
     location: props.product.location || null,
     description: props.product.description || null,
-    
+    image: null as File | null,
 });
 
 const handleImage = (event: Event) => {
     const target = event.target as HTMLInputElement;
     const file = target.files ? target.files[0] : null;
-    form.setData('image', file);
+    form.image = file;
 };
+
+const currentImageSrc = computed(() => {
+    if (props.product.image_url) {
+        return props.product.image_url;
+    }
+
+    if (props.product.image_path) {
+        return `/storage/${props.product.image_path}`;
+    }
+
+    return null;
+});
   
 
 const submit = () => {
@@ -181,8 +195,8 @@ const submit = () => {
 
                     <div>
                         <Label for="image">Imagen del producto</Label>
-                        <div v-if="props.product.image_url" class="mb-2">
-                            <img :src="props.product.image_url" alt="Imagen actual" class="h-20 w-20 rounded object-cover" />
+                        <div v-if="currentImageSrc" class="mb-2">
+                            <img :src="currentImageSrc" alt="Imagen actual" class="h-20 w-20 rounded object-cover" />
                         </div>
                         <Input id="image" type="file" accept="image/*" @change="handleImage" class="w-full" />
                         <InputError :message="form.errors.image" />

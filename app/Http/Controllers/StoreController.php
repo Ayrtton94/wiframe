@@ -50,9 +50,11 @@ class StoreController extends Controller
     public function store(StoreRequest $request)
     {
         $validated = $request->validated();
+        unset($validated['image'], $validated['image_path']);
 
-        if ($request->hasFile('image_path')) {
-            $validated['image_path'] = $request->file('image_path')->store('stores', 'public');
+        $imageFile = $request->file('image') ?? $request->file('image_path');
+        if ($imageFile) {
+            $validated['image_path'] = $imageFile->store('stores', 'public');
         }
 
         Store::create($validated);
@@ -89,18 +91,21 @@ class StoreController extends Controller
 public function update(StoreRequest $request, Store $store)
 {
     $validated = $request->validated();
+    unset($validated['image'], $validated['image_path']);
 
         $imageColumn = Schema::hasColumn('stores', 'image_path')
             ? 'image_path'
             : (Schema::hasColumn('stores', 'image') ? 'image' : null);
+ 
+            $imageFile = $request->file('image') ?? $request->file('image_path');
 
-        if ($imageColumn !== null && $request->hasFile('image')) {
+        if ($imageColumn !== null && $imageFile) {
             $existingPath = $store->{$imageColumn};
             if ($existingPath) {
                 Storage::disk('public')->delete($existingPath);
             }
 
-            $validated[$imageColumn] = $request->file('image')->store('products', 'public');
+            $validated[$imageColumn] = $imageFile->store('stores', 'public');
         }
 
         $store->update($validated);
