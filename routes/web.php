@@ -77,6 +77,10 @@ Route::middleware('auth')->group(function () {
 
     // ADMIN: Todos pueden ver productos (con control de permisos específicos)
     Route::resource('stores', StoreController::class)
+        ->middleware('permission:view_products');
+
+    Route::post('stores/import', [StoreController::class, 'import'])
+        ->name('stores.import')
         ->middleware('permission:view_products');   
     
     Route::resource('catalog', CatalogController::class);

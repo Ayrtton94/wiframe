@@ -52,7 +52,7 @@ const handleFileChange = (event: Event) => {
 };
 
 const submitImport = () => {
-    importForm.post('/catalog/import', {
+    importForm.post('/stores/import', {
         forceFormData: true,
         onSuccess: () => {
             importForm.reset();
