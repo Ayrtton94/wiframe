@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import AppLayout from '@/layouts/AppLayout.vue';
 import InputError from '@/components/InputError.vue';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem } from '@/types';
-import { Head, Link, router, useForm } from '@inertiajs/vue3';
-import { computed, reactive, ref } from 'vue';
+import { Head, Link, useForm } from '@inertiajs/vue3';
+import { ref } from 'vue';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -74,14 +74,15 @@ const submitImport = () => {
                         Crear Nuevo
                     </Link>
                 </div>
-                                <div class="mb-4 flex justify-end">
+                
+<div class="mb-4 flex justify-end">
                     <Dialog v-model:open="isImportDialogOpen">
                         <DialogTrigger as-child>
                             <button
                                 class="rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-emerald-700"
                                 type="button"
                             >
-                                Importar Excel (CSV)
+                                Importar Excel
                             </button>
                         </DialogTrigger>
                         <DialogContent class="sm:max-w-lg">

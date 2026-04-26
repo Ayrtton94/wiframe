@@ -128,9 +128,9 @@ public function update(StoreRequest $request, Store $store)
      public function import(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'file' => ['required', 'file', 'mimes:csv,txt'],
+            'file' => ['required', 'file', 'mimes:csv,txt,xlsx'],
         ], [
-            'file.mimes' => 'El archivo debe ser CSV (puedes exportarlo desde Excel).',
+            'file.mimes' => 'El archivo debe ser CSV o XLSX (puedes exportarlo desde Excel).',
         ]);
 
         if ($validator->fails()) {
@@ -147,7 +147,6 @@ public function update(StoreRequest $request, Store $store)
         }
 
         $headers = fgetcsv($handle);
-
         if (!is_array($headers) || count($headers) === 0) {
             fclose($handle);
 
@@ -195,31 +194,31 @@ public function update(StoreRequest $request, Store $store)
                 continue;
             }
 
-            $data = [
-                'name_product' => trim((string) ($payload['name_product'] ?? '')),
-                'fabric_type' => trim((string) ($payload['fabric_type'] ?? '')),
-                'color' => trim((string) ($payload['color'] ?? '')),
-                'proveedor' => trim((string) ($payload['proveedor'] ?? '')),
-                'kilos' => (string) ($payload['kilos'] ?? '0'),
-                'metros' => (string) ($payload['metros'] ?? '0'),
-                'minimum_stock' => (int) ($payload['minimum_stock'] ?? 0),
-                'price' => (float) ($payload['price'] ?? 0),
-                'public_price' => (float) ($payload['public_price'] ?? 0),
-                'wholesale_price' => (float) ($payload['wholesale_price'] ?? 0),
-                'price_roll' => (float) ($payload['price_roll'] ?? 0),
-                'special_price' => (float) ($payload['special_price'] ?? 0),
-                'location' => trim((string) ($payload['location'] ?? '')),
-                'description' => trim((string) ($payload['description'] ?? '')),
-            ];
-
             $codeProduct = trim((string) ($payload['code_product'] ?? ''));
-            if ($codeProduct === '' || $data['name_product'] === '') {
+            $nameProduct = trim((string) ($payload['name_product'] ?? ''));
+
+            if ($codeProduct === '' || $nameProduct === '') {
                 continue;
             }
 
             Store::updateOrCreate(
                 ['code_product' => $codeProduct],
-                $data
+                [
+                    'name_product' => $nameProduct,
+                    'fabric_type' => trim((string) ($payload['fabric_type'] ?? '')),
+                    'color' => trim((string) ($payload['color'] ?? '')),
+                    'proveedor' => trim((string) ($payload['proveedor'] ?? '')),
+                    'kilos' => (string) ($payload['kilos'] ?? '0'),
+                    'metros' => (string) ($payload['metros'] ?? '0'),
+                    'minimum_stock' => (int) ($payload['minimum_stock'] ?? 0),
+                    'price' => (float) ($payload['price'] ?? 0),
+                    'public_price' => (float) ($payload['public_price'] ?? 0),
+                    'wholesale_price' => (float) ($payload['wholesale_price'] ?? 0),
+                    'price_roll' => (float) ($payload['price_roll'] ?? 0),
+                    'special_price' => (float) ($payload['special_price'] ?? 0),
+                    'location' => trim((string) ($payload['location'] ?? '')),
+                    'description' => trim((string) ($payload['description'] ?? '')),
+                ]
             );
 
             $rowsImported++;
@@ -232,7 +231,7 @@ public function update(StoreRequest $request, Store $store)
             "Importación completada. Registros procesados: {$rowsImported}."
         );
     }
-    
+
     private function isEmptyCsvRow(array $row): bool
     {
         foreach ($row as $value) {
