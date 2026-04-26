@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\WarehouseRequest;
 use App\Models\Warehouse;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 
 class WarehouseController extends Controller
@@ -41,10 +42,31 @@ class WarehouseController extends Controller
      */
     public function update(WarehouseRequest $request, Warehouse $warehouse)
     {
-        $warehouse->update([
-            ...$request->validated(),
-            'is_active' => $request->boolean('is_active', true),
-        ]);
+        $isActive = $request->boolean('is_active', true);
+
+        DB::transaction(function () use ($request, $warehouse, $isActive) {
+            $warehouse->update([
+                ...$request->validated(),
+                'is_active' => $isActive,
+            ]);
+
+            if (! $isActive) {
+                $warehouse->users()
+                    ->whereHas('roles', fn ($query) => $query->where('name', 'almacen'))
+                    ->get()
+                    ->each(function ($user) use ($warehouse) {
+                        $user->warehouses()->detach($warehouse->id);
+
+                        $hasAnotherActiveWarehouse = $user->warehouses()
+                            ->where('warehouses.is_active', true)
+                            ->exists();
+
+                        if (! $hasAnotherActiveWarehouse) {
+                            $user->removeRole('almacen');
+                        }
+                    });
+            }
+        });
 
         return back()->with('success', 'Almacén actualizado correctamente.');
     }

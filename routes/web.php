@@ -4,13 +4,14 @@ use App\Http\Controllers\CatalogController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\EmployeesController;
+use App\Http\Controllers\ReportController;
+use App\Http\Controllers\SaleController;
 use App\Http\Controllers\StoreController;
 use App\Http\Controllers\SuppliersController;
 use App\Http\Controllers\TransferController;
 use App\Http\Controllers\UserRoleController;
 use App\Http\Controllers\WarehouseController;
 use App\Http\Controllers\WarehouseStockController;
-use App\Http\Controllers\SaleController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use Laravel\Fortify\Features;
@@ -80,6 +81,10 @@ Route::middleware('auth')->group(function () {
     
     Route::resource('catalog', CatalogController::class);
     Route::get('/catalog/{id}', [CatalogController::class, 'show']);
+
+    Route::get('reports', [ReportController::class, 'index'])
+        ->middleware('role:admin,almacen,tienda,vendedor')
+        ->name('reports.index');
 
     Route::middleware('role:admin,vendedor,tienda')->group(function () {
         Route::resource('sales', SaleController::class)->only(['index', 'store', 'show']);

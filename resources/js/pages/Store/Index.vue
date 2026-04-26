@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import AppLayout from '@/layouts/AppLayout.vue';
+import InputError from '@/components/InputError.vue';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { type BreadcrumbItem } from '@/types';
-import { Head, Link } from '@inertiajs/vue3';
+import { Head, Link, router, useForm } from '@inertiajs/vue3';
+import { computed, reactive, ref } from 'vue';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -36,6 +39,28 @@ defineProps<{
     };
 }>();
 
+const isImportDialogOpen = ref(false);
+const importForm = useForm<{
+    file: File | null;
+}>({
+    file: null,
+});
+
+const handleFileChange = (event: Event) => {
+    const target = event.target as HTMLInputElement;
+    importForm.file = target.files?.[0] ?? null;
+};
+
+const submitImport = () => {
+    importForm.post('/catalog/import', {
+        forceFormData: true,
+        onSuccess: () => {
+            importForm.reset();
+            isImportDialogOpen.value = false;
+        },
+    });
+};
+
 </script>
 
 <template>
@@ -48,6 +73,61 @@ defineProps<{
                     <Link href="stores/create" class="mb-4 inline-block rounded bg-blue-500 px-4 py-2 text-white hover:bg-blue-600">
                         Crear Nuevo
                     </Link>
+                </div>
+                                <div class="mb-4 flex justify-end">
+                    <Dialog v-model:open="isImportDialogOpen">
+                        <DialogTrigger as-child>
+                            <button
+                                class="rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-emerald-700"
+                                type="button"
+                            >
+                                Importar Excel (CSV)
+                            </button>
+                        </DialogTrigger>
+                        <DialogContent class="sm:max-w-lg">
+                            <DialogHeader>
+                                <DialogTitle>Importar productos</DialogTitle>
+                                <DialogDescription>
+                                    Sube un archivo CSV exportado desde Excel para crear o actualizar productos en la base de datos.
+                                </DialogDescription>
+                            </DialogHeader>
+
+                            <form class="space-y-3" @submit.prevent="submitImport">
+                                <div>
+                                    <label class="mb-1 block text-sm font-medium text-slate-700">
+                                        Archivo CSV
+                                    </label>
+                                    <input
+                                        accept=".csv,.txt"
+                                        class="block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                                        type="file"
+                                        @change="handleFileChange"
+                                    />
+                                    <p class="mt-2 text-xs text-slate-500">
+                                        Columnas requeridas: code_product, name_product, fabric_type, color, proveedor, kilos, metros, minimum_stock, price, public_price, wholesale_price, price_roll, special_price, location, description.
+                                    </p>
+                                    <InputError :message="importForm.errors.file" class="mt-2" />
+                                </div>
+
+                                <DialogFooter>
+                                    <button
+                                        class="rounded-lg border border-slate-300 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
+                                        type="button"
+                                        @click="isImportDialogOpen = false"
+                                    >
+                                        Cancelar
+                                    </button>
+                                    <button
+                                        :disabled="importForm.processing || !importForm.file"
+                                        class="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+                                        type="submit"
+                                    >
+                                        {{ importForm.processing ? 'Importando...' : 'Importar' }}
+                                    </button>
+                                </DialogFooter>
+                            </form>
+                        </DialogContent>
+                    </Dialog>
                 </div>
 
                 <table class="min-w-full divide-y divide-gray-200">
