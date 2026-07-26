@@ -78,9 +78,9 @@ const showImage = ref(false);
 
             <div
                 v-else
-                class="flex h-64 items-center justify-center rounded bg-gray-100"
+                class="h-64 rounded bg-gray-100"
+                aria-hidden="true"
             >
-                Sin imagen
             </div>
         </div>
         <div

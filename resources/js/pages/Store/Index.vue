@@ -143,6 +143,8 @@ const submitImport = () => {
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Precio</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Precio Mayorista</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Precio Minorista</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rollo</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Metros</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
                         </tr>
                     </thead>
@@ -150,7 +152,7 @@ const submitImport = () => {
                         <tr v-for="product in products.data" :key="product.id">
                             <td class="px-6 py-4 whitespace-nowrap text-sm">
                                 <img v-if="product.image_url" :src="product.image_url" alt="Imagen producto" class="h-12 w-12 rounded object-cover">
-                                <div v-else class="flex h-12 w-12 items-center justify-center rounded bg-gray-100 text-[10px] text-gray-500">Sin imagen</div>
+                                <div v-else class="h-12 w-12 rounded bg-gray-100" aria-hidden="true"></div>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ product.code_product }}</td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ product.name_product }}</td>
@@ -160,6 +162,8 @@ const submitImport = () => {
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${{ product.price }}</td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${{ product.wholesale_price }}</td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${{ product.public_price }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ product.kilos }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ product.metros }}</td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                 <Link :href="`/stores/${product.id}/edit`" class="text-blue-500 hover:text-blue-700 mr-2">Editar</Link>                               
                             </td>

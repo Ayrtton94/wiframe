@@ -207,9 +207,10 @@ const stockBadgeClass = (product: {
                                     />
                                     <div
                                         v-else
-                                        class="flex h-14 w-14 items-center justify-center rounded-lg bg-slate-100 text-xs text-slate-500"
+                                        class="h-14 w-14 rounded-lg bg-slate-100"
+                                        aria-hidden="true"
                                     >
-                                        Sin imagen
+                                        
                                     </div>
                                 </td>
                                 <td

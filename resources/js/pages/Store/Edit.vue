@@ -146,7 +146,7 @@ const submit = () => {
                     </div>
 
                     <div>
-                        <Label for="kilos">Kilos</Label>
+                        <Label for="kilos">Rollo</Label>
                         <Input id="kilos" v-model="form.kilos" type="number" step="0.01" class="w-full" />
                         <InputError :message="form.errors.kilos" />
                     </div>
