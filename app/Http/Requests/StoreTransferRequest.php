@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class StoreTransferRequest extends FormRequest
 {
@@ -26,7 +27,7 @@ class StoreTransferRequest extends FormRequest
             'to_warehouse_id' => ['required', 'integer', 'exists:warehouses,id'],
             'notes' => ['nullable', 'string', 'max:1000'],
             'items' => ['required', 'array', 'min:1'],
-            'items.*.store_id' => ['required', 'integer', 'exists:stores,id', 'distinct'],
+            'items.*.store_id' => ['required', 'integer', Rule::exists('stores', 'id')->where('is_active', true), 'distinct'],
             'items.*.kilos' => ['nullable', 'numeric', 'min:0'],
             'items.*.metros' => ['nullable', 'numeric', 'min:0'],
         ];

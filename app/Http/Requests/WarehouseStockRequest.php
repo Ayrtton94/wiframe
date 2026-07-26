@@ -23,7 +23,7 @@ class WarehouseStockRequest extends FormRequest
     {
         return [
             'warehouse_id' => ['required', 'integer', 'exists:warehouses,id'],
-            'store_id' => ['required', 'integer', 'exists:stores,id'],
+            'store_id' => ['required', 'integer', Rule::exists('stores', 'id')->where('is_active', true)],
             'kilos_available' => ['nullable', 'numeric', 'min:0'],
             'metros_available' => ['nullable', 'numeric', 'min:0'],
             'kilos_reserved' => ['nullable', 'numeric', 'min:0'],

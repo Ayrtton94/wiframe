@@ -48,6 +48,7 @@ class SaleController extends Controller
             'customers' => Customer::query()->orderBy('name')->get(['id', 'name', 'dni']),
             'warehouses' => $warehousesQuery->get(['id', 'name', 'code']),
             'products' => Store::query()
+                ->where('is_active', true)
                 ->orderBy('name_product')
                 ->get(['id', 'code_product', 'name_product', 'public_price']),
         ]);
@@ -92,7 +93,9 @@ class SaleController extends Controller
                 ]);
 
                 foreach ($validated['items'] as $index => $item) {
-                    $product = Store::query()->findOrFail($item['store_id']);
+                    $product = Store::query()
+                        ->where('is_active', true)
+                        ->findOrFail($item['store_id']);
                     $stock = WarehouseStock::query()
                         ->where('warehouse_id', $validated['warehouse_id'])
                         ->where('store_id', $item['store_id'])

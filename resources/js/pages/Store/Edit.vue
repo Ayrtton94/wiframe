@@ -35,6 +35,7 @@ const props = defineProps<{
         description?: string;
         image_path?: string | null;
         image_url?: string | null;
+        is_active: boolean;
     };
     suppliers: Array<{
         id: number;
@@ -59,6 +60,7 @@ const form = useForm({
     location: props.product.location || null,
     description: props.product.description || null,
     image: null as File | null,
+    is_active: props.product.is_active,
 });
 
 const handleImage = (event: Event) => {
@@ -191,6 +193,11 @@ const submit = () => {
                         <Label for="location">Ubicación</Label>
                         <Input id="location" v-model="form.location" class="w-full" />
                         <InputError :message="form.errors.location" />
+                    </div>
+                    
+                    <div class="flex items-center gap-2">
+                        <input id="is_active" v-model="form.is_active" type="checkbox" class="h-4 w-4 rounded border-gray-300" />
+                        <Label for="is_active">Producto activo</Label>
                     </div>
 
                     <div>

@@ -32,6 +32,7 @@ class StoreFactory extends Factory
             'special_price' => fake()->randomFloat(2, 1, 800),
             'location' => fake()->optional()->word(),
             'description' => fake()->optional()->sentence(),
+            'is_active' => true,
         ];
     }
 }

@@ -13,7 +13,7 @@ class CatalogController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Store::query();
+        $query = Store::query()->where('is_active', true);
 
         if ($request->filled('search')) {
             $search = $request->search;
@@ -63,6 +63,7 @@ class CatalogController extends Controller
     public function show($id)
 {
     $store = Store::with('warehouseStocks.warehouse:id,name,code')
+        ->where('is_active', true)
         ->findOrFail($id);
 
     $imagePath = $store->image_path ?? $store->image;

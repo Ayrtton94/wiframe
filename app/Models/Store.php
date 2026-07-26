@@ -29,6 +29,11 @@ class Store extends Model
         'description',
         'image_path',
         'image',
+        'is_active',
+    ];
+
+    protected $casts = [
+        'is_active' => 'boolean',
     ];
 
     public function warehouseStocks(): HasMany

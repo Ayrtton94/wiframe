@@ -26,6 +26,7 @@ defineProps<{
             wholesale_price: number;
             public_price: number;
             image_url: string | null;
+            is_active: boolean;
         }>;
         current_page: number;
         last_page: number;
@@ -49,6 +50,14 @@ const importForm = useForm<{
 const handleFileChange = (event: Event) => {
     const target = event.target as HTMLInputElement;
     importForm.file = target.files?.[0] ?? null;
+};
+
+const toggleProductStatus = (product: { id: number; is_active: boolean }) => {
+    const action = product.is_active ? 'desactivar' : 'activar';
+
+    if (confirm(`¿Seguro que deseas ${action} este producto?`)) {
+        router.patch(`/stores/${product.id}/toggle-status`, {}, { preserveScroll: true });
+    }
 };
 
 const submitImport = () => {
@@ -145,6 +154,7 @@ const submitImport = () => {
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Precio Minorista</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rollo</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Metros</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
                         </tr>
                     </thead>
@@ -164,8 +174,24 @@ const submitImport = () => {
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${{ product.public_price }}</td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ product.kilos }}</td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ product.metros }}</td>
+                             <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                <span
+                                    :class="product.is_active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'"
+                                    class="inline-flex rounded-full px-2 py-1 text-xs font-semibold"
+                                >
+                                    {{ product.is_active ? 'Activo' : 'Desactivado' }}
+                                </span>
+                            </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                <Link :href="`/stores/${product.id}/edit`" class="text-blue-500 hover:text-blue-700 mr-2">Editar</Link>                               
+                               <Link :href="`/stores/${product.id}/edit`" class="text-blue-500 hover:text-blue-700 mr-2">Editar</Link>
+                                <button
+                                    type="button"
+                                    class="text-sm font-medium"
+                                    :class="product.is_active ? 'text-red-500 hover:text-red-700' : 'text-green-600 hover:text-green-800'"
+                                    @click="toggleProductStatus(product)"
+                                >
+                                    {{ product.is_active ? 'Desactivar' : 'Activar' }}
+                                </button>                               
                             </td>
                         </tr>
                     </tbody>

@@ -39,6 +39,7 @@ const form = useForm({
     location: '',
     description: '',
     image_path: null as File | null,
+    is_active: true,
 });
 
 const handleImage = (event: Event) => {
@@ -171,6 +172,11 @@ const submit = () => {
                         <Label for="location" class="mb-1 block font-medium text-gray-700">Ubicación</Label>
                         <Input id="location" v-model="form.location" type="text" class="w-full" />
                         <InputError :message="form.errors.location" class="mt-1" />
+                    </div>
+                    
+                    <div class="flex items-center gap-2">
+                        <input id="is_active" v-model="form.is_active" type="checkbox" class="h-4 w-4 rounded border-gray-300" />
+                        <Label for="is_active" class="font-medium text-gray-700">Producto activo</Label>
                     </div>
                     <!-- Foto -->
                     <div>

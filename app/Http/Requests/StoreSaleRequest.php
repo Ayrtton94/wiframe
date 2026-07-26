@@ -26,7 +26,7 @@ class StoreSaleRequest extends FormRequest
             'warehouse_id' => ['required', 'integer', 'exists:warehouses,id'],
             'notes' => ['nullable', 'string', 'max:1000'],
             'items' => ['required', 'array', 'min:1'],
-            'items.*.store_id' => ['required', 'integer', 'exists:stores,id'],
+            'items.*.store_id' => ['required', 'integer', Rule::exists('stores', 'id')->where('is_active', true)],
             'items.*.unit' => ['required', 'string', 'in:kilos,metros'],
             'items.*.quantity' => ['required', 'numeric', 'min:0.001'],
         ];

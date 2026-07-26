@@ -101,7 +101,7 @@ class DashboardController extends Controller
                 'sales_count' => $salesCount,
                 'total_revenue' => round($totalRevenue, 2),
                 'average_ticket' => $averageTicket,
-                'products_count' => Store::count(),
+                'products_count' => Store::query()->where('is_active', true)->count(),
             ],
             'top_products' => $topProducts,
             'best_seller' => $bestSeller,

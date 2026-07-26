@@ -67,6 +67,7 @@ class ReportController extends Controller
         $inventoryByWarehouse = DB::table('warehouse_stocks')
             ->join('warehouses', 'warehouses.id', '=', 'warehouse_stocks.warehouse_id')
             ->join('stores', 'stores.id', '=', 'warehouse_stocks.store_id')
+            ->where('stores.is_active', true)
             ->when(
                 $assignedWarehouseIds !== null,
                 fn ($query) => $query->whereIn('warehouse_stocks.warehouse_id', $assignedWarehouseIds)

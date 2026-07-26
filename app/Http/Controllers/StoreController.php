@@ -52,6 +52,7 @@ class StoreController extends Controller
     {
         $validated = $request->validated();
         unset($validated['image'], $validated['image_path']);
+        $validated['is_active'] = $request->boolean('is_active');
 
         $imageFile = $request->file('image') ?? $request->file('image_path');
         if ($imageFile) {
@@ -93,6 +94,7 @@ public function update(StoreRequest $request, Store $store)
 {
     $validated = $request->validated();
     unset($validated['image'], $validated['image_path']);
+    $validated['is_active'] = $request->boolean('is_active', true);
 
         $imageColumn = Schema::hasColumn('stores', 'image_path')
             ? 'image_path'

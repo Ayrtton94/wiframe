@@ -44,6 +44,7 @@ class WarehouseStockController extends Controller
         $warehouses = $warehousesQuery->get(['id', 'name', 'code']);
 
         $products = Store::query()
+            ->where('is_active', true)
             ->orderBy('name_product')
             ->get(['id', 'code_product', 'name_product']);
 
