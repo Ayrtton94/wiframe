@@ -26,7 +26,7 @@ import { Form, Head } from '@inertiajs/vue3';
         >
             <div class="grid gap-6">
                 <div class="grid gap-2">
-                    <Label for="name">Name</Label>
+                    <Label for="name">Nombre</Label>
                     <Input
                         id="name"
                         type="text"
@@ -35,13 +35,13 @@ import { Form, Head } from '@inertiajs/vue3';
                         :tabindex="1"
                         autocomplete="name"
                         name="name"
-                        placeholder="Full name"
+                        placeholder="Nombre completo"
                     />
                     <InputError :message="errors.name" />
                 </div>
 
                 <div class="grid gap-2">
-                    <Label for="email">Email address</Label>
+                    <Label for="email">Correo electrónico</Label>
                     <Input
                         id="email"
                         type="email"
@@ -55,7 +55,7 @@ import { Form, Head } from '@inertiajs/vue3';
                 </div>
 
                 <div class="grid gap-2">
-                    <Label for="password">Password</Label>
+                    <Label for="password">Contraseña</Label>
                     <Input
                         id="password"
                         type="password"
@@ -63,13 +63,13 @@ import { Form, Head } from '@inertiajs/vue3';
                         :tabindex="3"
                         autocomplete="new-password"
                         name="password"
-                        placeholder="Password"
+                        placeholder="********"
                     />
                     <InputError :message="errors.password" />
                 </div>
 
                 <div class="grid gap-2">
-                    <Label for="password_confirmation">Confirm password</Label>
+                    <Label for="password_confirmation">Confirmar Contraseña</Label>
                     <Input
                         id="password_confirmation"
                         type="password"
@@ -81,7 +81,7 @@ import { Form, Head } from '@inertiajs/vue3';
                     />
                     <InputError :message="errors.password_confirmation" />
                 </div>
-
+                
                 <Button
                     type="submit"
                     class="mt-2 w-full"

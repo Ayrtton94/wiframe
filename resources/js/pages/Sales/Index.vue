@@ -93,11 +93,11 @@ const estimateLineTotal = (item: SaleItemForm) => {
     <AppLayout :breadcrumbs="breadcrumbs">
         <div class="flex h-full flex-1 flex-col gap-6 rounded-xl p-4">
             <h1 class="text-2xl font-semibold text-slate-900">
-                Ventas básicas
+                Salidas básicas
             </h1>
 
             <section class="rounded-xl border bg-white p-5 shadow-sm">
-                <h2 class="mb-4 text-lg font-semibold">Registrar venta</h2>
+                <h2 class="mb-4 text-lg font-semibold">Registrar salida</h2>
 
                 <form class="space-y-4" @submit.prevent="submit">
                     <div class="grid gap-3 md:grid-cols-2">
@@ -165,7 +165,7 @@ const estimateLineTotal = (item: SaleItemForm) => {
                                 class="rounded-lg border px-3 py-2"
                             >
                                 <option value="metros">Metros</option>
-                                <option value="kilos">Kilos</option>
+                                <option value="kilos">Rollos</option>
                             </select>
 
                             <input
@@ -205,7 +205,7 @@ const estimateLineTotal = (item: SaleItemForm) => {
                             :disabled="form.processing"
                             class="rounded-lg bg-blue-600 px-4 py-2 text-white"
                         >
-                            Guardar venta
+                            Guardar salida
                         </button>
                     </div>
 
@@ -213,7 +213,7 @@ const estimateLineTotal = (item: SaleItemForm) => {
                         v-model="form.notes"
                         rows="3"
                         maxlength="1000"
-                        placeholder="Notas de la venta (opcional)"
+                        placeholder="Notas de la salida (opcional)"
                         class="w-full rounded-lg border px-3 py-2"
                     />
 
@@ -239,7 +239,7 @@ const estimateLineTotal = (item: SaleItemForm) => {
                 class="overflow-hidden rounded-xl border bg-white shadow-sm"
             >
                 <div class="border-b px-5 py-4">
-                    <h2 class="text-lg font-semibold">Ventas registradas</h2>
+                    <h2 class="text-lg font-semibold">Salidas registradas</h2>
                 </div>
 
                 <div class="overflow-x-auto">

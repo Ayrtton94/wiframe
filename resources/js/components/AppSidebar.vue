@@ -63,7 +63,7 @@ const mainNavItems: NavItem[] = [
                   icon: Boxes,
               },
               {
-                  title: 'Ventas',
+                  title: 'Salidas',
                   href: '/sales',
                   icon: ShoppingCart,
               },

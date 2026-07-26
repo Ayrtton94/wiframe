@@ -112,7 +112,7 @@ const submit = () => {
                             </div>
 
                             <div>
-                                <Label for="kilos" class="mb-1 block font-medium text-gray-700">Kilos</Label>
+                                <Label for="kilos" class="mb-1 block font-medium text-gray-700">Rollos</Label>
                                 <Input id="kilos" v-model="form.kilos" type="number" step="0.01" class="w-full" />
                                 <InputError :message="form.errors.kilos" class="mt-1" />
                             </div>

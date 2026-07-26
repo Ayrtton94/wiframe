@@ -135,7 +135,7 @@ const submit = () => {
                                 type="number"
                                 min="0"
                                 step="0.001"
-                                placeholder="Kilos"
+                                placeholder="Rollos"
                                 class="rounded border px-3 py-2"
                             />
 

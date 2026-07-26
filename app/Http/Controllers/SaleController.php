@@ -87,7 +87,7 @@ class SaleController extends Controller
                     'customer_id' => $validated['customer_id'],
                     'warehouse_id' => $validated['warehouse_id'],
                     'sold_by' => $user->id,
-                    'status' => 'completed',
+                    'status' => 'completo',
                     'notes' => $validated['notes'] ?? null,
                 ]);
 

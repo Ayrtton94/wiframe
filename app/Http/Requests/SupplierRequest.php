@@ -12,6 +12,21 @@ class SupplierRequest extends FormRequest
         return true;
     }
 
+    protected function prepareForValidation(): void
+    {
+        $this->merge([
+            'ruc' => preg_replace('/\D+/', '', (string) $this->input('ruc')),
+            'phone' => preg_replace('/(?!^\+)\D+/', '', (string) $this->input('phone')),
+            'account' => preg_replace('/\D+/', '', (string) $this->input('account')),
+            'cod_swift' => strtoupper(str_replace(' ', '', (string) $this->input('cod_swift'))),
+            'bank_cod_swift' => strtoupper(str_replace(' ', '', (string) $this->input('bank_cod_swift'))),
+            'bank_cod_swift2' => $this->filled('bank_cod_swift2')
+                ? strtoupper(str_replace(' ', '', (string) $this->input('bank_cod_swift2')))
+                : null,
+        ]);
+    }
+
+
     public function rules(): array
     {
         $supplier = $this->route('supplier');

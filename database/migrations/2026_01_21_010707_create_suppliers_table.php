@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             //datos del proveedor
             $table->string('ruc');
-            $table->string('company_name');
+            $table->string('company_name')->nullable();
             $table->string('category');
             $table->string('phone');
             $table->string('email');
@@ -25,7 +25,7 @@ return new class extends Migration
             $table->string('city');
             $table->string('country');
             $table->string('account');
-            $table->string('cod_swift');
+            $table->string('cod_swift')->nullable();
             //
             $table->string('bank_name');
             $table->string('bank_address');

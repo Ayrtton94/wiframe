@@ -166,30 +166,6 @@ const submit = () => {
                                 />
                             </div>
 
-                            <!-- Foto -->
-                            <div>
-                                <Label
-                                    for="foto"
-                                    class="mb-1 block text-gray-700 dark:text-white"
-                                >
-                                    Foto
-                                </Label>
-                                <input
-                                    id="foto"
-                                    type="file"
-                                    accept="image/*"
-                                    @change="handleImage"
-                                    class="w-full rounded-lg border
-                                        border-gray-300 dark:border-gray-500
-                                        bg-white dark:bg-transparent
-                                        text-gray-800 dark:text-white"
-                                />
-                                <InputError
-                                    :message="form.errors.foto"
-                                    class="mt-2"
-                                />
-                            </div>
-
                         </div>
 
                         <!-- Botones -->

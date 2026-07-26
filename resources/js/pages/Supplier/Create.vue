@@ -125,12 +125,14 @@ const submit = () => {
                                 <Label for="account" class="text-sm font-semibold text-gray-700 dark:text-gray-300">N° de Cuenta</Label>
                                 <Input id="account" v-model="form.account" type="text" placeholder="Número de cuenta bancaria" class="w-full border-gray-300 dark:border-gray-700" />
                                 <InputError :message="form.errors.account" class="mt-1 text-xs" />
-                            </div>  
-                            <div class="space-y-2">
+                            </div>
+
+                            <div class="space-y-2" hidden>
                                 <Label for="swift_code" class="text-sm font-semibold text-gray-700 dark:text-gray-300">Código SWIFT</Label>
                                 <Input id="swift_code" v-model="form.cod_swift" type="text" placeholder="Ej. ABCDPEMX" class="w-full border-gray-300 dark:border-gray-700" />
                                 <InputError :message="form.errors.cod_swift" class="mt-1 text-xs" />
-                            </div>                              
+                            </div> 
+
                         </div>                                                  
                     </CardContent>
                 </Card>
@@ -148,7 +150,7 @@ const submit = () => {
                                 <InputError :message="form.errors.bank_name" class="mt-1 text-xs" />
                             </div>
 
-                            <div class="space-y-2">
+                            <div class="space-y-2" hidden>
                                 <Label for="bank_company" class="text-sm font-semibold text-gray-700 dark:text-gray-300">Razón Social del Banco</Label>
                                 <Input id="bank_company" v-model="form.company_name" type="text" placeholder="Razón social registrada" class="w-full border-gray-300 dark:border-gray-700" />
                                 <InputError :message="form.errors.company_name" class="mt-1 text-xs" />
