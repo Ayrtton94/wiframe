@@ -175,13 +175,7 @@ const submit = () => {
                                 <Input id="bank_name" v-model="form.bank_name" type="text" placeholder="Ej. Banco de Crédito del Perú" class="w-full border-gray-300 dark:border-gray-700" />
                                 <InputError :message="form.errors.bank_name" class="mt-1 text-xs" />
                             </div>
-
-                            <div class="space-y-2">
-                                <Label for="bank_company" class="text-sm font-semibold text-gray-700 dark:text-gray-300">Razón Social del Banco</Label>
-                                <Input id="bank_company" v-model="form.company_name" type="text" placeholder="Razón social registrada" class="w-full border-gray-300 dark:border-gray-700" />
-                                <InputError :message="form.errors.company_name" class="mt-1 text-xs" />
-                            </div>
-
+                            
                             <div class="space-y-2">
                                 <Label for="bank_address" class="text-sm font-semibold text-gray-700 dark:text-gray-300">Dirección del Banco</Label>
                                 <Input id="bank_address" v-model="form.bank_address" type="text" placeholder="Calle, número, piso" class="w-full border-gray-300 dark:border-gray-700" />

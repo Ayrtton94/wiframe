@@ -17,9 +17,15 @@ class SupplierRequest extends FormRequest
         $this->merge([
             'ruc' => preg_replace('/\D+/', '', (string) $this->input('ruc')),
             'phone' => preg_replace('/(?!^\+)\D+/', '', (string) $this->input('phone')),
-            'account' => preg_replace('/\D+/', '', (string) $this->input('account')),
-            'cod_swift' => strtoupper(str_replace(' ', '', (string) $this->input('cod_swift'))),
-            'bank_cod_swift' => strtoupper(str_replace(' ', '', (string) $this->input('bank_cod_swift'))),
+            'account' => $this->filled('account')
+                ? preg_replace('/\D+/', '', (string) $this->input('account'))
+                : null,
+            'cod_swift' => $this->filled('cod_swift')
+                ? strtoupper(str_replace(' ', '', (string) $this->input('cod_swift')))
+                : null,
+            'bank_cod_swift' => $this->filled('bank_cod_swift')
+                ? strtoupper(str_replace(' ', '', (string) $this->input('bank_cod_swift')))
+                : null,
             'bank_cod_swift2' => $this->filled('bank_cod_swift2')
                 ? strtoupper(str_replace(' ', '', (string) $this->input('bank_cod_swift2')))
                 : null,
@@ -58,31 +64,31 @@ class SupplierRequest extends FormRequest
             ],
 
             // 🔹 Beneficiario
-            'name' => 'required|string|max:255',
-            'address' => 'required|string|max:255',
-            'city' => 'required|string|max:100',
-            'country' => 'required|string|max:100',
+            'name' => 'nullable|string|max:255',
+            'address' => 'nullable|string|max:255',
+            'city' => 'nullable|string|max:100',
+            'country' => 'nullable|string|max:100',
 
             'account' => [
-                'required',
+                'nullable',
                 'string',
                 'regex:/^[0-9]{10,34}$/',
             ],
 
             // 🔹 Banco principal
             'cod_swift' => [
-                'required',
+                'nullable',
                 'string',
                 'regex:/^[A-Z]{6}[A-Z0-9]{2}([A-Z0-9]{3})?$/',
             ],
 
-            'bank_name' => 'required|string|max:255',
-            'bank_address' => 'required|string|max:255',
-            'bank_city' => 'required|string|max:100',
-            'bank_country' => 'required|string|max:100',
+            'bank_name' => 'nullable|string|max:255',
+            'bank_address' => 'nullable|string|max:255',
+            'bank_city' => 'nullable|string|max:100',
+            'bank_country' => 'nullable|string|max:100',
 
             'bank_cod_swift' => [
-                'required',
+                'nullable',
                 'string',
                 'regex:/^[A-Z]{6}[A-Z0-9]{2}([A-Z0-9]{3})?$/',
             ],

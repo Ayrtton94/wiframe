@@ -4,8 +4,8 @@ namespace App\Http\Controllers;
 
 use Inertia\Inertia;
 use App\Models\Suppliers;
-use Illuminate\Http\Request;
 use App\Http\Requests\SupplierRequest;
+use Illuminate\Support\Arr;
 
 class SuppliersController extends Controller
 {
@@ -31,9 +31,28 @@ class SuppliersController extends Controller
      */
     public function store(SupplierRequest $request)
     {
-        Suppliers::create($request->validated());
+        Suppliers::create($this->supplierData($request));
 
         return redirect()->route('suppliers.index')->with('success', 'Proveedor creado exitosamente.');
+    }
+
+     private function supplierData(SupplierRequest $request): array
+    {
+        $defaults = [
+            'name' => '',
+            'address' => '',
+            'city' => '',
+            'country' => '',
+            'account' => '',
+            'cod_swift' => '',
+            'bank_name' => '',
+            'bank_address' => '',
+            'bank_city' => '',
+            'bank_country' => '',
+            'bank_cod_swift' => '',
+        ];
+
+        return array_merge($defaults, Arr::whereNotNull($request->validated()));
     }
 
     /**
@@ -57,7 +76,7 @@ class SuppliersController extends Controller
      */
     public function update(SupplierRequest $request, Suppliers $supplier)
     {
-        $supplier->update($request->validated());
+        $supplier->update($this->supplierData($request));
 
         return redirect()->route('suppliers.index')->with('success', 'Proveedor actualizado correctamente.');
     }
