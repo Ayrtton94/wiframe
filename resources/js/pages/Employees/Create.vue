@@ -72,7 +72,7 @@ const submit = () => {
                                     for="dni"
                                     class="mb-1 block text-gray-700 dark:text-white"
                                 >
-                                    DNI
+                                    Numero de Identificacion
                                 </Label>
                                 <Input
                                     id="dni"

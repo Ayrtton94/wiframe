@@ -3,17 +3,10 @@ import InputError from '@/components/InputError.vue';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem } from '@/types';
-import { Head, Link, useForm } from '@inertiajs/vue3';
-import { ref } from 'vue';
+import { Head, Link, router, useForm } from '@inertiajs/vue3';
+import { reactive, ref } from 'vue';
 
-const breadcrumbs: BreadcrumbItem[] = [
-    {
-        title: 'Almacen',
-        href: '/stores',
-    },
-];
-
-defineProps<{
+const props = defineProps<{
     products: {
         data: Array<{
             id: number;
@@ -25,6 +18,8 @@ defineProps<{
             price: number;
             wholesale_price: number;
             public_price: number;
+            kilos: number | string;
+            metros: number | string;
             image_url: string | null;
             is_active: boolean;
         }>;
@@ -40,7 +35,17 @@ defineProps<{
     };
 }>();
 
+const breadcrumbs: BreadcrumbItem[] = [
+    {
+        title: 'Almacen',
+        href: '/stores',
+    },
+];
+
 const isImportDialogOpen = ref(false);
+const filters = reactive({
+    search: props.filters.search ?? '',
+});
 const importForm = useForm<{
     file: File | null;
 }>({
@@ -70,6 +75,22 @@ const submitImport = () => {
     });
 };
 
+const submitFilters = () => {
+    const params = filters.search ? { search: filters.search } : {};
+
+    router.get('/stores', params, {
+        preserveState: true,
+        preserveScroll: true,
+        replace: true,
+        only: ['products'],
+    });
+};
+
+const clearFilters = () => {
+    filters.search = '';
+    submitFilters();
+};
+
 </script>
 
 <template>
@@ -78,10 +99,35 @@ const submitImport = () => {
     <AppLayout :breadcrumbs="breadcrumbs">
         <div class="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
             <div class="overflow-x-auto">
-                <div>
-                    <Link href="stores/create" class="mb-4 inline-block rounded bg-blue-500 px-4 py-2 text-white hover:bg-blue-600">
-                        Crear Nuevo
-                    </Link>
+                <div class="mb-4 flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+                    <div class="flex flex-1 flex-col gap-2 md:flex-row md:items-end">
+                        <form class="flex flex-1 flex-col gap-2 md:flex-row" @submit.prevent="submitFilters">
+                            <input
+                                v-model="filters.search"
+                                class="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm shadow-sm focus:border-blue-500 focus:outline-none"
+                                placeholder="Buscar por código, nombre o proveedor"
+                                type="text"
+                            />
+                            <button
+                                class="rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-blue-700"
+                                type="submit"
+                            >
+                                Buscar
+                            </button>
+                            <button
+                                class="rounded-lg border border-slate-300 px-4 py-2.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+                                type="button"
+                                @click="clearFilters"
+                            >
+                                Limpiar
+                            </button>
+                        </form>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <Link href="stores/create" class="inline-block rounded bg-blue-500 px-4 py-2 text-white hover:bg-blue-600">
+                            Crear Nuevo
+                        </Link>
+                    </div>
                 </div>
                 
 <div class="mb-4 flex justify-end">
@@ -204,7 +250,7 @@ const submitImport = () => {
                     <div class="flex space-x-2">
                         <Link
                             v-if="products.current_page > 1"
-                            :href="`/stores?page=${products.current_page - 1}`"
+                            :href="`/stores?page=${products.current_page - 1}${filters.search ? `&search=${encodeURIComponent(filters.search)}` : ''}`"
                             class="px-3 py-2 text-sm border rounded bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
                         >
                             Anterior
@@ -214,7 +260,7 @@ const submitImport = () => {
                         </span>
                         <Link
                             v-if="products.current_page < products.last_page"
-                            :href="`/stores?page=${products.current_page + 1}`"
+                            :href="`/stores?page=${products.current_page + 1}${filters.search ? `&search=${encodeURIComponent(filters.search)}` : ''}`"
                             class="px-3 py-2 text-sm border rounded bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
                         >
                             Siguiente

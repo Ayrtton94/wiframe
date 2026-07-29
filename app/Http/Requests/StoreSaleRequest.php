@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class StoreSaleRequest extends FormRequest
 {
@@ -29,6 +30,7 @@ class StoreSaleRequest extends FormRequest
             'items.*.store_id' => ['required', 'integer', Rule::exists('stores', 'id')->where('is_active', true)],
             'items.*.unit' => ['required', 'string', 'in:kilos,metros'],
             'items.*.quantity' => ['required', 'numeric', 'min:0.001'],
+            'items.*.price_type' => ['nullable', 'string', 'in:price,public,wholesale,price_roll,special'],
         ];
     }
 }

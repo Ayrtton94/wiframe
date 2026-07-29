@@ -21,6 +21,8 @@ class WarehouseStockController extends Controller
             ? null
             : $user->warehouses()->pluck('warehouses.id');
 
+        $search = trim((string) $request->input('search', ''));
+
         $stocksQuery = WarehouseStock::query()
             ->with(['warehouse:id,name,code', 'store:id,code_product,name_product'])
             ->latest();
@@ -29,8 +31,19 @@ class WarehouseStockController extends Controller
             $stocksQuery->whereIn('warehouse_id', $assignedWarehouseIds);
         }
 
+        if ($search !== '') {
+            $stocksQuery->whereHas('store', function ($query) use ($search) {
+                $query->where('code_product', 'like', "%{$search}%")
+                    ->orWhere('name_product', 'like', "%{$search}%");
+            })->orWhereHas('warehouse', function ($query) use ($search) {
+                $query->where('name', 'like', "%{$search}%")
+                    ->orWhere('code', 'like', "%{$search}%");
+            });
+        }
+
         $stocks = $stocksQuery
             ->paginate(20)
+            ->appends(['search' => $search])
             ->withQueryString();
 
         $warehousesQuery = Warehouse::query()
@@ -52,6 +65,7 @@ class WarehouseStockController extends Controller
             'stocks' => $stocks,
             'warehouses' => $warehouses,
             'products' => $products,
+            'filters' => ['search' => $search],
         ]);
     }
 
@@ -78,8 +92,8 @@ class WarehouseStockController extends Controller
             [
                 'kilos_available' => (float) ($validated['kilos_available'] ?? 0),
                 'metros_available' => (float) ($validated['metros_available'] ?? 0),
-                'kilos_reserved' => (float) ($validated['kilos_reserved'] ?? 0),
-                'metros_reserved' => (float) ($validated['metros_reserved'] ?? 0),
+                'kilos_reserved' => 0,
+                'metros_reserved' => 0,
             ],
         );
 
@@ -106,8 +120,8 @@ class WarehouseStockController extends Controller
             'store_id' => $validated['store_id'],
             'kilos_available' => (float) ($validated['kilos_available'] ?? 0),
             'metros_available' => (float) ($validated['metros_available'] ?? 0),
-            'kilos_reserved' => (float) ($validated['kilos_reserved'] ?? 0),
-            'metros_reserved' => (float) ($validated['metros_reserved'] ?? 0),
+            'kilos_reserved' => 0,
+            'metros_reserved' => 0,
         ]);
 
         return back()->with('success', 'Stock actualizado correctamente.');

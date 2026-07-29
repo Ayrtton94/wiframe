@@ -43,14 +43,37 @@ class SaleController extends Controller
             $warehousesQuery->whereIn('id', $assignedWarehouseIds);
         }
 
+        $warehouseStocks = WarehouseStock::query()
+            ->with('warehouse:id,name,code')
+            ->whereHas('warehouse', fn ($query) => $query->where('is_active', true));
+
+        if ($assignedWarehouseIds !== null) {
+            $warehouseStocks->whereIn('warehouse_id', $assignedWarehouseIds);
+        }
+
         return Inertia::render('Sales/Index', [
             'sales' => $sales,
             'customers' => Customer::query()->orderBy('name')->get(['id', 'name', 'dni']),
             'warehouses' => $warehousesQuery->get(['id', 'name', 'code']),
+            'warehouseStocks' => $warehouseStocks->get([
+                'warehouse_id',
+                'store_id',
+                'kilos_available',
+                'metros_available',
+            ]),
             'products' => Store::query()
                 ->where('is_active', true)
                 ->orderBy('name_product')
-                ->get(['id', 'code_product', 'name_product', 'public_price']),
+                ->get([
+                    'id',
+                    'code_product',
+                    'name_product',
+                    'price',
+                    'public_price',
+                    'wholesale_price',
+                    'price_roll',
+                    'special_price',
+                ]),
         ]);
     }
 
@@ -123,7 +146,14 @@ class SaleController extends Controller
                         ]);
                     }
 
-                    $unitPrice = (float) $product->public_price;
+                    $priceType = $item['price_type'] ?? 'public';
+                    $unitPrice = match ($priceType) {
+                        'wholesale' => (float) $product->wholesale_price,
+                        'price_roll' => (float) $product->price_roll,
+                        'special' => (float) ($product->special_price > 0 ? $product->special_price : $product->public_price),
+                        'price' => (float) $product->price,
+                        default => (float) $product->public_price,
+                    };
                     $lineTotal = round($quantity * $unitPrice, 2);
                     $subtotal += $lineTotal;
 

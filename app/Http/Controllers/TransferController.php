@@ -168,9 +168,9 @@ class TransferController extends Controller
         if (! $user->hasRole('admin')) {
             $assignedWarehouseIds = $user->warehouses()->pluck('warehouses.id');
 
-            if (! $assignedWarehouseIds->contains($transfer->to_warehouse_id)) {
+            if (! $assignedWarehouseIds->contains($transfer->from_warehouse_id)) {
                 throw ValidationException::withMessages([
-                    'transfer' => 'Solo puedes recepcionar traslados hacia almacenes asignados a tu usuario.',
+                    'transfer' => 'Solo puedes despachar traslados desde almacenes asignados a tu usuario.',
                 ]);
             }
         }

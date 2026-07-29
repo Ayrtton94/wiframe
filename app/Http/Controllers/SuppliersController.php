@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Inertia\Inertia;
+use Illuminate\Http\Request;
 use App\Models\Suppliers;
 use App\Http\Requests\SupplierRequest;
 use Illuminate\Support\Arr;
@@ -12,10 +13,25 @@ class SuppliersController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $suppliers = Suppliers::all();
-        return Inertia::render("Supplier/Index", ['suppliers' => $suppliers]);
+        $search = trim((string) $request->input('search', ''));
+
+        $suppliers = Suppliers::query()
+            ->when($search !== '', function ($query) use ($search) {
+                $query->where(function ($subQuery) use ($search) {
+                    $subQuery->where('company_name', 'like', "%{$search}%")
+                        ->orWhere('ruc', 'like', "%{$search}%");
+                });
+            })
+            ->orderBy('company_name')
+            ->paginate(10)
+            ->appends(['search' => $search]);
+
+        return Inertia::render('Supplier/Index', [
+            'suppliers' => $suppliers,
+            'filters' => ['search' => $search],
+        ]);
     }
 
     /**
@@ -23,7 +39,10 @@ class SuppliersController extends Controller
      */
     public function create()
     {
-        return Inertia::render("Supplier/Create");
+        return Inertia::render("Supplier/Create", [
+            'suppliers' => $suppliers,
+            'filters' => ['search' => $search]
+            ]);
     }
 
     /**

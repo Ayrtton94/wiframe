@@ -9,6 +9,7 @@ use App\Models\WarehouseStock;
 
 beforeEach(function () {
     Role::query()->firstOrCreate(['name' => 'admin', 'guard_name' => 'web']);
+    Role::query()->firstOrCreate(['name' => 'almacen', 'guard_name' => 'web']);
 });
 
 function createAdminUser(): User
@@ -75,6 +76,46 @@ test('shipping transfer discounts stock in origin warehouse', function () {
     ]);
 
     $response = $this->actingAs($admin)->post(route('transfers.ship', $transfer));
+
+    $response->assertSessionHasNoErrors();
+
+    expect($transfer->fresh()->status)->toBe('shipped');
+    expect((float) WarehouseStock::where('warehouse_id', $from->id)->where('store_id', $product->id)->value('kilos_available'))->toBe(90.0);
+    expect((float) WarehouseStock::where('warehouse_id', $from->id)->where('store_id', $product->id)->value('metros_available'))->toBe(180.0);
+});
+
+test('shipping transfer discounts stock for users assigned to the origin warehouse', function () {
+    $user = User::factory()->create();
+    $user->assignRole('almacen');
+
+    $from = Warehouse::create(['name' => 'Almacén 1', 'code' => 'ALM-1']);
+    $to = Warehouse::create(['name' => 'Almacén 2', 'code' => 'ALM-2']);
+    $product = Store::factory()->create();
+
+    $user->warehouses()->attach($from->id);
+
+    WarehouseStock::create([
+        'warehouse_id' => $from->id,
+        'store_id' => $product->id,
+        'kilos_available' => 100,
+        'metros_available' => 200,
+    ]);
+
+    $transfer = Transfer::create([
+        'code' => 'TRF-TEST-3',
+        'from_warehouse_id' => $from->id,
+        'to_warehouse_id' => $to->id,
+        'status' => 'requested',
+        'requested_by' => $user->id,
+    ]);
+
+    $transfer->items()->create([
+        'store_id' => $product->id,
+        'kilos_requested' => 10,
+        'metros_requested' => 20,
+    ]);
+
+    $response = $this->actingAs($user)->post(route('transfers.ship', $transfer));
 
     $response->assertSessionHasNoErrors();
 

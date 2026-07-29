@@ -90,6 +90,10 @@ Route::middleware('auth')->group(function () {
         ->middleware('role:admin,almacen,tienda,vendedor')
         ->name('reports.index');
 
+    Route::get('reports/export', [ReportController::class, 'export'])
+        ->middleware('role:admin,almacen,tienda,vendedor')
+        ->name('reports.export');
+
     Route::middleware('role:admin,vendedor,tienda')->group(function () {
         Route::resource('sales', SaleController::class)->only(['index', 'store', 'show']);
     });

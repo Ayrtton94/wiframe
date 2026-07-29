@@ -62,6 +62,16 @@ const applyFilters = () => {
     );
 };
 
+const exportExcel = () => {
+    const params = new URLSearchParams({
+        start_date: form.start_date,
+        end_date: form.end_date,
+        warehouse_id: form.warehouse_id || '',
+    });
+
+    window.location.href = `/reports/export?${params.toString()}`;
+};
+
 const currency = (value: number | string) => {
     return new Intl.NumberFormat('es-PE', {
         style: 'currency',
@@ -77,9 +87,9 @@ const currency = (value: number | string) => {
     <AppLayout :breadcrumbs="breadcrumbs">
         <div class="space-y-6 p-4">
             <section class="rounded-xl border bg-white p-4">
-                <h1 class="text-xl font-semibold">Reportes de ventas e inventario</h1>
+                <h1 class="text-xl font-semibold">Reportes de salidas e inventario</h1>
                 <p class="mt-1 text-sm text-gray-500">
-                    Consulta ventas y stock por tienda/almacén en un solo lugar.
+                    Consulta salidas y stock por tienda/almacén en un solo lugar.
                 </p>
 
                 <form class="mt-4 grid gap-3 md:grid-cols-4" @submit.prevent="applyFilters">
@@ -100,8 +110,11 @@ const currency = (value: number | string) => {
                             </option>
                         </select>
                     </div>
-                    <div class="flex items-end">
+                    <div class="flex items-end gap-2">
                         <Button type="submit" class="w-full">Aplicar filtros</Button>
+                        <Button type="button" variant="outline" class="w-full" @click="exportExcel">
+                            Exportar Excel
+                        </Button>
                     </div>
                 </form>
             </section>

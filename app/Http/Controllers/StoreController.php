@@ -19,7 +19,20 @@ class StoreController extends Controller
     }
     public function index(Request $request)
     {
-        $products = Store::paginate(10);
+        $search = trim((string) $request->input('search', ''));
+
+        $products = Store::query()
+            ->when($search !== '', function ($query) use ($search) {
+                $query->where(function ($subQuery) use ($search) {
+                    $subQuery->where('code_product', 'like', "%{$search}%")
+                        ->orWhere('name_product', 'like', "%{$search}%")
+                        ->orWhere('proveedor', 'like', "%{$search}%");
+                });
+            })
+            ->orderBy('name_product')
+            ->paginate(10)
+            ->appends(['search' => $search]);
+
         $products->getCollection()->transform(function ($product) {
             $imagePath = $product->image_path ?? $product->image ?? null;
             $product->image_url = $imagePath ? asset('storage/' . $imagePath) : null;
@@ -29,7 +42,7 @@ class StoreController extends Controller
 
         return Inertia::render("Store/Index", [
             'products' => $products,
-            'filters' => $request->only(['search'])
+            'filters' => ['search' => $search],
         ]);
     }
 

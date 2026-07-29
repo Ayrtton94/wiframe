@@ -73,18 +73,18 @@ const chartConfig = computed(() => {
         <div class="flex h-full flex-1 flex-col gap-6 overflow-x-auto rounded-xl p-4">
 
             <h1 class="text-2xl font-semibold text-slate-900 dark:text-white">
-                Dashboard de ventas
+                Dashboard de salidas
             </h1>
 
             <!-- STATS -->
             <section class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
                 <article class="rounded-xl border bg-white p-4 shadow-sm dark:bg-slate-900">
-                    <p class="text-sm text-slate-500">Ventas registradas</p>
+                    <p class="text-sm text-slate-500">Salidas registradas</p>
                     <p class="mt-2 text-2xl font-bold">{{ stats.sales_count }}</p>
                 </article>
 
                 <article class="rounded-xl border bg-white p-4 shadow-sm dark:bg-slate-900">
-                    <p class="text-sm text-slate-500">Ingresos por ventas</p>
+                    <p class="text-sm text-slate-500">Ingresos por salidas</p>
                     <p class="mt-2 text-2xl font-bold">{{ currency(stats.total_revenue) }}</p>
                 </article>
 
@@ -104,10 +104,10 @@ const chartConfig = computed(() => {
 
                 <!-- TOP PRODUCTOS -->
                 <article class="rounded-xl border bg-white p-4 shadow-sm dark:bg-slate-900">
-                    <h2 class="mb-3 text-lg font-semibold">Top 5 productos más vendidos</h2>
+                    <h2 class="mb-3 text-lg font-semibold">Top 5 productos con mas salidas</h2>
 
                     <div v-if="top_products.length === 0" class="text-sm text-slate-500">
-                        Aún no hay ventas.
+                        Aún no hay salidas.
                     </div>
 
                     <div v-else class="overflow-x-auto">
@@ -156,7 +156,7 @@ const chartConfig = computed(() => {
 
             <!-- GRÁFICO -->
             <section class="rounded-xl border bg-white p-4 shadow-sm dark:bg-slate-900">
-                <h2 class="mb-3 text-lg font-semibold">Venta diaria del mes</h2>
+                <h2 class="mb-3 text-lg font-semibold">Salidas diaria del mes</h2>
 
                 <div v-if="month_sales_trend.length === 0">
                     No hay datos.

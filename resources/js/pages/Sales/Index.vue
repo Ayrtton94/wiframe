@@ -4,6 +4,19 @@ import { type BreadcrumbItem } from '@/types';
 import { Head, Link, useForm } from '@inertiajs/vue3';
 import { computed } from 'vue';
 
+type PriceType = 'price' | 'public' | 'wholesale' | 'price_roll' | 'special';
+
+type ProductOption = {
+    id: number;
+    code_product: string;
+    name_product: string;
+    price: number;
+    public_price: number;
+    wholesale_price: number;
+    price_roll: number;
+    special_price: number;
+};
+
 const props = defineProps<{
     sales: {
         data: Array<{
@@ -19,12 +32,13 @@ const props = defineProps<{
     };
     customers: Array<{ id: number; name: string; dni: string }>;
     warehouses: Array<{ id: number; name: string; code: string }>;
-    products: Array<{
-        id: number;
-        code_product: string;
-        name_product: string;
-        public_price: number;
+    warehouseStocks: Array<{
+        warehouse_id: number;
+        store_id: number;
+        kilos_available: number | string;
+        metros_available: number | string;
     }>;
+    products: ProductOption[];
 }>();
 
 const breadcrumbs: BreadcrumbItem[] = [{ title: 'Ventas', href: '/sales' }];
@@ -33,17 +47,19 @@ type SaleItemForm = {
     store_id: string;
     unit: 'kilos' | 'metros';
     quantity: number;
+    price_type: PriceType;
+    search_text: string;
 };
 
 const form = useForm({
     customer_id: '',
     warehouse_id: '',
     notes: '',
-    items: [{ store_id: '', unit: 'metros', quantity: 1 }] as SaleItemForm[],
+    items: [{ store_id: '', unit: 'metros', quantity: 1, price_type: 'public' as PriceType, search_text: '' }] as SaleItemForm[],
 });
 
 const addItem = () => {
-    form.items.push({ store_id: '', unit: 'metros', quantity: 1 });
+    form.items.push({ store_id: '', unit: 'metros', quantity: 1, price_type: 'public', search_text: '' });
 };
 
 const removeItem = (index: number) => {
@@ -54,15 +70,183 @@ const removeItem = (index: number) => {
     form.items.splice(index, 1);
 };
 
+const productMap = computed(
+    () => new Map(props.products.map((product: ProductOption) => [product.id, product])),
+);
+
+const warehouseStockMap = computed(() => {
+    const map = new Map<string, { kilos_available: number; metros_available: number }>();
+
+    props.warehouseStocks.forEach((stock: { warehouse_id: number; store_id: number; kilos_available: number | string; metros_available: number | string }) => {
+        map.set(`${stock.warehouse_id}:${stock.store_id}`, {
+            kilos_available: Number(stock.kilos_available || 0),
+            metros_available: Number(stock.metros_available || 0),
+        });
+    });
+
+    return map;
+});
+
+const getProductPriceOptions = (product?: ProductOption) => {
+    if (!product) {
+        return [];
+    }
+
+    const options = [
+        { label: 'Precio base', value: 'price' as const, price: Number(product.price || 0) },
+        { label: 'Precio público', value: 'public' as const, price: Number(product.public_price || 0) },
+        { label: 'Precio mayorista', value: 'wholesale' as const, price: Number(product.wholesale_price || 0) },
+    ];
+
+    if (Number(product.price_roll || 0) > 0) {
+        options.push({
+            label: 'Precio por rollo',
+            value: 'price_roll' as const,
+            price: Number(product.price_roll || 0),
+        });
+    }
+
+    if (Number(product.special_price || 0) > 0) {
+        options.push({
+            label: 'Precio especial',
+            value: 'special' as const,
+            price: Number(product.special_price || 0),
+        });
+    }
+
+    return options.filter((option) => option.price > 0);
+};
+
+const getSelectedProductPrice = (item: SaleItemForm) => {
+    const product = productMap.value.get(Number(item.store_id));
+    if (!product) {
+        return 0;
+    }
+
+    switch (item.price_type) {
+        case 'wholesale':
+            return Number(product.wholesale_price || 0);
+        case 'price_roll':
+            return Number(product.price_roll || 0);
+        case 'special':
+            return Number(product.special_price || 0);
+        case 'price':
+            return Number(product.price || 0);
+        default:
+            return Number(product.public_price || 0);
+    }
+};
+
+const estimateLineTotal = (item: SaleItemForm) => {
+    return (Number(item.quantity || 0) * getSelectedProductPrice(item)).toFixed(2);
+};
+
+const getStockForItem = (item: SaleItemForm) => {
+    const warehouseId = Number(form.warehouse_id);
+    const storeId = Number(item.store_id);
+
+    if (!warehouseId || !storeId) {
+        return null;
+    }
+
+    return warehouseStockMap.value.get(`${warehouseId}:${storeId}`) ?? null;
+};
+
+const getFilteredProducts = (item: SaleItemForm) => {
+    const term = (item.search_text || '').trim().toLowerCase();
+
+    if (!term) {
+        return props.products;
+    }
+
+    return props.products.filter((product: ProductOption) => {
+        const haystack = `${product.code_product} ${product.name_product}`.toLowerCase();
+        return haystack.includes(term);
+    });
+};
+
+const getSelectedProduct = (item: SaleItemForm) => {
+    if (!item.store_id) {
+        return null;
+    }
+
+    return props.products.find((product: ProductOption) => String(product.id) === item.store_id) ?? null;
+};
+
+const selectProduct = (item: SaleItemForm, productId: number) => {
+    const product = props.products.find((entry: ProductOption) => entry.id === productId);
+    if (!product) {
+        return;
+    }
+
+    item.store_id = String(product.id);
+    item.search_text = `${product.code_product} - ${product.name_product}`;
+};
+
+const getStockMessage = (item: SaleItemForm) => {
+    const stock = getStockForItem(item);
+
+    if (!stock) {
+        return 'Sin stock configurado para esta ubicación';
+    }
+
+    const unitLabel = item.unit === 'kilos' ? 'kilos' : 'metros';
+    const available = item.unit === 'kilos' ? stock.kilos_available : stock.metros_available;
+
+    return `Stock disponible: ${available} ${unitLabel}`;
+};
+
+const hasStockForItem = (item: SaleItemForm) => {
+    const stock = getStockForItem(item);
+
+    if (!stock) {
+        return false;
+    }
+
+    const available = item.unit === 'kilos' ? stock.kilos_available : stock.metros_available;
+    return available > 0;
+};
+
+const validateItemStock = (item: SaleItemForm) => {
+    const stock = getStockForItem(item);
+
+    if (!stock) {
+        window.alert('El producto seleccionado no tiene stock configurado en la ubicación seleccionada.');
+        return false;
+    }
+
+    const available = item.unit === 'kilos' ? stock.kilos_available : stock.metros_available;
+    const requested = Number(item.quantity || 0);
+
+    if (available <= 0) {
+        window.alert('El producto seleccionado no tiene stock disponible en esta ubicación.');
+        return false;
+    }
+
+    if (requested > available) {
+        window.alert(`La cantidad solicitada supera el stock disponible (${available} ${item.unit === 'kilos' ? 'kilos' : 'metros'}).`);
+        return false;
+    }
+
+    return true;
+};
+
 const submit = () => {
-    form.transform((data) => ({
+    const hasValidStock = form.items.every((item: SaleItemForm) => validateItemStock(item));
+
+    if (!hasValidStock) {
+        return;
+    }
+
+    form.transform((data: any) => ({
         ...data,
         customer_id: Number(data.customer_id),
         warehouse_id: Number(data.warehouse_id),
-        items: data.items.map((item) => ({
+        items: data.items.map((item: SaleItemForm) => ({
             store_id: Number(item.store_id),
             unit: item.unit,
             quantity: Number(item.quantity),
+            price_type: item.price_type,
         })),
     })).post('/sales', {
         preserveScroll: true,
@@ -70,25 +254,10 @@ const submit = () => {
             form.reset('customer_id', 'warehouse_id', 'notes', 'items'),
     });
 };
-
-const productMap = computed(
-    () => new Map(props.products.map((product) => [product.id, product])),
-);
-
-const estimateLineTotal = (item: SaleItemForm) => {
-    const product = productMap.value.get(Number(item.store_id));
-    if (!product) {
-        return 0;
-    }
-
-    return (Number(item.quantity || 0) * Number(product.public_price)).toFixed(
-        2,
-    );
-};
 </script>
 
 <template>
-    <Head title="Ventas" />
+    <Head title="Salidas" />
 
     <AppLayout :breadcrumbs="breadcrumbs">
         <div class="flex h-full flex-1 flex-col gap-6 rounded-xl p-4">
@@ -140,25 +309,37 @@ const estimateLineTotal = (item: SaleItemForm) => {
                         <div
                             v-for="(item, index) in form.items"
                             :key="index"
-                            class="grid gap-3 rounded-lg border p-4 md:grid-cols-[2fr_1fr_1fr_auto]"
+                            class="grid gap-3 rounded-lg border p-4 md:grid-cols-[2fr_1fr_1fr_1fr_auto]"
                         >
-                            <select
-                                v-model="item.store_id"
-                                class="rounded-lg border px-3 py-2"
-                                required
-                            >
-                                <option disabled value="">
-                                    Selecciona producto
-                                </option>
-                                <option
-                                    v-for="product in props.products"
-                                    :key="product.id"
-                                    :value="String(product.id)"
-                                >
-                                    {{ product.code_product }} -
-                                    {{ product.name_product }}
-                                </option>
-                            </select>
+                            <div class="space-y-2">
+                                <input
+                                    v-model="item.search_text"
+                                    type="text"
+                                    class="w-full rounded-lg border px-3 py-2"
+                                    placeholder="Buscar por código o nombre"
+                                />
+                                <div class="max-h-40 overflow-y-auto rounded-lg border bg-slate-50 p-2">
+                                    <p class="mb-2 text-xs font-medium uppercase text-slate-500">
+                                        Resultados
+                                    </p>
+                                    <button
+                                        v-for="product in getFilteredProducts(item)"
+                                        :key="product.id"
+                                        type="button"
+                                        class="mb-1 flex w-full items-center justify-between rounded px-2 py-2 text-left text-sm hover:bg-slate-200"
+                                        @click="selectProduct(item, product.id)"
+                                    >
+                                        <span>{{ product.code_product }} - {{ product.name_product }}</span>
+                                        <span class="text-xs text-slate-500">Seleccionar</span>
+                                    </button>
+                                    <p v-if="!getFilteredProducts(item).length" class="text-sm text-slate-500">
+                                        No hay productos que coincidan con la búsqueda.
+                                    </p>
+                                </div>
+                                <p v-if="getSelectedProduct(item)" class="text-sm text-slate-600">
+                                    Producto seleccionado: {{ getSelectedProduct(item)?.code_product }} - {{ getSelectedProduct(item)?.name_product }}
+                                </p>
+                            </div>
 
                             <select
                                 v-model="item.unit"
@@ -176,7 +357,26 @@ const estimateLineTotal = (item: SaleItemForm) => {
                                 placeholder="Cantidad"
                                 class="rounded-lg border px-3 py-2"
                                 required
+                                @change="validateItemStock(item)"
                             />
+
+                            <div v-if="getProductPriceOptions(productMap.get(Number(item.store_id))).length > 1" class="w-full">
+                                <select
+                                    v-model="item.price_type"
+                                    class="w-full rounded-lg border px-3 py-2"
+                                >
+                                    <option
+                                        v-for="option in getProductPriceOptions(productMap.get(Number(item.store_id)))"
+                                        :key="option.value"
+                                        :value="option.value"
+                                    >
+                                        {{ option.label }}
+                                    </option>
+                                </select>
+                            </div>
+                            <div v-else class="flex items-center text-sm text-slate-500">
+                                Precio: S/ {{ getSelectedProductPrice(item) }}
+                            </div>
 
                             <button
                                 type="button"
@@ -186,8 +386,8 @@ const estimateLineTotal = (item: SaleItemForm) => {
                                 Quitar
                             </button>
 
-                            <p class="text-sm text-slate-500 md:col-span-4">
-                                Estimado: S/ {{ estimateLineTotal(item) }}
+                            <p :class="['text-sm md:col-span-5', hasStockForItem(item) ? 'text-slate-500' : 'text-red-600']">
+                                {{ getStockMessage(item) }} · Estimado: S/ {{ estimateLineTotal(item) }}
                             </p>
                         </div>
                     </div>

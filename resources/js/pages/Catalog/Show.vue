@@ -112,13 +112,6 @@ const showImage = ref(false);
         <div class="rounded border bg-white p-4">Especial: {{ product.special_price ?? 0 }}</div>
       </div>
 
-      <div class="grid gap-4 md:grid-cols-4">
-        <div class="rounded border bg-white p-4">Kg disponibles: {{ stock_summary.kilos_available }}</div>
-        <div class="rounded border bg-white p-4">M disponibles: {{ stock_summary.metros_available }}</div>
-        <div class="rounded border bg-white p-4">Kg reservados: {{ stock_summary.kilos_reserved }}</div>
-        <div class="rounded border bg-white p-4">M reservados: {{ stock_summary.metros_reserved }}</div>
-      </div>
-
       <div class="overflow-x-auto rounded border bg-white">
         <table class="min-w-full divide-y divide-gray-200">
           <thead class="bg-gray-50">
@@ -127,8 +120,6 @@ const showImage = ref(false);
               <th class="px-4 py-3 text-left text-xs uppercase">Código</th>
               <th class="px-4 py-3 text-left text-xs uppercase">Kg disp.</th>
               <th class="px-4 py-3 text-left text-xs uppercase">M disp.</th>
-              <th class="px-4 py-3 text-left text-xs uppercase">Kg res.</th>
-              <th class="px-4 py-3 text-left text-xs uppercase">M res.</th>
             </tr>
           </thead>
           <tbody>
@@ -137,8 +128,6 @@ const showImage = ref(false);
               <td class="px-4 py-3">{{ row.warehouse_code }}</td>
               <td class="px-4 py-3">{{ row.kilos_available }}</td>
               <td class="px-4 py-3">{{ row.metros_available }}</td>
-              <td class="px-4 py-3">{{ row.kilos_reserved }}</td>
-              <td class="px-4 py-3">{{ row.metros_reserved }}</td>
             </tr>
           </tbody>
         </table>
