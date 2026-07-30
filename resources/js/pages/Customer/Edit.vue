@@ -68,7 +68,7 @@ const submit = () => {
 
                                 <tr class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <td class="text-sm font-medium text-gray-700 dark:text-white">
-                                        RUC o DNI
+                                        Numero de identificación (DNI, RUC, etc.)
                                         <Input
                                             v-model="form.dni"
                                             class="mt-1 w-full

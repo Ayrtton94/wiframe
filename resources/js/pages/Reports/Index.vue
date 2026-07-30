@@ -110,6 +110,7 @@ const currency = (value: number | string) => {
                             </option>
                         </select>
                     </div>
+                    <br>
                     <div class="flex items-end gap-2">
                         <Button type="submit" class="w-full">Aplicar filtros</Button>
                         <Button type="button" variant="outline" class="w-full" @click="exportExcel">
@@ -127,7 +128,7 @@ const currency = (value: number | string) => {
                             <tr>
                                 <th class="px-4 py-2 text-left text-xs font-semibold uppercase">Código</th>
                                 <th class="px-4 py-2 text-left text-xs font-semibold uppercase">Nombre</th>
-                                <th class="px-4 py-2 text-right text-xs font-semibold uppercase">N° ventas</th>
+                                <th class="px-4 py-2 text-right text-xs font-semibold uppercase">N° salida</th>
                                 <th class="px-4 py-2 text-right text-xs font-semibold uppercase">Unidades</th>
                                 <th class="px-4 py-2 text-right text-xs font-semibold uppercase">Total vendido</th>
                             </tr>

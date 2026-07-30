@@ -147,7 +147,7 @@ const chartConfig = computed(() => {
 
                     <div v-else class="space-y-2 text-sm">
                         <p><strong>Nombre:</strong> {{ best_seller.name }}</p>
-                        <p><strong>Ventas:</strong> {{ best_seller.sales_count }}</p>
+                        <p><strong>Salidas:</strong> {{ best_seller.sales_count }}</p>
                         <p><strong>Total:</strong> {{ currency(best_seller.total_sold) }}</p>
                     </div>
                 </article>
