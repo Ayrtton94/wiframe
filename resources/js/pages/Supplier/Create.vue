@@ -60,8 +60,8 @@ const submit = () => {
                     <CardContent class="pt-6">
                         <div class="grid grid-cols-2 gap-6">
                             <div class="space-y-2">
-                                <Label for="code_product" class="text-sm font-semibold text-gray-700 dark:text-gray-300">RUC</Label>
-                                <Input id="code_product" v-model="form.ruc" type="text" placeholder="Ingrese RUC" class="w-full border-gray-300 dark:border-gray-700" />
+                                <Label for="code_product" class="text-sm font-semibold text-gray-700 dark:text-gray-300">Codigo de Proveedor u otros</Label>
+                                <Input id="code_product" v-model="form.ruc" type="text" placeholder="Ingrese código de proveedor" class="w-full border-gray-300 dark:border-gray-700" />
                                 <InputError :message="form.errors.ruc" class="mt-1 text-xs" />
                             </div>
 

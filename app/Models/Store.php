@@ -34,6 +34,8 @@ class Store extends Model
 
     protected $casts = [
         'is_active' => 'boolean',
+        'kilos' => 'integer',
+        'metros' => 'integer',
     ];
 
     public function warehouseStocks(): HasMany

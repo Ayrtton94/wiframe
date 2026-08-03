@@ -43,6 +43,9 @@ class SaleController extends Controller
             $warehousesQuery->whereIn('id', $assignedWarehouseIds);
         }
 
+        $warehouses = $warehousesQuery->get(['id', 'name', 'code']);
+        $defaultWarehouseId = $warehouses->count() === 1 ? $warehouses->first()->id : null;
+
         $warehouseStocks = WarehouseStock::query()
             ->with('warehouse:id,name,code')
             ->whereHas('warehouse', fn ($query) => $query->where('is_active', true));
@@ -54,7 +57,8 @@ class SaleController extends Controller
         return Inertia::render('Sales/Index', [
             'sales' => $sales,
             'customers' => Customer::query()->orderBy('name')->get(['id', 'name', 'dni']),
-            'warehouses' => $warehousesQuery->get(['id', 'name', 'code']),
+            'warehouses' => $warehouses,
+            'defaultWarehouseId' => $defaultWarehouseId,
             'warehouseStocks' => $warehouseStocks->get([
                 'warehouse_id',
                 'store_id',
@@ -73,6 +77,8 @@ class SaleController extends Controller
                     'wholesale_price',
                     'price_roll',
                     'special_price',
+                    'kilos',
+                    'metros',
                 ]),
         ]);
     }
@@ -122,13 +128,21 @@ class SaleController extends Controller
                     $stock = WarehouseStock::query()
                         ->where('warehouse_id', $validated['warehouse_id'])
                         ->where('store_id', $item['store_id'])
-                        ->lockForUpdate()
                         ->first();
 
                     if (! $stock) {
-                        throw ValidationException::withMessages([
-                            "items.$index.store_id" => 'El producto no tiene stock configurado en la ubicación seleccionada.',
-                        ]);
+                        $stock = WarehouseStock::firstOrCreate(
+                            [
+                                'warehouse_id' => $validated['warehouse_id'],
+                                'store_id' => $item['store_id'],
+                            ],
+                            [
+                                'kilos_available' => (float) $product->kilos,
+                                'metros_available' => (float) $product->metros,
+                                'kilos_reserved' => 0,
+                                'metros_reserved' => 0,
+                            ],
+                        );
                     }
 
                     $quantity = (float) $item['quantity'];
@@ -158,9 +172,11 @@ class SaleController extends Controller
                     $subtotal += $lineTotal;
 
                     if ($unit === 'kilos') {
-                        $stock->decrement('kilos_available', $quantity);
+                        $stock->decrement('kilos_available', (int) round($quantity));
+                        $product->decrement('kilos', (int) round($quantity));
                     } else {
-                        $stock->decrement('metros_available', $quantity);
+                        $stock->decrement('metros_available', (int) round($quantity));
+                        $product->decrement('metros', (int) round($quantity));
                     }
 
                     $sale->items()->create([

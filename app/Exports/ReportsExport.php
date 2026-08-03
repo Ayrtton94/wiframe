@@ -47,6 +47,8 @@ class SalesReportSheet implements FromArray, \Maatwebsite\Excel\Concerns\WithTit
             return [
                 'warehouse_code' => $row->warehouse_code,
                 'warehouse_name' => $row->warehouse_name,
+                'sale_date' => $row->sale_date,
+                'seller_name' => $row->seller_name,
                 'sales_count' => (int) $row->sales_count,
                 'total_units' => number_format((float) $row->total_units, 2, '.', ''),
                 'total_sales' => number_format((float) $row->total_sales, 2, '.', ''),
@@ -56,7 +58,7 @@ class SalesReportSheet implements FromArray, \Maatwebsite\Excel\Concerns\WithTit
 
     public function headings(): array
     {
-        return ['Código', 'Nombre', 'N° ventas', 'Unidades', 'Total vendido'];
+        return ['Código', 'Nombre', 'Fecha', 'Vendedor', 'N° ventas', 'Unidades', 'Total vendido'];
     }
 
     public function title(): string

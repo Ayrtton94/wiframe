@@ -69,6 +69,25 @@ const handleImage = (event: Event) => {
     form.image = file;
 };
 
+const setNegativeMessage = (event: Event) => {
+    const target = event.target as HTMLInputElement;
+    if (target.validity.rangeUnderflow) {
+        target.setCustomValidity('El valor no puede ser negativo');
+    }
+};
+
+const clearInvalidMessage = (event: Event) => {
+    const target = event.target as HTMLInputElement;
+    target.setCustomValidity('');
+};
+
+const clampNumberField = (field: 'kilos' | 'metros' | 'minimum_stock' | 'price' | 'public_price' | 'wholesale_price' | 'price_roll' | 'special_price', event: Event) => {
+    clearInvalidMessage(event);
+    if (Number(form[field]) < 0) {
+        form[field] = 0 as any;
+    }
+};
+
 const currentImageSrc = computed(() => {
     if (props.product.image_url) {
         return props.product.image_url;
@@ -143,49 +162,49 @@ const submit = () => {
 
                     <div>
                         <Label for="minimum_stock">Stock Mínimo</Label>
-                        <Input id="minimum_stock" v-model="form.minimum_stock" type="number" class="w-full" />
+                        <Input id="minimum_stock" v-model.number="form.minimum_stock" type="number" min="0" class="w-full" @input="clampNumberField('minimum_stock', $event)" @invalid="setNegativeMessage" />
                         <InputError :message="form.errors.minimum_stock" />
                     </div>
 
                     <div>
                         <Label for="kilos">Rollo</Label>
-                        <Input id="kilos" v-model="form.kilos" type="number" step="0.01" class="w-full" />
+                        <Input id="kilos" v-model.number="form.kilos" type="number" min="0" step="0.01" class="w-full" @input="clampNumberField('kilos', $event)" @invalid="setNegativeMessage" />
                         <InputError :message="form.errors.kilos" />
                     </div>
 
                     <div>
                         <Label for="metros">Metros</Label>
-                        <Input id="metros" v-model="form.metros" type="number" step="0.01" class="w-full" />
+                        <Input id="metros" v-model.number="form.metros" type="number" min="0" step="0.01" class="w-full" @input="clampNumberField('metros', $event)" @invalid="setNegativeMessage" />
                         <InputError :message="form.errors.metros" />
                     </div>
 
                     <div>
                         <Label for="price">Precio</Label>
-                        <Input id="price" v-model="form.price" type="number" step="0.01" class="w-full" />
+                        <Input id="price" v-model.number="form.price" type="number" min="0" step="0.01" class="w-full" @input="clampNumberField('price', $event)" @invalid="setNegativeMessage" />
                         <InputError :message="form.errors.price" />
                     </div>
 
                     <div>
                         <Label for="public_price">Precio Público</Label>
-                        <Input id="public_price" v-model="form.public_price" type="number" step="0.01" class="w-full" />
+                        <Input id="public_price" v-model.number="form.public_price" type="number" min="0" step="0.01" class="w-full" @input="clampNumberField('public_price', $event)" @invalid="setNegativeMessage" />
                         <InputError :message="form.errors.public_price" />
                     </div>
 
                     <div>
                         <Label for="wholesale_price">Precio Mayorista</Label>
-                        <Input id="wholesale_price" v-model="form.wholesale_price" type="number" step="0.01" class="w-full" />
+                        <Input id="wholesale_price" v-model.number="form.wholesale_price" type="number" min="0" step="0.01" class="w-full" @input="clampNumberField('wholesale_price', $event)" @invalid="setNegativeMessage" />
                         <InputError :message="form.errors.wholesale_price" />
                     </div>
 
                     <div>
                         <Label for="price_roll">Precio por Rollo</Label>
-                        <Input id="price_roll" v-model="form.price_roll" type="number" step="0.01" class="w-full" />
+                        <Input id="price_roll" v-model.number="form.price_roll" type="number" min="0" step="0.01" class="w-full" @input="clampNumberField('price_roll', $event)" @invalid="setNegativeMessage" />
                         <InputError :message="form.errors.price_roll" />
                     </div>
 
                     <div>
                         <Label for="special_price">Precio Especial</Label>
-                        <Input id="special_price" v-model="form.special_price" type="number" step="0.01" class="w-full" />
+                        <Input id="special_price" v-model.number="form.special_price" type="number" min="0" step="0.01" class="w-full" @input="clampNumberField('special_price', $event)" @invalid="setNegativeMessage" />
                         <InputError :message="form.errors.special_price" />
                     </div>
 

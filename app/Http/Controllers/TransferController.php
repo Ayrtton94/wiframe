@@ -43,26 +43,48 @@ class TransferController extends Controller
             ->paginate(15)
             ->withQueryString();
 
-        $warehousesQuery = Warehouse::query()
+        $sourceWarehousesQuery = Warehouse::query()
             ->where('is_active', true)
             ->orderBy('name');
 
         if ($assignedWarehouseIds !== null) {
-            $warehousesQuery->whereIn('id', $assignedWarehouseIds);
+            $sourceWarehousesQuery->whereIn('id', $assignedWarehouseIds);
         }
 
-        $warehouses = $warehousesQuery->get(['id', 'name', 'code']);
+        $sourceWarehouses = $sourceWarehousesQuery->get(['id', 'name', 'code']);
+        $defaultSourceWarehouseId = $sourceWarehouses->count() === 1
+            ? $sourceWarehouses->first()->id
+            : null;
+
+        $destinationWarehouses = Warehouse::query()
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get(['id', 'name', 'code']);
 
         $products = Store::query()
             ->where('is_active', true)
             ->orderBy('name_product')
             ->get(['id', 'code_product', 'name_product']);
 
+        $warehouseStocks = WarehouseStock::query()
+            ->when(
+                $assignedWarehouseIds !== null,
+                fn ($query) => $query->whereIn('warehouse_id', $assignedWarehouseIds),
+            )
+            ->get([
+                'warehouse_id',
+                'store_id',
+                'kilos_available',
+                'metros_available',
+            ]);
 
         return Inertia::render('Transfers/Index', [
             'transfers' => $transfers,
-            'warehouses' => $warehouses,
+            'sourceWarehouses' => $sourceWarehouses,
+            'destinationWarehouses' => $destinationWarehouses,
+            'defaultSourceWarehouseId' => $defaultSourceWarehouseId,
             'products' => $products,
+            'warehouseStocks' => $warehouseStocks,
             'filters' => $request->only(['status']),
         ]);
     }
@@ -294,6 +316,34 @@ class TransferController extends Controller
                     'kilos_received' => $kilosReceived,
                     'metros_received' => $metrosReceived,
                 ]);
+
+                $kilosReturned = max(0, (float) $item->kilos_shipped - $kilosReceived);
+                $metrosReturned = max(0, (float) $item->metros_shipped - $metrosReceived);
+
+                if ($kilosReturned > 0 || $metrosReturned > 0) {
+                    $originStock = WarehouseStock::query()
+                        ->where('warehouse_id', $transfer->from_warehouse_id)
+                        ->where('store_id', $item->store_id)
+                        ->lockForUpdate()
+                        ->first();
+
+                    if (! $originStock) {
+                        $originStock = WarehouseStock::create([
+                            'warehouse_id' => $transfer->from_warehouse_id,
+                            'store_id' => $item->store_id,
+                            'kilos_available' => 0,
+                            'metros_available' => 0,
+                        ]);
+                    }
+
+                    if ($kilosReturned > 0) {
+                        $originStock->increment('kilos_available', $kilosReturned);
+                    }
+
+                    if ($metrosReturned > 0) {
+                        $originStock->increment('metros_available', $metrosReturned);
+                    }
+                }
 
                 if ($kilosReceived < (float) $item->kilos_shipped || $metrosReceived < (float) $item->metros_shipped) {
                     $isPartial = true;

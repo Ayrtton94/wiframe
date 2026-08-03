@@ -16,6 +16,13 @@ class WarehouseStock extends Model
         'metros_reserved',
     ];
 
+    protected $casts = [
+        'kilos_available' => 'integer',
+        'metros_available' => 'integer',
+        'kilos_reserved' => 'integer',
+        'metros_reserved' => 'integer',
+    ];
+
     public function warehouse(): BelongsTo
     {
         return $this->belongsTo(Warehouse::class);

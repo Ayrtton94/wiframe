@@ -2,7 +2,7 @@
 import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link, useForm } from '@inertiajs/vue3';
-import { computed } from 'vue';
+import { computed, watch } from 'vue';
 
 type PriceType = 'price' | 'public' | 'wholesale' | 'price_roll' | 'special';
 
@@ -15,6 +15,8 @@ type ProductOption = {
     wholesale_price: number;
     price_roll: number;
     special_price: number;
+    kilos: number;
+    metros: number;
 };
 
 const props = defineProps<{
@@ -32,6 +34,7 @@ const props = defineProps<{
     };
     customers: Array<{ id: number; name: string; dni: string }>;
     warehouses: Array<{ id: number; name: string; code: string }>;
+    defaultWarehouseId: number | null;
     warehouseStocks: Array<{
         warehouse_id: number;
         store_id: number;
@@ -51,9 +54,11 @@ type SaleItemForm = {
     search_text: string;
 };
 
+const defaultWarehouseId = props.defaultWarehouseId ? String(props.defaultWarehouseId) : props.warehouses.length === 1 ? String(props.warehouses[0].id) : '';
+
 const form = useForm({
     customer_id: '',
-    warehouse_id: '',
+    warehouse_id: defaultWarehouseId,
     notes: '',
     items: [{ store_id: '', unit: 'metros', quantity: 1, price_type: 'public' as PriceType, search_text: '' }] as SaleItemForm[],
 });
@@ -87,21 +92,46 @@ const warehouseStockMap = computed(() => {
     return map;
 });
 
+watch(
+    () => form.warehouse_id,
+    (warehouseId) => {
+        form.items.forEach((item: SaleItemForm) => {
+            if (!item.store_id) {
+                return;
+            }
+
+            if (!warehouseId) {
+                item.store_id = '';
+                item.search_text = '';
+                return;
+            }
+
+            const stock = getStockForItem(item);
+            const available = item.unit === 'kilos' ? stock?.kilos_available ?? 0 : stock?.metros_available ?? 0;
+
+            if (!stock || available <= 0) {
+                item.store_id = '';
+                item.search_text = '';
+            }
+        });
+    },
+);
+
 const getProductPriceOptions = (product?: ProductOption) => {
     if (!product) {
         return [];
     }
 
-    const options = [
-        { label: 'Precio base', value: 'price' as const, price: Number(product.price || 0) },
-        { label: 'Precio público', value: 'public' as const, price: Number(product.public_price || 0) },
-        { label: 'Precio mayorista', value: 'wholesale' as const, price: Number(product.wholesale_price || 0) },
+    const options: Array<{ label: string; value: PriceType; price: number }> = [
+        { label: 'Precio base', value: 'price', price: Number(product.price || 0) },
+        { label: 'Precio público', value: 'public', price: Number(product.public_price || 0) },
+        { label: 'Precio mayorista', value: 'wholesale', price: Number(product.wholesale_price || 0) },
     ];
 
     if (Number(product.price_roll || 0) > 0) {
         options.push({
             label: 'Precio por rollo',
-            value: 'price_roll' as const,
+            value: 'price_roll',
             price: Number(product.price_roll || 0),
         });
     }
@@ -109,7 +139,7 @@ const getProductPriceOptions = (product?: ProductOption) => {
     if (Number(product.special_price || 0) > 0) {
         options.push({
             label: 'Precio especial',
-            value: 'special' as const,
+            value: 'special',
             price: Number(product.special_price || 0),
         });
     }
@@ -145,21 +175,49 @@ const getStockForItem = (item: SaleItemForm) => {
     const warehouseId = Number(form.warehouse_id);
     const storeId = Number(item.store_id);
 
-    if (!warehouseId || !storeId) {
+    if (!storeId) {
         return null;
     }
 
-    return warehouseStockMap.value.get(`${warehouseId}:${storeId}`) ?? null;
+    if (!warehouseId) {
+        const product = props.products.find((entry: ProductOption) => entry.id === storeId);
+        return product
+            ? {
+                  kilos_available: Number(product.kilos || 0),
+                  metros_available: Number(product.metros || 0),
+              }
+            : null;
+    }
+
+    const stockFromMap = warehouseStockMap.value.get(`${warehouseId}:${storeId}`);
+    if (stockFromMap) {
+        return stockFromMap;
+    }
+
+    return null;
+};
+
+const getAvailableProductsForWarehouse = (item: SaleItemForm) => {
+    if (!form.warehouse_id) {
+        return props.products;
+    }
+
+    const warehouseId = Number(form.warehouse_id);
+    return props.products.filter((product: ProductOption) => {
+        const stock = warehouseStockMap.value.get(`${warehouseId}:${product.id}`);
+        return stock ? stock.kilos_available > 0 || stock.metros_available > 0 : false;
+    });
 };
 
 const getFilteredProducts = (item: SaleItemForm) => {
     const term = (item.search_text || '').trim().toLowerCase();
+    const sourceProducts = getAvailableProductsForWarehouse(item);
 
     if (!term) {
-        return props.products;
+        return sourceProducts;
     }
 
-    return props.products.filter((product: ProductOption) => {
+    return sourceProducts.filter((product: ProductOption) => {
         const haystack = `${product.code_product} ${product.name_product}`.toLowerCase();
         return haystack.includes(term);
     });
@@ -183,6 +241,15 @@ const selectProduct = (item: SaleItemForm, productId: number) => {
     item.search_text = `${product.code_product} - ${product.name_product}`;
 };
 
+const getAvailableForItem = (item: SaleItemForm) => {
+    const stock = getStockForItem(item);
+    if (!stock) {
+        return 0;
+    }
+
+    return item.unit === 'kilos' ? stock.kilos_available : stock.metros_available;
+};
+
 const getStockMessage = (item: SaleItemForm) => {
     const stock = getStockForItem(item);
 
@@ -190,7 +257,7 @@ const getStockMessage = (item: SaleItemForm) => {
         return 'Sin stock configurado para esta ubicación';
     }
 
-    const unitLabel = item.unit === 'kilos' ? 'kilos' : 'metros';
+    const unitLabel = item.unit === 'kilos' ? 'rollos' : 'metros';
     const available = item.unit === 'kilos' ? stock.kilos_available : stock.metros_available;
 
     return `Stock disponible: ${available} ${unitLabel}`;
@@ -207,7 +274,44 @@ const hasStockForItem = (item: SaleItemForm) => {
     return available > 0;
 };
 
+const clearSaleQuantityInvalidMessage = (event: Event) => {
+    const target = event.target as HTMLInputElement;
+    target.setCustomValidity('');
+};
+
+const setSaleQuantityInvalidMessage = (event: Event) => {
+    const target = event.target as HTMLInputElement;
+
+    if (target.validity.rangeUnderflow) {
+        target.setCustomValidity('El valor no puede ser negativo');
+    } else if (target.validity.rangeOverflow) {
+        target.setCustomValidity('No puedes solicitar más del stock disponible');
+    } else {
+        target.setCustomValidity('');
+    }
+};
+
+const clampSaleItemQuantity = (item: SaleItemForm, event: Event) => {
+    clearSaleQuantityInvalidMessage(event);
+    const quantity = Number(item.quantity || 0);
+
+    if (quantity < 0) {
+        item.quantity = 0 as any;
+        return;
+    }
+
+    const available = getAvailableForItem(item);
+    if (quantity > available) {
+        item.quantity = available as any;
+    }
+};
+
 const validateItemStock = (item: SaleItemForm) => {
+    if (!form.warehouse_id) {
+        window.alert('Selecciona un almacén o tienda antes de elegir productos.');
+        return false;
+    }
+
     const stock = getStockForItem(item);
 
     if (!stock) {
@@ -353,11 +457,13 @@ const submit = () => {
                                 v-model.number="item.quantity"
                                 type="number"
                                 min="0.001"
+                                :max="getAvailableForItem(item) || undefined"
                                 step="0.001"
                                 placeholder="Cantidad"
                                 class="rounded-lg border px-3 py-2"
                                 required
-                                @change="validateItemStock(item)"
+                                @input="clampSaleItemQuantity(item, $event)"
+                                @invalid="setSaleQuantityInvalidMessage"
                             />
 
                             <div v-if="getProductPriceOptions(productMap.get(Number(item.store_id))).length > 1" class="w-full">

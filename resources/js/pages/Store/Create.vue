@@ -49,6 +49,25 @@ const handleImage = (event: Event) => {
     }
 };
 
+const setNegativeMessage = (event: Event) => {
+    const target = event.target as HTMLInputElement;
+    if (target.validity.rangeUnderflow) {
+        target.setCustomValidity('El valor no puede ser negativo');
+    }
+};
+
+const clearInvalidMessage = (event: Event) => {
+    const target = event.target as HTMLInputElement;
+    target.setCustomValidity('');
+};
+
+const clampNumberField = (field: 'kilos' | 'metros' | 'minimum_stock' | 'price' | 'public_price' | 'wholesale_price' | 'price_roll' | 'special_price', event: Event) => {
+    clearInvalidMessage(event);
+    if (Number(form[field]) < 0) {
+        form[field] = 0 as any;
+    }
+};
+
 const submit = () => {
     form.post('/stores', {
         preserveScroll: true,
@@ -114,19 +133,19 @@ const submit = () => {
 
                             <div>
                                 <Label for="kilos" class="mb-1 block font-medium text-gray-700">Rollos</Label>
-                                <Input id="kilos" v-model="form.kilos" type="number" step="0.01" class="w-full" />
+                                <Input id="kilos" v-model.number="form.kilos" type="number" min="0" step="0.01" class="w-full" @input="clampNumberField('kilos', $event)" @invalid="setNegativeMessage" />
                                 <InputError :message="form.errors.kilos" class="mt-1" />
                             </div>
 
                             <div>
                                 <Label for="metros" class="mb-1 block font-medium text-gray-700">Metros</Label>
-                                <Input id="metros" v-model="form.metros" type="number" step="0.01" class="w-full" />
+                                <Input id="metros" v-model.number="form.metros" type="number" min="0" step="0.01" class="w-full" @input="clampNumberField('metros', $event)" @invalid="setNegativeMessage" />
                                 <InputError :message="form.errors.metros" class="mt-1" />
                             </div>
 
                             <div>
                                 <Label for="minimum_stock" class="mb-1 block font-medium text-gray-700">Stock Mínimo</Label>
-                                <Input id="minimum_stock" v-model="form.minimum_stock" type="number" class="w-full" />
+                                <Input id="minimum_stock" v-model.number="form.minimum_stock" type="number" min="0" class="w-full" @input="clampNumberField('minimum_stock', $event)" @invalid="setNegativeMessage" />
                                 <InputError :message="form.errors.minimum_stock" class="mt-1" />
                             </div>
                     </CardContent>
@@ -139,31 +158,31 @@ const submit = () => {
                     <div class="grid grid-cols-2 gap-4 mb-4">
                         <div>
                             <Label for="price" class="mb-1 block font-medium text-gray-700">Precio</Label>
-                            <Input id="price" v-model="form.price" type="number" step="0.01" class="w-full" />
+                            <Input id="price" v-model.number="form.price" type="number" min="0" step="0.01" class="w-full" @input="clampNumberField('price', $event)" @invalid="setNegativeMessage" />
                             <InputError :message="form.errors.price" class="mt-1" />
                         </div>
 
                         <div>
                             <Label for="public_price" class="mb-1 block font-medium text-gray-700">Precio Público</Label>
-                            <Input id="public_price" v-model="form.public_price" type="number" step="0.01" class="w-full" />
+                            <Input id="public_price" v-model.number="form.public_price" type="number" min="0" step="0.01" class="w-full" @input="clampNumberField('public_price', $event)" @invalid="setNegativeMessage" />
                             <InputError :message="form.errors.public_price" class="mt-1" />
                         </div>
 
                         <div>
                             <Label for="wholesale_price" class="mb-1 block font-medium text-gray-700">Precio Mayorista</Label>
-                            <Input id="wholesale_price" v-model="form.wholesale_price" type="number" step="0.01" class="w-full" />
+                            <Input id="wholesale_price" v-model.number="form.wholesale_price" type="number" min="0" step="0.01" class="w-full" @input="clampNumberField('wholesale_price', $event)" @invalid="setNegativeMessage" />
                             <InputError :message="form.errors.wholesale_price" class="mt-1" />
                         </div>
 
                         <div>
                             <Label for="price_roll" class="mb-1 block font-medium text-gray-700">Precio por Rollo</Label>
-                            <Input id="price_roll" v-model="form.price_roll" type="number" step="0.01" class="w-full" />
+                            <Input id="price_roll" v-model.number="form.price_roll" type="number" min="0" step="0.01" class="w-full" @input="clampNumberField('price_roll', $event)" @invalid="setNegativeMessage" />
                             <InputError :message="form.errors.price_roll" class="mt-1" />
                         </div>
 
                         <div class="col-span-2">
                             <Label for="special_price" class="mb-1 block font-medium text-gray-700">Precio Especial</Label>
-                            <Input id="special_price" v-model="form.special_price" type="number" step="0.01" class="w-full" />
+                            <Input id="special_price" v-model.number="form.special_price" type="number" min="0" step="0.01" class="w-full" @input="clampNumberField('special_price', $event)" @invalid="setNegativeMessage" />
                             <InputError :message="form.errors.special_price" class="mt-1" />
                         </div>
                     </div>

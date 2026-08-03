@@ -43,3 +43,36 @@ test('warehouse stock can be searched by product or warehouse', function () {
         ->where('filters.search', 'premium')
     );
 });
+
+test('warehouse stock products expose their base kilos and metros values', function () {
+    $user = User::factory()->create();
+
+    $warehouse = Warehouse::create([
+        'name' => 'Almacén Central',
+        'code' => 'AC',
+        'is_active' => true,
+    ]);
+
+    $user->warehouses()->attach($warehouse->id);
+
+    $product = Store::factory()->create([
+        'code_product' => 'XYZ123',
+        'name_product' => 'Tela base',
+        'kilos' => 12,
+        'metros' => 45,
+        'is_active' => true,
+    ]);
+
+    $response = $this
+        ->actingAs($user)
+        ->withoutMiddleware()
+        ->get(route('warehouse-stocks.index'));
+
+    $response->assertOk();
+    $response->assertInertia(fn (AssertableInertia $page) => $page
+        ->has('products', 1)
+        ->where('products.0.id', $product->id)
+        ->where('products.0.kilos', 12)
+        ->where('products.0.metros', 45)
+    );
+});

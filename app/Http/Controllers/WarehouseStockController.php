@@ -59,7 +59,7 @@ class WarehouseStockController extends Controller
         $products = Store::query()
             ->where('is_active', true)
             ->orderBy('name_product')
-            ->get(['id', 'code_product', 'name_product']);
+            ->get(['id', 'code_product', 'name_product', 'kilos', 'metros']);
 
         return Inertia::render('WarehouseStock/Index', [
             'stocks' => $stocks,
@@ -84,14 +84,43 @@ class WarehouseStockController extends Controller
             }
         }
 
+        // Ajustar el total del producto (`stores.kilos` / `stores.metros`) según la diferencia
+        $product = Store::findOrFail($validated['store_id']);
+
+        $existing = WarehouseStock::query()
+            ->where('warehouse_id', $validated['warehouse_id'])
+            ->where('store_id', $validated['store_id'])
+            ->first();
+
+        $kilosBefore = $existing ? (float) $existing->kilos_available : 0.0;
+        $metrosBefore = $existing ? (float) $existing->metros_available : 0.0;
+
+        $kilosNew = (int) round((float) ($validated['kilos_available'] ?? 0));
+        $metrosNew = (int) round((float) ($validated['metros_available'] ?? 0));
+
+        $deltaKilos = $kilosNew - $kilosBefore;
+        $deltaMetros = $metrosNew - $metrosBefore;
+
+        if ($deltaKilos > 0) {
+            $product->decrement('kilos', $deltaKilos);
+        } elseif ($deltaKilos < 0) {
+            $product->increment('kilos', abs($deltaKilos));
+        }
+
+        if ($deltaMetros > 0) {
+            $product->decrement('metros', $deltaMetros);
+        } elseif ($deltaMetros < 0) {
+            $product->increment('metros', abs($deltaMetros));
+        }
+
         WarehouseStock::updateOrCreate(
             [
                 'warehouse_id' => $validated['warehouse_id'],
                 'store_id' => $validated['store_id'],
             ],
             [
-                'kilos_available' => (float) ($validated['kilos_available'] ?? 0),
-                'metros_available' => (float) ($validated['metros_available'] ?? 0),
+                'kilos_available' => $kilosNew,
+                'metros_available' => $metrosNew,
                 'kilos_reserved' => 0,
                 'metros_reserved' => 0,
             ],
@@ -115,11 +144,35 @@ class WarehouseStockController extends Controller
             }
         }
 
+        // Ajustar el total del producto según diferencia entre valores nuevos y anteriores
+        $product = Store::findOrFail($validated['store_id']);
+
+        $kilosBefore = (float) $warehouseStock->kilos_available;
+        $metrosBefore = (float) $warehouseStock->metros_available;
+
+        $kilosNew = (int) round((float) ($validated['kilos_available'] ?? 0));
+        $metrosNew = (int) round((float) ($validated['metros_available'] ?? 0));
+
+        $deltaKilos = $kilosNew - $kilosBefore;
+        $deltaMetros = $metrosNew - $metrosBefore;
+
+        if ($deltaKilos > 0) {
+            $product->decrement('kilos', $deltaKilos);
+        } elseif ($deltaKilos < 0) {
+            $product->increment('kilos', abs($deltaKilos));
+        }
+
+        if ($deltaMetros > 0) {
+            $product->decrement('metros', $deltaMetros);
+        } elseif ($deltaMetros < 0) {
+            $product->increment('metros', abs($deltaMetros));
+        }
+
         $warehouseStock->update([
             'warehouse_id' => $validated['warehouse_id'],
             'store_id' => $validated['store_id'],
-            'kilos_available' => (float) ($validated['kilos_available'] ?? 0),
-            'metros_available' => (float) ($validated['metros_available'] ?? 0),
+            'kilos_available' => $kilosNew,
+            'metros_available' => $metrosNew,
             'kilos_reserved' => 0,
             'metros_reserved' => 0,
         ]);

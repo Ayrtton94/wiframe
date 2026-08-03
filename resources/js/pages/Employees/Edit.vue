@@ -99,6 +99,7 @@ const submit = () => {
                                            text-gray-800 dark:text-white
                                            border-gray-300 dark:border-gray-500
                                            focus:border-green-500 focus:ring-green-500"
+                                           required
                                     :disabled="form.processing"
                                 />
                                 <InputError
@@ -124,6 +125,7 @@ const submit = () => {
                                            text-gray-800 dark:text-white
                                            border-gray-300 dark:border-gray-500
                                            focus:border-green-500 focus:ring-green-500"
+                                           required
                                     :disabled="form.processing"
                                 />
                                 <InputError
@@ -149,6 +151,7 @@ const submit = () => {
                                            text-gray-800 dark:text-white
                                            border-gray-300 dark:border-gray-500
                                            focus:border-green-500 focus:ring-green-500"
+                                           required
                                     :disabled="form.processing"
                                 />
                                 <InputError
@@ -174,6 +177,7 @@ const submit = () => {
                                            text-gray-800 dark:text-white
                                            border-gray-300 dark:border-gray-500
                                            focus:border-green-500 focus:ring-green-500"
+                                           required
                                     :disabled="form.processing"
                                 />
                                 <InputError
@@ -182,7 +186,7 @@ const submit = () => {
                                 />
                             </div>
 
-                            <!-- Foto -->
+                            <!-- Foto 
                             <div>
                                 <Label
                                     for="foto"
@@ -202,12 +206,13 @@ const submit = () => {
                                         border-gray-300 dark:border-gray-500
                                         bg-white dark:bg-transparent
                                         text-gray-800 dark:text-white"
+                                    required
                                 />
                                 <InputError
                                     :message="form.errors.foto"
                                     class="mt-2"
                                 />
-                            </div>
+                            </div>-->
 
                         </div>
 

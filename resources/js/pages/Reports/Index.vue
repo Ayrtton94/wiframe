@@ -23,6 +23,8 @@ const props = defineProps<{
         warehouse_id: number;
         warehouse_name: string;
         warehouse_code: string;
+        sale_date: string;
+        seller_name: string;
         sales_count: number | string;
         total_sales: number | string;
         total_units: number | string;
@@ -79,6 +81,20 @@ const currency = (value: number | string) => {
         minimumFractionDigits: 2,
     }).format(Number(value || 0));
 };
+
+const formatNumber = (value: number | string, fractionDigits = 0) => {
+    const numberValue = Number(value);
+
+    if (Number.isNaN(numberValue)) {
+        return String(value);
+    }
+
+    if (fractionDigits <= 0 && Number.isInteger(numberValue)) {
+        return numberValue.toString();
+    }
+
+    return numberValue.toFixed(fractionDigits).replace(/\.0+$/, '');
+};
 </script>
 
 <template>
@@ -121,24 +137,28 @@ const currency = (value: number | string) => {
             </section>
 
             <section class="rounded-xl border bg-white p-4">
-                <h2 class="mb-3 text-lg font-semibold">Reporte de ventas por tienda/almacén</h2>
+                <h2 class="mb-3 text-lg font-semibold">Reporte de ventas por tienda</h2>
                 <div class="overflow-x-auto">
                     <table class="w-full min-w-[700px] divide-y divide-gray-200">
                         <thead class="bg-gray-50">
                             <tr>
                                 <th class="px-4 py-2 text-left text-xs font-semibold uppercase">Código</th>
                                 <th class="px-4 py-2 text-left text-xs font-semibold uppercase">Nombre</th>
+                                <th class="px-4 py-2 text-left text-xs font-semibold uppercase">Fecha</th>
+                                <th class="px-4 py-2 text-left text-xs font-semibold uppercase">Vendedor</th>
                                 <th class="px-4 py-2 text-right text-xs font-semibold uppercase">N° salida</th>
                                 <th class="px-4 py-2 text-right text-xs font-semibold uppercase">Unidades</th>
                                 <th class="px-4 py-2 text-right text-xs font-semibold uppercase">Total vendido</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-100">
-                            <tr v-for="row in props.sales_by_warehouse" :key="row.warehouse_id">
+                            <tr v-for="row in props.sales_by_warehouse" :key="`${row.warehouse_id}-${row.sale_date}-${row.seller_name}`">
                                 <td class="px-4 py-2 text-sm">{{ row.warehouse_code }}</td>
                                 <td class="px-4 py-2 text-sm">{{ row.warehouse_name }}</td>
-                                <td class="px-4 py-2 text-right text-sm">{{ Number(row.sales_count) }}</td>
-                                <td class="px-4 py-2 text-right text-sm">{{ Number(row.total_units).toFixed(2) }}</td>
+                                <td class="px-4 py-2 text-sm">{{ row.sale_date }}</td>
+                                <td class="px-4 py-2 text-sm">{{ row.seller_name }}</td>
+                                <td class="px-4 py-2 text-right text-sm">{{ formatNumber(row.sales_count) }}</td>
+                                <td class="px-4 py-2 text-right text-sm">{{ formatNumber(row.total_units, 2) }}</td>
                                 <td class="px-4 py-2 text-right text-sm font-medium">{{ currency(row.total_sales) }}</td>
                             </tr>
                             <tr v-if="props.sales_by_warehouse.length === 0">
@@ -160,7 +180,7 @@ const currency = (value: number | string) => {
                                 <th class="px-4 py-2 text-left text-xs font-semibold uppercase">Almacén</th>
                                 <th class="px-4 py-2 text-left text-xs font-semibold uppercase">Código prod.</th>
                                 <th class="px-4 py-2 text-left text-xs font-semibold uppercase">Producto</th>
-                                <th class="px-4 py-2 text-right text-xs font-semibold uppercase">Kilos disp.</th>
+                                <th class="px-4 py-2 text-right text-xs font-semibold uppercase">Royos</th>
                                 <th class="px-4 py-2 text-right text-xs font-semibold uppercase">Metros disp.</th>
                             </tr>
                         </thead>
@@ -169,8 +189,8 @@ const currency = (value: number | string) => {
                                 <td class="px-4 py-2 text-sm">{{ row.warehouse_code }} - {{ row.warehouse_name }}</td>
                                 <td class="px-4 py-2 text-sm">{{ row.code_product }}</td>
                                 <td class="px-4 py-2 text-sm">{{ row.name_product }}</td>
-                                <td class="px-4 py-2 text-right text-sm">{{ Number(row.kilos_available).toFixed(3) }}</td>
-                                <td class="px-4 py-2 text-right text-sm">{{ Number(row.metros_available).toFixed(3) }}</td>
+                                <td class="px-4 py-2 text-right text-sm">{{ formatNumber(row.kilos_available, 3) }}</td>
+                                <td class="px-4 py-2 text-right text-sm">{{ formatNumber(row.metros_available, 3) }}</td>
                             </tr>
                             <tr v-if="props.inventory_by_warehouse.length === 0">
                                 <td colspan="5" class="px-4 py-4 text-center text-sm text-gray-500">

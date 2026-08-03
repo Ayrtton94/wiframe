@@ -29,6 +29,20 @@ const breadcrumbs: BreadcrumbItem[] = [
     { title: 'Ventas', href: '/sales' },
     { title: props.sale.code, href: `/sales/${props.sale.id}` },
 ];
+
+const formatNumber = (value: number | string) => {
+    const numberValue = Number(value);
+
+    if (Number.isNaN(numberValue)) {
+        return String(value);
+    }
+
+    if (Number.isInteger(numberValue)) {
+        return numberValue.toString();
+    }
+
+    return numberValue.toFixed(2).replace(/\.00$/, '');
+};
 </script>
 
 <template>
@@ -99,12 +113,12 @@ const breadcrumbs: BreadcrumbItem[] = [
                                 <th
                                     class="px-4 py-3 text-left text-xs font-semibold uppercase"
                                 >
-                                    Unidad
+                                    Cantidad
                                 </th>
                                 <th
                                     class="px-4 py-3 text-left text-xs font-semibold uppercase"
                                 >
-                                    Cantidad
+                                    Unidad
                                 </th>
                                 <th
                                     class="px-4 py-3 text-left text-xs font-semibold uppercase"
@@ -125,16 +139,16 @@ const breadcrumbs: BreadcrumbItem[] = [
                                     {{ item.store.name_product }}
                                 </td>
                                 <td class="px-4 py-3 text-sm">
-                                    {{ item.unit }}
+                                    {{ formatNumber(item.quantity) }}
+                                </td>
+                                <td class="px-4 py-3 text-sm uppercase">
+                                    {{ item.unit === 'kilos' ? 'Rollos' : 'Metros' }}
                                 </td>
                                 <td class="px-4 py-3 text-sm">
-                                    {{ item.quantity }}
+                                    S/ {{ formatNumber(item.unit_price) }}
                                 </td>
                                 <td class="px-4 py-3 text-sm">
-                                    S/ {{ item.unit_price }}
-                                </td>
-                                <td class="px-4 py-3 text-sm">
-                                    S/ {{ item.line_total }}
+                                    S/ {{ formatNumber(item.line_total) }}
                                 </td>
                             </tr>
                         </tbody>

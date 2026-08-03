@@ -39,10 +39,10 @@ class SuppliersController extends Controller
      */
     public function create()
     {
-        return Inertia::render("Supplier/Create", [
-            'suppliers' => $suppliers,
-            'filters' => ['search' => $search]
-            ]);
+        return Inertia::render('Supplier/Create', [
+            'suppliers' => [],
+            'filters' => ['search' => ''],
+        ]);
     }
 
     /**

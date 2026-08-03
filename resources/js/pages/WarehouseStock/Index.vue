@@ -25,7 +25,7 @@ const props = defineProps<{
         to: number;
     };
     warehouses: Array<{ id: number; name: string; code: string }>;
-    products: Array<{ id: number; code_product: string; name_product: string }>;
+    products: Array<{ id: number; code_product: string; name_product: string; kilos: number | string; metros: number | string }>;
     filters: {
         search?: string;
     };
@@ -47,8 +47,22 @@ const selectedProduct = computed(() => {
         return null;
     }
 
-    return props.products.find((product: { id: number; code_product: string; name_product: string }) => product.id === Number(form.store_id)) ?? null;
+    return props.products.find((product: { id: number; code_product: string; name_product: string; kilos: number | string; metros: number | string }) => product.id === Number(form.store_id)) ?? null;
 });
+
+const handleSelectProduct = (event: Event) => {
+    productSearch.value = '';
+
+    const select = event.target as HTMLSelectElement | null;
+    const productId = select?.value ?? '';
+
+    if (!productId) {
+        form.store_id = '';
+        return;
+    }
+
+    form.store_id = productId;
+};
 
 const canSaveStock = computed(() => {
     const hasWarehouse = Boolean(form.warehouse_id);
@@ -56,7 +70,36 @@ const canSaveStock = computed(() => {
     const hasKilos = Number(form.kilos_available || 0) > 0;
     const hasMetros = Number(form.metros_available || 0) > 0;
 
-    return hasWarehouse && hasProduct && (hasKilos || hasMetros);
+    return hasWarehouse && hasProduct && (hasKilos || hasMetros) && !hasStockError.value;
+});
+
+const stockErrors = computed(() => {
+    const errors: string[] = [];
+
+    if (!selectedProduct.value) {
+        return errors;
+    }
+
+    const kilosAvailable = Number(form.kilos_available || 0);
+    const metrosAvailable = Number(form.metros_available || 0);
+    const kilosStock = Number(selectedProduct.value.kilos || 0);
+    const metrosStock = Number(selectedProduct.value.metros || 0);
+
+    if (kilosAvailable > kilosStock) {
+        errors.push(`Rollos no puede ser mayor a ${kilosStock}`);
+    }
+
+    if (metrosAvailable > metrosStock) {
+        errors.push(`Metros no puede ser mayor a ${metrosStock}`);
+    }
+
+    return errors;
+});
+
+const hasStockError = computed(() => stockErrors.value.length > 0);
+
+const stockZero = computed(() => {
+    return Number(form.kilos_available || 0) === 0 && Number(form.metros_available || 0) === 0;
 });
 
 const productSearch = ref('');
@@ -83,10 +126,37 @@ const clearProductSearch = () => {
 };
 
 const saveStock = () => {
+    if (hasStockError.value) {
+        window.alert(stockErrors.value.join('\n'));
+        return;
+    }
+
     form.post('/warehouse-stocks', {
         preserveScroll: true,
         onSuccess: () => form.reset(),
     });
+};
+
+const setNegativeMessage = (event: Event) => {
+    const target = event.target as HTMLInputElement;
+    if (target.validity.rangeUnderflow) {
+        target.setCustomValidity('El valor no puede ser negativo');
+    }
+    else if (target.validity.rangeOverflow) {
+        target.setCustomValidity('El valor no puede ser mayor al stock disponible');
+    }
+};
+
+const clearInvalidMessage = (event: Event) => {
+    const target = event.target as HTMLInputElement;
+    target.setCustomValidity('');
+};
+
+const clampNumberField = (field: 'kilos_available' | 'metros_available', event: Event) => {
+    clearInvalidMessage(event);
+    if (Number(form[field]) < 0) {
+        form[field] = 0 as any;
+    }
 };
 
 const submitFilters = () => {
@@ -170,7 +240,7 @@ const removeStock = (stockId: number) => {
                                 Limpiar
                             </button>
                         </div>
-                        <select v-model="form.store_id" class="w-full rounded border px-3 py-2" required>
+                        <select :value="form.store_id" class="w-full rounded border px-3 py-2" required @change="handleSelectProduct($event)">
                             <option disabled value="">Selecciona producto</option>
                             <option v-if="filteredProducts.length === 0" disabled value="">
                                 No hay productos que coincidan con la búsqueda
@@ -185,22 +255,52 @@ const removeStock = (stockId: number) => {
                 <div class="grid gap-3 md:grid-cols-2">
                     <div>
                         <label class="mb-1 block text-sm font-medium">Rollos disponibles</label>
-                        <input v-model.number="form.kilos_available" min="0" step="0.001" type="number" class="w-full rounded border px-3 py-2" />
+                        <input
+                            v-model.number="form.kilos_available"
+                            min="0"
+                            :max="selectedProduct ? Number(selectedProduct.kilos || 0) : undefined"
+                            step="0.001"
+                            type="number"
+                            class="w-full rounded border px-3 py-2"
+                            @input="clampNumberField('kilos_available', $event)"
+                            @invalid="setNegativeMessage"
+                        />
                     </div>
 
                     <div>
                         <label class="mb-1 block text-sm font-medium">Metros disponibles</label>
-                        <input v-model.number="form.metros_available" min="0" step="0.001" type="number" class="w-full rounded border px-3 py-2" />
+                        <input
+                            v-model.number="form.metros_available"
+                            min="0"
+                            :max="selectedProduct ? Number(selectedProduct.metros || 0) : undefined"
+                            step="0.001"
+                            type="number"
+                            class="w-full rounded border px-3 py-2"
+                            @input="clampNumberField('metros_available', $event)"
+                            @invalid="setNegativeMessage"
+                        />
                     </div>
                 </div>
 
                 <div v-if="selectedProduct" class="rounded border border-slate-200 bg-slate-50 p-3 text-sm text-slate-700">
                     <p class="font-medium">Producto seleccionado:</p>
                     <p>{{ selectedProduct.code_product }} - {{ selectedProduct.name_product }}</p>
+                    <p class="mt-1">Stock base del producto: {{ Number(selectedProduct.kilos || 0) }} rollos / {{ Number(selectedProduct.metros || 0) }} metros</p>
                 </div>
 
                 <div class="text-sm text-slate-600">
                     <p>Debes seleccionar un producto y asignar al menos un valor mayor a 0 en kilos o metros para guardar.</p>
+                </div>
+
+                <div v-if="stockZero && form.warehouse_id && form.store_id" class="rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+                    No se puede enviar si el stock de rollos y metros está en 0.
+                </div>
+
+                <div v-if="hasStockError" class="rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+                    <p class="font-semibold">No se puede guardar porque la cantidad excede el stock disponible:</p>
+                    <ul class="mt-1 list-disc pl-5">
+                        <li v-for="error in stockErrors" :key="error">{{ error }}</li>
+                    </ul>
                 </div>
 
                 <div>
@@ -257,7 +357,7 @@ const removeStock = (stockId: number) => {
                             <td class="px-4 py-3 text-sm">{{ stock.store.code_product }} - {{ stock.store.name_product }}</td>
                             <td class="px-4 py-3 text-sm">
                                 <div class="flex flex-col gap-1">
-                                    <span class="font-medium">{{ stock.kilos_available }} kg / {{ stock.metros_available }} m</span>
+                                    <span class="font-medium">{{ stock.kilos_available }} / {{ stock.metros_available }} m</span>
                                     <span :class="stockStatus(stock).className" class="inline-flex w-fit rounded-full px-2 py-1 text-xs font-semibold">
                                         {{ stockStatus(stock).label }}
                                     </span>

@@ -44,6 +44,7 @@ class ReportController extends Controller
 
         $salesByWarehouseQuery = DB::table('sales')
             ->join('warehouses', 'warehouses.id', '=', 'sales.warehouse_id')
+            ->join('users', 'users.id', '=', 'sales.sold_by')
             ->leftJoin('sale_items', 'sale_items.sale_id', '=', 'sales.id')
             ->whereBetween('sales.created_at', [$startDate, $endDate])
             ->when(
@@ -54,13 +55,23 @@ class ReportController extends Controller
                 $warehouseFilter > 0,
                 fn ($query) => $query->where('sales.warehouse_id', $warehouseFilter)
             )
-            ->groupBy('sales.warehouse_id', 'warehouses.name', 'warehouses.code')
-            ->orderBy('warehouses.name');
+            ->groupBy(
+                'sales.warehouse_id',
+                'warehouses.name',
+                'warehouses.code',
+                DB::raw('DATE(sales.created_at)'),
+                'users.name'
+            )
+            ->orderBy('warehouses.name')
+            ->orderBy(DB::raw('DATE(sales.created_at)'))
+            ->orderBy('users.name');
 
         $salesByWarehouse = $salesByWarehouseQuery->get([
             'sales.warehouse_id',
             'warehouses.name as warehouse_name',
             'warehouses.code as warehouse_code',
+            'users.name as seller_name',
+            DB::raw('DATE(sales.created_at) as sale_date'),
             DB::raw('COUNT(DISTINCT sales.id) as sales_count'),
             DB::raw('COALESCE(SUM(sales.total), 0) as total_sales'),
             DB::raw('COALESCE(SUM(sale_items.quantity), 0) as total_units'),
@@ -136,12 +147,14 @@ class ReportController extends Controller
                 $warehouseFilter > 0,
                 fn ($query) => $query->where('sales.warehouse_id', $warehouseFilter)
             )
-            ->groupBy('sales.warehouse_id', 'warehouses.name', 'warehouses.code')
+            ->groupBy('sales.warehouse_id', 'warehouses.name', 'warehouses.code', DB::raw('DATE(sales.created_at)'))
             ->orderBy('warehouses.name')
+            ->orderBy(DB::raw('DATE(sales.created_at)'))
             ->get([
                 'sales.warehouse_id',
                 'warehouses.name as warehouse_name',
                 'warehouses.code as warehouse_code',
+                DB::raw('DATE(sales.created_at) as sale_date'),
                 DB::raw('COUNT(DISTINCT sales.id) as sales_count'),
                 DB::raw('COALESCE(SUM(sales.total), 0) as total_sales'),
                 DB::raw('COALESCE(SUM(sale_items.quantity), 0) as total_units'),

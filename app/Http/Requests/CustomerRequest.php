@@ -32,7 +32,7 @@ class CustomerRequest extends FormRequest
             ],
             'name' => 'required|string|max:255',
             'email' => [
-                'required',
+                'nullable',
                 'email',
                 'max:255',
                 Rule::unique('customers', 'email')->ignore($customerId),
@@ -53,7 +53,6 @@ class CustomerRequest extends FormRequest
             'dni.regex' => 'El DNI debe contener entre 8 y 20 dígitos.',
             'dni.unique' => 'El DNI ya está registrado en el sistema.',
             'name.required' => 'El nombre es obligatorio.',
-            'email.required' => 'El correo electrónico es obligatorio.',
             'email.email' => 'El correo electrónico debe ser válido.',
             'email.unique' => 'El correo electrónico ya está registrado.',
             'phone.regex' => 'El teléfono no tiene un formato válido.',

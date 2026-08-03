@@ -118,6 +118,11 @@ const mainNavItems: NavItem[] = [
                   href: '/transfers',
                   icon: Boxes,
               },
+              {
+                  title: 'Productos',
+                  href: '/stores',
+                  icon: Boxes,
+              },
           ]
         : []),
 

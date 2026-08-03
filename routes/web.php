@@ -51,6 +51,7 @@ Route::middleware('auth')->group(function () {
 
     // ADMIN + ALMACEN: gestión de traslados
     Route::middleware('role:admin,almacen')->group(function () {
+        Route::resource('stores', StoreController::class);
         Route::get('transfers', [TransferController::class, 'index'])->name('transfers.index');
         Route::post('transfers', [TransferController::class, 'store'])->name('transfers.store');
         Route::get('transfers/{transfer}', [TransferController::class, 'show'])->name('transfers.show');
@@ -81,7 +82,7 @@ Route::middleware('auth')->group(function () {
 
     Route::post('stores/import', [StoreController::class, 'import'])
         ->name('stores.import')
-        ->middleware('permission:view_products');   
+        ->middleware(['role:admin,almacen', 'permission:view_products']);   
     
     Route::resource('catalog', CatalogController::class);
     Route::get('/catalog/{id}', [CatalogController::class, 'show']);

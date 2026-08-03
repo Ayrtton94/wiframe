@@ -2,6 +2,7 @@
 import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem } from '@/types';
 import { Head, useForm } from '@inertiajs/vue3';
+import { computed } from 'vue';
 
 const props = defineProps<{
     transfer: {
@@ -42,10 +43,15 @@ const breadcrumbs: BreadcrumbItem[] = [
     },
 ];
 
-const shipForm = useForm({ notes: '' });
-const approveForm = useForm({ notes: '' });
+type ReceiveItemForm = {
+    transfer_item_id: number;
+    kilos_received: number;
+    metros_received: number;
+};
 
-const receiveForm = useForm({
+const shipForm = useForm<{ notes: string }>({ notes: '' });
+const approveForm = useForm<{ notes: string }>({ notes: '' });
+const receiveForm = useForm<{ notes: string; items: ReceiveItemForm[] }>({
     notes: '',
     items: props.transfer.items.map((item) => ({
         transfer_item_id: item.id,
@@ -53,6 +59,10 @@ const receiveForm = useForm({
         metros_received: Number(item.metros_shipped || 0),
     })),
 });
+
+const approveErrors = computed(() => approveForm.errors as Record<string, string>);
+const shipErrors = computed(() => shipForm.errors as Record<string, string>);
+const receiveErrors = computed(() => receiveForm.errors as Record<string, string>);
 
 const shipTransfer = () => {
     shipForm.post(`/transfers/${props.transfer.id}/ship`, {
@@ -70,6 +80,47 @@ const receiveTransfer = () => {
     receiveForm.post(`/transfers/${props.transfer.id}/receive`, {
         preserveScroll: true,
     });
+};
+
+const clearInvalidReceiveMessage = (event: Event) => {
+    const target = event.target as HTMLInputElement;
+    target.setCustomValidity('');
+};
+
+const setInvalidReceiveMessage = (event: Event) => {
+    const target = event.target as HTMLInputElement;
+    if (target.validity.rangeUnderflow) {
+        target.setCustomValidity('El valor no puede ser negativo');
+    } else if (target.validity.rangeOverflow) {
+        target.setCustomValidity('No puedes recepcionar más que lo despachado');
+    } else {
+        target.setCustomValidity('');
+    }
+};
+
+const clampReceivedField = (item: ReceiveItemForm, field: 'kilos_received' | 'metros_received', event: Event) => {
+    clearInvalidReceiveMessage(event);
+    const value = Number(item[field] || 0);
+    if (value < 0) {
+        item[field] = 0 as any;
+        return;
+    }
+
+    const receiveItems = receiveForm.items as ReceiveItemForm[];
+    const index = receiveItems.findIndex((receiveItem) => receiveItem.transfer_item_id === item.transfer_item_id);
+    const shipped = props.transfer.items[index];
+
+    if (! shipped) {
+        return;
+    }
+
+    const maxValue = field === 'kilos_received'
+        ? shipped.kilos_shipped
+        : shipped.metros_shipped;
+
+    if (value > maxValue) {
+        item[field] = maxValue as any;
+    }
 };
 
 </script>
@@ -92,7 +143,6 @@ const receiveTransfer = () => {
                             <th class="px-4 py-3 text-left text-xs uppercase">Producto</th>
                             <th class="px-4 py-3 text-left text-xs uppercase">Solicitado</th>
                             <th class="px-4 py-3 text-left text-xs uppercase">Despachado</th>
-                            <th class="px-4 py-3 text-left text-xs uppercase">Recibido</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-200">
@@ -105,9 +155,6 @@ const receiveTransfer = () => {
                             </td>
                             <td class="px-4 py-3 text-sm">
                                 {{ item.kilos_shipped }} kg / {{ item.metros_shipped }} m
-                            </td>
-                            <td class="px-4 py-3 text-sm">
-                                {{ item.kilos_received }} kg / {{ item.metros_received }} m
                             </td>
                         </tr>
                     </tbody>
@@ -124,8 +171,8 @@ const receiveTransfer = () => {
                     placeholder="Notas de aprobación (opcional)"
                     class="w-full rounded border px-3 py-2"
                 />
-                <p v-if="approveForm.errors.transfer" class="text-sm text-red-600">
-                    {{ approveForm.errors.transfer }}
+                <p v-if="approveErrors.transfer" class="text-sm text-red-600">
+                    {{ approveErrors.transfer }}
                 </p>
                 <button
                     type="button"
@@ -148,11 +195,11 @@ const receiveTransfer = () => {
                     placeholder="Notas del despacho (opcional)"
                     class="w-full rounded border px-3 py-2"
                 />
-                <p v-if="shipForm.errors.transfer" class="text-sm text-red-600">
-                    {{ shipForm.errors.transfer }}
+                <p v-if="shipErrors.transfer" class="text-sm text-red-600">
+                    {{ shipErrors.transfer }}
                 </p>
-                <p v-if="shipForm.errors.stock" class="text-sm text-red-600">
-                    {{ shipForm.errors.stock }}
+                <p v-if="shipErrors.stock" class="text-sm text-red-600">
+                    {{ shipErrors.stock }}
                 </p>
                 <button
                     type="button"
@@ -178,17 +225,23 @@ const receiveTransfer = () => {
                         v-model.number="item.kilos_received"
                         type="number"
                         min="0"
+                        :max="props.transfer.items[index].kilos_shipped"
                         step="0.001"
                         class="rounded border px-3 py-2"
                         placeholder="Kilos recibidos"
+                        @input="clampReceivedField(item, 'kilos_received', $event)"
+                        @invalid="setInvalidReceiveMessage"
                     />
                     <input
                         v-model.number="item.metros_received"
                         type="number"
                         min="0"
+                        :max="props.transfer.items[index].metros_shipped"
                         step="0.001"
                         class="rounded border px-3 py-2"
                         placeholder="Metros recibidos"
+                        @input="clampReceivedField(item, 'metros_received', $event)"
+                        @invalid="setInvalidReceiveMessage"
                     />
                     <p class="text-xs text-slate-500 md:col-span-2">
                         Item {{ index + 1 }} · máximo: {{ props.transfer.items[index].kilos_shipped }} kg /
@@ -202,11 +255,11 @@ const receiveTransfer = () => {
                     placeholder="Notas de recepción (opcional)"
                     class="w-full rounded border px-3 py-2"
                 />
-                <p v-if="receiveForm.errors.transfer" class="text-sm text-red-600">
-                    {{ receiveForm.errors.transfer }}
+                <p v-if="receiveErrors.transfer" class="text-sm text-red-600">
+                    {{ receiveErrors.transfer }}
                 </p>
-                <p v-if="receiveForm.errors.items" class="text-sm text-red-600">
-                    {{ receiveForm.errors.items }}
+                <p v-if="receiveErrors.items" class="text-sm text-red-600">
+                    {{ receiveErrors.items }}
                 </p>
                 <button
                     type="button"

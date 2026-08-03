@@ -65,6 +65,7 @@ const submit = () => {
                                                    text-gray-800 dark:text-white
                                                    border-gray-300 dark:border-gray-500
                                                    focus:border-green-500 focus:ring-green-500"
+                                                   required
                                         />
                                         <InputError :message="form.errors.dni" />
                                     </td>
@@ -78,6 +79,7 @@ const submit = () => {
                                                    text-gray-800 dark:text-white
                                                    border-gray-300 dark:border-gray-500
                                                    focus:border-green-500 focus:ring-green-500"
+                                                   required
                                         />
                                         <InputError :message="form.errors.name" />
                                     </td>
@@ -92,7 +94,7 @@ const submit = () => {
                                                    bg-white dark:bg-transparent
                                                    text-gray-800 dark:text-white
                                                    border-gray-300 dark:border-gray-500
-                                                   focus:border-green-500 focus:ring-green-500"
+                                                   focus:border-green-500 focus:ring-green-500"                                                   
                                         />
                                         <InputError :message="form.errors.phone" />
                                     </td>
@@ -105,7 +107,7 @@ const submit = () => {
                                                    bg-white dark:bg-transparent
                                                    text-gray-800 dark:text-white
                                                    border-gray-300 dark:border-gray-500
-                                                   focus:border-green-500 focus:ring-green-500"
+                                                   focus:border-green-500 focus:ring-green-500"                                                   
                                         />
                                         <InputError :message="form.errors.email" />
                                     </td>
@@ -120,7 +122,7 @@ const submit = () => {
                                                    bg-white dark:bg-transparent
                                                    text-gray-800 dark:text-white
                                                    border-gray-300 dark:border-gray-500
-                                                   focus:border-green-500 focus:ring-green-500"
+                                                   focus:border-green-500 focus:ring-green-500"                                                   
                                         />
                                         <InputError :message="form.errors.address" />
                                     </td>
@@ -133,7 +135,7 @@ const submit = () => {
                                                    bg-white dark:bg-transparent
                                                    text-gray-800 dark:text-white
                                                    border-gray-300 dark:border-gray-500
-                                                   focus:border-green-500 focus:ring-green-500"
+                                                   focus:border-green-500 focus:ring-green-500"                                                   
                                         />
                                         <InputError :message="form.errors.position" />
                                     </td>

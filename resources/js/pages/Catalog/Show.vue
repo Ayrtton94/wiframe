@@ -118,7 +118,7 @@ const showImage = ref(false);
             <tr>
               <th class="px-4 py-3 text-left text-xs uppercase">Almacén</th>
               <th class="px-4 py-3 text-left text-xs uppercase">Código</th>
-              <th class="px-4 py-3 text-left text-xs uppercase">Kg disp.</th>
+              <th class="px-4 py-3 text-left text-xs uppercase">Rollos</th>
               <th class="px-4 py-3 text-left text-xs uppercase">M disp.</th>
             </tr>
           </thead>

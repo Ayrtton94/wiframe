@@ -84,6 +84,7 @@ const submit = () => {
                                            border-gray-300 dark:border-gray-500
                                            focus:border-green-500 focus:ring-green-500"
                                     :disabled="form.processing"
+                                    required
                                 />
                                 <InputError
                                     :message="form.errors.dni"
@@ -109,6 +110,7 @@ const submit = () => {
                                            border-gray-300 dark:border-gray-500
                                            focus:border-green-500 focus:ring-green-500"
                                     :disabled="form.processing"
+                                    required
                                 />
                                 <InputError
                                     :message="form.errors.name"
@@ -134,6 +136,7 @@ const submit = () => {
                                            border-gray-300 dark:border-gray-500
                                            focus:border-green-500 focus:ring-green-500"
                                     :disabled="form.processing"
+                                    required
                                 />
                                 <InputError
                                     :message="form.errors.phone"
@@ -159,6 +162,7 @@ const submit = () => {
                                            border-gray-300 dark:border-gray-500
                                            focus:border-green-500 focus:ring-green-500"
                                     :disabled="form.processing"
+                                    required
                                 />
                                 <InputError
                                     :message="form.errors.area"
