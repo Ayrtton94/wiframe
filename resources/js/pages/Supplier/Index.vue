@@ -63,65 +63,184 @@ const clearFilters = () => {
 </script>
 <template>
      <Head title="Listar Proveedores" />
+     ```vue
+<AppLayout :breadcrumbs="breadcrumbs">
+    <div class="flex h-full flex-1 flex-col gap-6 overflow-x-auto rounded-xl p-4">
 
-      <AppLayout :breadcrumbs="breadcrumbs">
-        <div class="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
+        <!-- Encabezado -->
+        <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+                <h1 class="text-2xl font-bold text-slate-800">
+                    Proveedores
+                </h1>
+                <p class="text-sm text-slate-500">
+                    Administra y consulta tus proveedores registrados.
+                </p>
+            </div>
+
+            <Link
+                href="/suppliers/create"
+                class="inline-flex items-center justify-center rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+            >
+                + Crear Nuevo
+            </Link>
+        </div>
+
+        <!-- Contenedor principal -->
+        <div class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+
+            <!-- Filtros -->
+            <div class="border-b border-slate-200 bg-slate-50/70 p-5">
+                <form
+                    class="flex flex-col gap-3 sm:flex-row sm:items-center"
+                    @submit.prevent="submitFilters"
+                >
+                    <div class="relative flex-1">
+                        <input
+                            v-model="filters.search"
+                            type="text"
+                            placeholder="Buscar por nombre o RUC..."
+                            class="w-full rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm text-slate-700 shadow-sm transition placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                        />
+                    </div>
+
+                    <div class="flex gap-2">
+                        <button
+                            type="submit"
+                            class="rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                        >
+                            Buscar
+                        </button>
+
+                        <button
+                            type="button"
+                            @click="clearFilters"
+                            class="rounded-lg border border-slate-300 bg-white px-5 py-2.5 text-sm font-medium text-slate-700 shadow-sm transition hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-300"
+                        >
+                            Limpiar
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Tabla -->
             <div class="overflow-x-auto">
-                <div class="flex flex-1 flex-col gap-2 md:flex-row md:items-end">
-                        <form class="flex flex-1 flex-col gap-2 md:flex-row" @submit.prevent="submitFilters">
-                            <input
-                                v-model="filters.search"
-                                class="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm shadow-sm focus:border-blue-500 focus:outline-none"
-                                placeholder="Buscar por nombre o RUC"
-                                type="text"
-                            />
-                            <button
-                                class="rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-blue-700"
-                                type="submit"
-                            >
-                                Buscar
-                            </button>
-                            <button
-                                class="rounded-lg border border-slate-300 px-4 py-2.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
-                                type="button"
-                                @click="clearFilters"
-                            >
-                                Limpiar
-                            </button>
-                        </form>
-                    </div>                
-                <div>
-                    <Link href="suppliers/create" class="mb-4 inline-block rounded bg-blue-500 px-4 py-2 text-white hover:bg-blue-600">
-                        Crear Nuevo
-                    </Link>
-                </div>
-
-                <table class="min-w-full divide-y divide-gray-200">
-                    <thead class="bg-gray-50">
+                <table class="min-w-full divide-y divide-slate-200">
+                    <thead class="bg-slate-100">
                         <tr>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">RUC</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Razon Social</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rubro/Categoria</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Teléfono Principal</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Correo Electrónico</th>  
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>                          
+                            <th class="whitespace-nowrap px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-slate-600">
+                                RUC
+                            </th>
+
+                            <th class="whitespace-nowrap px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-slate-600">
+                                Razón Social
+                            </th>
+
+                            <th class="whitespace-nowrap px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-slate-600">
+                                Rubro / Categoría
+                            </th>
+
+                            <th class="whitespace-nowrap px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-slate-600">
+                                Teléfono Principal
+                            </th>
+
+                            <th class="whitespace-nowrap px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-slate-600">
+                                Correo Electrónico
+                            </th>
+
+                            <th class="whitespace-nowrap px-6 py-4 text-center text-xs font-semibold uppercase tracking-wider text-slate-600">
+                                Acciones
+                            </th>
                         </tr>
                     </thead>
-                    <tbody class="bg-white divide-y divide-gray-200">
-                        <tr v-for="supplier in props.suppliers.data" :key="supplier.id">
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ supplier.ruc }}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ supplier.company_name }}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ supplier.category }}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ supplier.phone }}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ supplier.email }}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                <Link :href="`/suppliers/${supplier.id}/edit`" class="text-blue-500 hover:text-blue-700 mr-2">Editar</Link>
-                                <button @click="deleteSupplier(supplier.id)" class="text-red-500 hover:text-red-700 cursor-pointer">Eliminar</button>
+
+                    <tbody class="divide-y divide-slate-200 bg-white">
+                        <tr
+                            v-for="supplier in props.suppliers.data"
+                            :key="supplier.id"
+                            class="transition hover:bg-slate-50"
+                        >
+                            <td class="whitespace-nowrap px-6 py-4 text-sm font-medium text-slate-800">
+                                {{ supplier.ruc }}
+                            </td>
+
+                            <td class="px-6 py-4 text-sm font-medium text-slate-800">
+                                {{ supplier.company_name }}
+                            </td>
+
+                            <td class="px-6 py-4 text-sm text-slate-600">
+                                {{ supplier.category }}
+                            </td>
+
+                            <td class="whitespace-nowrap px-6 py-4 text-sm text-slate-600">
+                                {{ supplier.phone }}
+                            </td>
+
+                            <td class="px-6 py-4 text-sm text-slate-600">
+                                {{ supplier.email }}
+                            </td>
+
+                            <td class="whitespace-nowrap px-6 py-4 text-center text-sm">
+                                <div class="flex items-center justify-center gap-3">
+                                    <Link
+                                        :href="`/suppliers/${supplier.id}/edit`"
+                                        class="font-medium text-blue-600 transition hover:text-blue-800"
+                                    >
+                                        Editar
+                                    </Link>
+
+                                    <button
+                                        @click="deleteSupplier(supplier.id)"
+                                        type="button"
+                                        class="cursor-pointer font-medium text-red-600 transition hover:text-red-800"
+                                    >
+                                        Eliminar
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+
+                        <!-- Sin resultados -->
+                        <tr v-if="props.suppliers.data.length === 0">
+                            <td
+                                colspan="6"
+                                class="px-6 py-12 text-center"
+                            >
+                                <div class="flex flex-col items-center justify-center">
+                                    <div class="mb-3 rounded-full bg-slate-100 p-4">
+                                        <span class="text-2xl">📋</span>
+                                    </div>
+
+                                    <p class="text-sm font-medium text-slate-700">
+                                        No se encontraron proveedores
+                                    </p>
+
+                                    <p class="mt-1 text-sm text-slate-500">
+                                        Intenta realizar otra búsqueda.
+                                    </p>
+                                </div>
                             </td>
                         </tr>
                     </tbody>
-                    </table>
+                </table>
+            </div>
+
+            <!-- Footer de la tabla -->
+            <div class="border-t border-slate-200 bg-slate-50 px-6 py-4">
+                <div class="flex flex-col gap-2 text-sm text-slate-500 sm:flex-row sm:items-center sm:justify-between">
+                    <span>
+                        Mostrando
+                        <span class="font-medium text-slate-700">
+                            {{ props.suppliers.data.length }}
+                        </span>
+                        proveedores
+                    </span>
                 </div>
+            </div>
+
         </div>
-    </AppLayout>
+    </div>
+</AppLayout>
+```
+
 </template>

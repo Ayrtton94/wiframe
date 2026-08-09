@@ -8,11 +8,18 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 
-defineProps<{
+const props = defineProps<{
     suppliers: Array<{
         id: number;
         company_name: string;
     }>;
+    warehouses: Array<{
+        id: number;
+        name: string;
+        code: string;
+    }>;
+    warehouseSelectionRequired: boolean;
+    defaultWarehouseId: number | null;
 }>();
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -38,6 +45,7 @@ const form = useForm({
     special_price: 0,
     location: '',
     description: '',
+    warehouse_id: props.defaultWarehouseId ? String(props.defaultWarehouseId) : '',
     image_path: null as File | null,
     is_active: true,
 });
@@ -188,9 +196,22 @@ const submit = () => {
                     </div>
 
                     <div>
-                        <Label for="location" class="mb-1 block font-medium text-gray-700">Ubicación</Label>
-                        <Input id="location" v-model="form.location" type="text" class="w-full" />
-                        <InputError :message="form.errors.location" class="mt-1" />
+                        <Label for="warehouse_id" class="mb-1 block font-medium text-gray-700">Almacén para stock inicial</Label>
+                        <select
+                            v-if="props.warehouseSelectionRequired"
+                            id="warehouse_id"
+                            v-model="form.warehouse_id"
+                            class="w-full rounded border border-gray-300 px-3 py-2"
+                        >
+                            <option value="" disabled>Selecciona un almacén</option>
+                            <option v-for="warehouse in props.warehouses" :key="warehouse.id" :value="String(warehouse.id)">
+                                {{ warehouse.name }} ({{ warehouse.code }})
+                            </option>
+                        </select>
+                        <div v-else class="rounded border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-600">
+                            Se registrará stock automáticamente en {{ props.warehouses[0]?.name || 'el almacén asignado' }}.
+                        </div>
+                        <InputError :message="form.errors.warehouse_id" class="mt-1" />
                     </div>
                     
                     <div class="flex items-center gap-2">

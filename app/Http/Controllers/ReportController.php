@@ -31,6 +31,8 @@ class ReportController extends Controller
             : now()->endOfMonth()->endOfDay();
 
         $warehouseFilter = $request->integer('warehouse_id');
+        $sellerFilter = $request->integer('seller_id');
+        $search = trim((string) $request->input('search', ''));
 
         $warehousesQuery = Warehouse::query()
             ->where('is_active', true)
@@ -42,10 +44,26 @@ class ReportController extends Controller
 
         $warehouses = $warehousesQuery->get(['id', 'name', 'code']);
 
+        $sellers = DB::table('users')
+            ->join('sales', 'users.id', '=', 'sales.sold_by')
+            ->when(
+                $assignedWarehouseIds !== null,
+                fn ($query) => $query->whereIn('sales.warehouse_id', $assignedWarehouseIds)
+            )
+            ->when(
+                $warehouseFilter > 0,
+                fn ($query) => $query->where('sales.warehouse_id', $warehouseFilter)
+            )
+            ->distinct()
+            ->orderBy('users.name')
+            ->get(['users.id', 'users.name']);
+
         $salesByWarehouseQuery = DB::table('sales')
             ->join('warehouses', 'warehouses.id', '=', 'sales.warehouse_id')
             ->join('users', 'users.id', '=', 'sales.sold_by')
+            ->leftJoin('customers', 'customers.id', '=', 'sales.customer_id')
             ->leftJoin('sale_items', 'sale_items.sale_id', '=', 'sales.id')
+            ->leftJoin('stores', 'stores.id', '=', 'sale_items.store_id')
             ->whereBetween('sales.created_at', [$startDate, $endDate])
             ->when(
                 $assignedWarehouseIds !== null,
@@ -54,6 +72,19 @@ class ReportController extends Controller
             ->when(
                 $warehouseFilter > 0,
                 fn ($query) => $query->where('sales.warehouse_id', $warehouseFilter)
+            )
+            ->when(
+                $sellerFilter > 0,
+                fn ($query) => $query->where('sales.sold_by', $sellerFilter)
+            )
+            ->when(
+                $search !== '',
+                fn ($query) => $query->where(function ($query) use ($search) {
+                    $query->where('sales.code', 'like', "%{$search}%")
+                        ->orWhere('customers.name', 'like', "%{$search}%")
+                        ->orWhere('stores.code_product', 'like', "%{$search}%")
+                        ->orWhere('stores.name_product', 'like', "%{$search}%");
+                })
             )
             ->groupBy(
                 'sales.warehouse_id',
@@ -108,8 +139,11 @@ class ReportController extends Controller
                 'start_date' => $startDate->toDateString(),
                 'end_date' => $endDate->toDateString(),
                 'warehouse_id' => $warehouseFilter > 0 ? $warehouseFilter : null,
+                'seller_id' => $sellerFilter > 0 ? $sellerFilter : null,
+                'search' => $search,
             ],
             'warehouses' => $warehouses,
+            'sellers' => $sellers,
             'sales_by_warehouse' => $salesByWarehouse,
             'inventory_by_warehouse' => $inventoryByWarehouse,
         ]);
@@ -134,10 +168,15 @@ class ReportController extends Controller
             : now()->endOfMonth()->endOfDay();
 
         $warehouseFilter = $request->integer('warehouse_id');
+        $sellerFilter = $request->integer('seller_id');
+        $search = trim((string) $request->input('search', ''));
 
         $salesByWarehouse = DB::table('sales')
             ->join('warehouses', 'warehouses.id', '=', 'sales.warehouse_id')
+            ->join('users', 'users.id', '=', 'sales.sold_by')
+            ->leftJoin('customers', 'customers.id', '=', 'sales.customer_id')
             ->leftJoin('sale_items', 'sale_items.sale_id', '=', 'sales.id')
+            ->leftJoin('stores', 'stores.id', '=', 'sale_items.store_id')
             ->whereBetween('sales.created_at', [$startDate, $endDate])
             ->when(
                 $assignedWarehouseIds !== null,
@@ -147,9 +186,23 @@ class ReportController extends Controller
                 $warehouseFilter > 0,
                 fn ($query) => $query->where('sales.warehouse_id', $warehouseFilter)
             )
-            ->groupBy('sales.warehouse_id', 'warehouses.name', 'warehouses.code', DB::raw('DATE(sales.created_at)'))
+            ->when(
+                $sellerFilter > 0,
+                fn ($query) => $query->where('sales.sold_by', $sellerFilter)
+            )
+            ->when(
+                $search !== '',
+                fn ($query) => $query->where(function ($query) use ($search) {
+                    $query->where('sales.code', 'like', "%{$search}%")
+                        ->orWhere('customers.name', 'like', "%{$search}%")
+                        ->orWhere('stores.code_product', 'like', "%{$search}%")
+                        ->orWhere('stores.name_product', 'like', "%{$search}%");
+                })
+            )
+            ->groupBy('sales.warehouse_id', 'warehouses.name', 'warehouses.code', DB::raw('DATE(sales.created_at)'), 'users.name')
             ->orderBy('warehouses.name')
             ->orderBy(DB::raw('DATE(sales.created_at)'))
+            ->orderBy('users.name')
             ->get([
                 'sales.warehouse_id',
                 'warehouses.name as warehouse_name',
@@ -191,6 +244,8 @@ class ReportController extends Controller
                 'start_date' => $startDate->toDateString(),
                 'end_date' => $endDate->toDateString(),
                 'warehouse_id' => $warehouseFilter > 0 ? $warehouseFilter : null,
+                'seller_id' => $sellerFilter > 0 ? $sellerFilter : null,
+                'search' => $search,
             ]),
             'reporte-'.now()->format('Ymd_His').'.xlsx'
         );

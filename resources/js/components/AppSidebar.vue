@@ -48,7 +48,7 @@ const mainNavItems: NavItem[] = [
                   icon: Boxes,
               },
               {
-                  title: 'Almacenes',
+                  title: 'Creación de almacenes',
                   href: '/warehouses',
                   icon: Boxes,
               },

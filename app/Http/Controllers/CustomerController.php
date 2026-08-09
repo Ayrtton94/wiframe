@@ -41,7 +41,17 @@ class CustomerController extends Controller
      */
     public function show(Customer $customer)
     {
-        //
+        return Inertia::render("Customer/Show", [
+            'customer' => [
+                'id' => $customer->id,
+                'dni' => $customer->dni,
+                'name' => $customer->name,
+                'phone' => $customer->phone,
+                'email' => $customer->email,
+                'address' => $customer->address,
+                'position' => $customer->position,
+            ],
+        ]);
     }
 
     /**

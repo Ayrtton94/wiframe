@@ -43,6 +43,7 @@ class StoreRequest extends FormRequest
             'special_price' => 'nullable|numeric|min:0|max:999999.99',
             'location' => 'nullable|string|max:255',
             'description' => 'nullable|string|max:1000',
+            'warehouse_id' => ['nullable', 'integer', 'exists:warehouses,id'],
             'image' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
             'is_active' => 'nullable|boolean',
         ];

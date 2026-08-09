@@ -216,7 +216,7 @@ const removeStock = (stockId: number) => {
     <AppLayout :breadcrumbs="breadcrumbs">
         <div class="flex h-full flex-1 flex-col gap-4 rounded-xl p-4">
 
-            <div v-if="isAdmin" class="rounded border bg-white p-4">
+            <div v-if="isAdmin" class="rounded border bg-white p-4" hidden>
                 <h2 class="mb-3 text-lg font-semibold">Asignar stock inicial / actualización</h2>
 
                 <form class="space-y-4" @submit.prevent="saveStock">

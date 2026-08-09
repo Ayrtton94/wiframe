@@ -25,41 +25,164 @@ const props = defineProps<{
 </script>
 <template>
      <Head title="Listar Cliente" />
+     ```vue
+<AppLayout :breadcrumbs="breadcrumbs">
+    <div class="flex h-full flex-1 flex-col gap-6 overflow-x-auto rounded-xl p-4">
 
-      <AppLayout :breadcrumbs="breadcrumbs">
-        <div class="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
+        <!-- Encabezado -->
+        <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+                <h1 class="text-2xl font-bold text-slate-800">
+                    Empleados
+                </h1>
+
+                <p class="text-sm text-slate-500">
+                    Administra la información de los empleados registrados.
+                </p>
+            </div>
+
+            <Link
+                href="/employees/create"
+                class="inline-flex items-center justify-center rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+            >
+                + Crear Nuevo
+            </Link>
+        </div>
+
+        <!-- Card principal -->
+        <div class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+
             <div class="overflow-x-auto">
-                <div>
-                    <Link href="employees/create" class="mb-4 inline-block rounded bg-blue-500 px-4 py-2 text-white hover:bg-blue-600">
-                        Crear Nuevo
-                    </Link>
-                </div>
+                <table class="min-w-full divide-y divide-slate-200">
 
-                <table class="min-w-full divide-y divide-gray-200">
-                    <thead class="bg-gray-50">
+                    <!-- Encabezado de tabla -->
+                    <thead class="bg-slate-100">
                         <tr>
-                            <th class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Numero de Identificacion</th>
-                            <th class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Nombre</th>
-                            <th class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Área</th>
-                            <th class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Teléfono</th>
-                            <th class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Acciones</th>
+                            <th
+                                class="whitespace-nowrap px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-slate-600"
+                            >
+                                Número de Identificación
+                            </th>
+
+                            <th
+                                class="whitespace-nowrap px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-slate-600"
+                            >
+                                Nombre
+                            </th>
+
+                            <th
+                                class="whitespace-nowrap px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-slate-600"
+                            >
+                                Área
+                            </th>
+
+                            <th
+                                class="whitespace-nowrap px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-slate-600"
+                            >
+                                Teléfono
+                            </th>
+
+                            <th
+                                class="whitespace-nowrap px-6 py-4 text-center text-xs font-semibold uppercase tracking-wider text-slate-600"
+                            >
+                                Acciones
+                            </th>
                         </tr>
                     </thead>
-                    <tbody class="bg-white divide-y divide-gray-200">
-                        <tr v-for="employees in props.employees" :key="employees.id">
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ employees.dni }}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ employees.name }}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ employees.area }}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ employees.phone }}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                <Link :href="`/employees/${employees.id}/edit`" class="text-blue-600 hover:text-blue-900 mr-4">Editar</Link>
-                                <Link :href="`/employees/${employees.id}`" method="delete" as="button" class="text-red-500 hover:text-red-700">Eliminar</Link>
+
+                    <!-- Datos -->
+                    <tbody class="divide-y divide-slate-200 bg-white">
+
+                        <tr
+                            v-for="employee in props.employees"
+                            :key="employee.id"
+                            class="transition hover:bg-slate-50"
+                        >
+                            <!-- Identificación -->
+                            <td class="whitespace-nowrap px-6 py-4 text-sm font-medium text-slate-800">
+                                {{ employee.dni }}
+                            </td>
+
+                            <!-- Nombre -->
+                            <td class="px-6 py-4 text-sm font-medium text-slate-800">
+                                {{ employee.name }}
+                            </td>
+
+                            <!-- Área -->
+                            <td class="whitespace-nowrap px-6 py-4 text-sm text-slate-600">
+                                {{ employee.area }}
+                            </td>
+
+                            <!-- Teléfono -->
+                            <td class="whitespace-nowrap px-6 py-4 text-sm text-slate-600">
+                                {{ employee.phone }}
+                            </td>
+
+                            <!-- Acciones -->
+                            <td class="whitespace-nowrap px-6 py-4 text-center">
+                                <div class="flex items-center justify-center gap-3">
+
+                                    <Link
+                                        :href="`/employees/${employee.id}/edit`"
+                                        class="font-medium text-blue-600 transition hover:text-blue-800"
+                                    >
+                                        Editar
+                                    </Link>
+
+                                    <Link
+                                        :href="`/employees/${employee.id}`"
+                                        method="delete"
+                                        as="button"
+                                        class="font-medium text-red-600 transition hover:text-red-800"
+                                    >
+                                        Eliminar
+                                    </Link>
+
+                                </div>
                             </td>
                         </tr>
+
+                        <!-- Sin resultados -->
+                        <tr v-if="props.employees.length === 0">
+                            <td
+                                colspan="5"
+                                class="px-6 py-14 text-center"
+                            >
+                                <div class="flex flex-col items-center justify-center">
+
+                                    <div class="mb-3 rounded-full bg-slate-100 p-4">
+                                        <span class="text-2xl">👤</span>
+                                    </div>
+
+                                    <p class="text-sm font-medium text-slate-700">
+                                        No hay empleados registrados
+                                    </p>
+
+                                    <p class="mt-1 text-sm text-slate-500">
+                                        Los empleados que registres aparecerán aquí.
+                                    </p>
+
+                                </div>
+                            </td>
+                        </tr>
+
                     </tbody>
                 </table>
             </div>
+
+            <!-- Footer -->
+            <div class="border-t border-slate-200 bg-slate-50 px-6 py-4">
+                <p class="text-sm text-slate-500">
+                    Total de empleados:
+                    <span class="font-semibold text-slate-700">
+                        {{ props.employees.length }}
+                    </span>
+                </p>
+            </div>
+
         </div>
-        
-        </AppLayout>
+    </div>
+</AppLayout>
+```
+
 </template>

@@ -44,7 +44,7 @@ const props = defineProps<{
     products: ProductOption[];
 }>();
 
-const breadcrumbs: BreadcrumbItem[] = [{ title: 'Ventas', href: '/sales' }];
+const breadcrumbs: BreadcrumbItem[] = [{ title: 'Salidas', href: '/sales' }];
 
 type SaleItemForm = {
     store_id: string;
@@ -366,7 +366,7 @@ const submit = () => {
     <AppLayout :breadcrumbs="breadcrumbs">
         <div class="flex h-full flex-1 flex-col gap-6 rounded-xl p-4">
             <h1 class="text-2xl font-semibold text-slate-900">
-                Salidas básicas
+                Salidas
             </h1>
 
             <section class="rounded-xl border bg-white p-5 shadow-sm">

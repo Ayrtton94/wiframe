@@ -5,7 +5,9 @@ namespace App\Http\Controllers;
 use Inertia\Inertia;
 use App\Models\Store;
 use App\Models\Suppliers;
+use App\Models\Warehouse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
@@ -51,10 +53,38 @@ class StoreController extends Controller
      */
     public function create()
     {
+        $user = auth()->user();
+        $warehouses = collect();
+        $warehouseSelectionRequired = false;
+        $defaultWarehouseId = null;
+
+        if ($user && $user->hasRole('admin')) {
+            $warehouses = Warehouse::query()
+                ->where('is_active', true)
+                ->orderBy('name')
+                ->get(['id', 'name', 'code']);
+            $warehouseSelectionRequired = true;
+        } elseif ($user) {
+            $assignedWarehouseIds = $user->warehouses()
+                ->where('warehouses.is_active', true)
+                ->pluck('warehouses.id');
+
+            $warehouses = Warehouse::query()
+                ->whereIn('id', $assignedWarehouseIds)
+                ->where('is_active', true)
+                ->orderBy('name')
+                ->get(['id', 'name', 'code']);
+
+            $defaultWarehouseId = $warehouses->first()?->id;
+        }
+
         return Inertia::render('Store/Create', [
             'suppliers' => Suppliers::query()
                 ->orderBy('company_name')
                 ->get(['id', 'company_name']),
+            'warehouses' => $warehouses,
+            'warehouseSelectionRequired' => $warehouseSelectionRequired,
+            'defaultWarehouseId' => $defaultWarehouseId,
         ]);
     }
     
@@ -64,17 +94,76 @@ class StoreController extends Controller
     public function store(StoreRequest $request)
     {
         $validated = $request->validated();
-        unset($validated['image'], $validated['image_path']);
+        unset($validated['image'], $validated['image_path'], $validated['warehouse_id']);
         $validated['is_active'] = $request->boolean('is_active');
 
+        $warehouse = $this->resolveWarehouseForStoreCreation($request, $request->input('warehouse_id'));
         $imageFile = $request->file('image') ?? $request->file('image_path');
         if ($imageFile) {
             $validated['image_path'] = $imageFile->store('stores', 'public');
         }
 
-        Store::create($validated);
+        DB::transaction(function () use (&$validated, $warehouse) {
+            $store = Store::create($validated);
+
+            if ($warehouse) {
+                $store->warehouseStocks()->updateOrCreate(
+                    [
+                        'warehouse_id' => $warehouse->id,
+                        'store_id' => $store->id,
+                    ],
+                    [
+                        'kilos_available' => (float) ($validated['kilos'] ?? 0),
+                        'metros_available' => (float) ($validated['metros'] ?? 0),
+                        'kilos_reserved' => 0,
+                        'metros_reserved' => 0,
+                    ]
+                );
+            }
+        });
 
         return redirect()->route('stores.index')->with('success', 'Producto creado exitosamente.');
+    }
+
+    private function resolveWarehouseForStoreCreation(Request $request, ?int $requestedWarehouseId = null): ?Warehouse
+    {
+        $user = auth()->user();
+
+        if ($user && $user->hasRole('admin')) {
+            if ($requestedWarehouseId) {
+                return Warehouse::query()
+                    ->where('id', $requestedWarehouseId)
+                    ->where('is_active', true)
+                    ->first();
+            }
+
+            return Warehouse::query()
+                ->where('is_active', true)
+                ->orderBy('name')
+                ->first();
+        }
+
+        $assignedWarehouseIds = $user?->warehouses()
+            ->where('warehouses.is_active', true)
+            ->pluck('warehouses.id')
+            ->all() ?? [];
+
+        if ($requestedWarehouseId && in_array($requestedWarehouseId, $assignedWarehouseIds, true)) {
+            return Warehouse::query()
+                ->where('id', $requestedWarehouseId)
+                ->where('is_active', true)
+                ->first();
+        }
+
+        if (empty($assignedWarehouseIds)) {
+            return null;
+        }
+
+        return Warehouse::query()
+            ->whereIn('id', $assignedWarehouseIds)
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->first();
     }
 
     /**

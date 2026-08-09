@@ -95,178 +95,407 @@ const clearFilters = () => {
 
 <template>
     <Head title="Inventario de Productos" />
+    ```vue
+<AppLayout :breadcrumbs="breadcrumbs">
+    <div class="flex h-full flex-1 flex-col gap-6 overflow-x-auto rounded-xl p-4">
 
-    <AppLayout :breadcrumbs="breadcrumbs">
-        <div class="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
-            <div class="overflow-x-auto">
-                <div class="mb-4 flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
-                    <div class="flex flex-1 flex-col gap-2 md:flex-row md:items-end">
-                        <form class="flex flex-1 flex-col gap-2 md:flex-row" @submit.prevent="submitFilters">
-                            <input
-                                v-model="filters.search"
-                                class="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm shadow-sm focus:border-blue-500 focus:outline-none"
-                                placeholder="Buscar por código, nombre o proveedor"
-                                type="text"
-                            />
-                            <button
-                                class="rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-blue-700"
-                                type="submit"
-                            >
-                                Buscar
-                            </button>
-                            <button
-                                class="rounded-lg border border-slate-300 px-4 py-2.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
-                                type="button"
-                                @click="clearFilters"
-                            >
-                                Limpiar
-                            </button>
-                        </form>
-                    </div>
-                    <div class="flex items-center gap-3">
-                        <Link href="stores/create" class="inline-block rounded bg-blue-500 px-4 py-2 text-white hover:bg-blue-600">
-                            Crear Nuevo
-                        </Link>
-                    </div>
-                </div>
-                
-<div class="mb-4 flex justify-end">
-                    <Dialog v-model:open="isImportDialogOpen">
-                        <DialogTrigger as-child>
-                            <button
-                                class="rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-emerald-700"
-                                type="button"
-                            >
-                                Importar Excel
-                            </button>
-                        </DialogTrigger>
-                        <DialogContent class="sm:max-w-lg">
-                            <DialogHeader>
-                                <DialogTitle>Importar productos</DialogTitle>
-                                <DialogDescription>
-                                    Sube un archivo CSV exportado desde Excel para crear o actualizar productos en la base de datos.
-                                </DialogDescription>
-                            </DialogHeader>
+        <!-- Encabezado -->
+        <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+                <h1 class="text-2xl font-bold text-slate-800">
+                    Productos
+                </h1>
 
-                            <form class="space-y-3" @submit.prevent="submitImport">
-                                <div>
-                                    <label class="mb-1 block text-sm font-medium text-slate-700">
-                                        Archivo CSV
-                                    </label>
-                                    <input
-                                        accept=".csv,.txt"
-                                        class="block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
-                                        type="file"
-                                        @change="handleFileChange"
-                                    />
-                                    <p class="mt-2 text-xs text-slate-500">
-                                        Columnas requeridas: code_product, name_product, fabric_type, color, proveedor, kilos, metros, minimum_stock, price, public_price, wholesale_price, price_roll, special_price, location, description.
-                                    </p>
-                                    <InputError :message="importForm.errors.file" class="mt-2" />
-                                </div>
+                <p class="text-sm text-slate-500">
+                    Administra el inventario, precios y estado de tus productos.
+                </p>
+            </div>
 
-                                <DialogFooter>
-                                    <button
-                                        class="rounded-lg border border-slate-300 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
-                                        type="button"
-                                        @click="isImportDialogOpen = false"
-                                    >
-                                        Cancelar
-                                    </button>
-                                    <button
-                                        :disabled="importForm.processing || !importForm.file"
-                                        class="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
-                                        type="submit"
-                                    >
-                                        {{ importForm.processing ? 'Importando...' : 'Importar' }}
-                                    </button>
-                                </DialogFooter>
-                            </form>
-                        </DialogContent>
-                    </Dialog>
-                </div>
+            <div class="flex flex-wrap gap-2">
+                <Dialog v-model:open="isImportDialogOpen">
+                    <DialogTrigger as-child>
+                        <button
+                            type="button"
+                            class="inline-flex items-center justify-center rounded-lg bg-emerald-600 px-5 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2"
+                        >
+                            Importar Excel
+                        </button>
+                    </DialogTrigger>
 
-                <table class="min-w-full divide-y divide-gray-200">
-                    <thead class="bg-gray-50">
-                        <tr>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Imagen</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Código</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nombre</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tipo de Tela</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Color</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Proveedor</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Precio</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Precio Mayorista</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Precio Público</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rollo</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Metros</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody class="bg-white divide-y divide-gray-200">
-                        <tr v-for="product in products.data" :key="product.id">
-                            <td class="px-6 py-4 whitespace-nowrap text-sm">
-                                <img v-if="product.image_url" :src="product.image_url" alt="Imagen producto" class="h-12 w-12 rounded object-cover">
-                                <div v-else class="h-12 w-12 rounded bg-gray-100" aria-hidden="true"></div>
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ product.code_product }}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ product.name_product }}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ product.fabric_type }}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ product.color }}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ product.proveedor }}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${{ product.price }}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${{ product.wholesale_price }}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${{ product.public_price }}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ product.kilos }}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ product.metros }}</td>
-                             <td class="px-6 py-4 whitespace-nowrap text-sm">
-                                <span
-                                    :class="product.is_active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'"
-                                    class="inline-flex rounded-full px-2 py-1 text-xs font-semibold"
+                    <DialogContent class="sm:max-w-lg">
+                        <DialogHeader>
+                            <DialogTitle>
+                                Importar productos
+                            </DialogTitle>
+
+                            <DialogDescription>
+                                Sube un archivo CSV exportado desde Excel para crear o actualizar productos en la base de datos.
+                            </DialogDescription>
+                        </DialogHeader>
+
+                        <form
+                            class="space-y-5"
+                            @submit.prevent="submitImport"
+                        >
+                            <div>
+                                <label
+                                    class="mb-2 block text-sm font-medium text-slate-700"
                                 >
-                                    {{ product.is_active ? 'Activo' : 'Desactivado' }}
-                                </span>
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                               <Link :href="`/stores/${product.id}/edit`" class="text-blue-500 hover:text-blue-700 mr-2">Editar</Link>
+                                    Archivo CSV
+                                </label>
+
+                                <input
+                                    accept=".csv,.txt"
+                                    type="file"
+                                    @change="handleFileChange"
+                                    class="block w-full cursor-pointer rounded-lg border border-slate-300 bg-white text-sm text-slate-700 file:mr-4 file:border-0 file:bg-slate-100 file:px-4 file:py-2.5 file:text-sm file:font-medium file:text-slate-700 hover:file:bg-slate-200"
+                                />
+
+                                <p class="mt-2 text-xs leading-5 text-slate-500">
+                                    Columnas requeridas:
+                                    code_product, name_product, fabric_type, color,
+                                    proveedor, kilos, metros, minimum_stock, price,
+                                    public_price, wholesale_price, price_roll,
+                                    special_price, location, description.
+                                </p>
+
+                                <InputError
+                                    :message="importForm.errors.file"
+                                    class="mt-2"
+                                />
+                            </div>
+
+                            <DialogFooter>
                                 <button
                                     type="button"
-                                    class="text-sm font-medium"
-                                    :class="product.is_active ? 'text-red-500 hover:text-red-700' : 'text-green-600 hover:text-green-800'"
-                                    @click="toggleProductStatus(product)"
+                                    @click="isImportDialogOpen = false"
+                                    class="rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
                                 >
-                                    {{ product.is_active ? 'Desactivar' : 'Activar' }}
-                                </button>                               
+                                    Cancelar
+                                </button>
+
+                                <button
+                                    type="submit"
+                                    :disabled="importForm.processing || !importForm.file"
+                                    class="rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+                                >
+                                    {{
+                                        importForm.processing
+                                            ? 'Importando...'
+                                            : 'Importar'
+                                    }}
+                                </button>
+                            </DialogFooter>
+                        </form>
+                    </DialogContent>
+                </Dialog>
+
+                <Link
+                    href="/stores/create"
+                    class="inline-flex items-center justify-center rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                >
+                    + Crear Nuevo
+                </Link>
+            </div>
+        </div>
+
+        <!-- Card principal -->
+        <div class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+
+            <!-- Filtros -->
+            <div class="border-b border-slate-200 bg-slate-50/70 p-5">
+                <form
+                    class="flex flex-col gap-3 sm:flex-row sm:items-center"
+                    @submit.prevent="submitFilters"
+                >
+                    <div class="flex-1">
+                        <input
+                            v-model="filters.search"
+                            type="text"
+                            placeholder="Buscar por código, nombre o proveedor..."
+                            class="w-full rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm text-slate-700 shadow-sm transition placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                        />
+                    </div>
+
+                    <div class="flex gap-2">
+                        <button
+                            type="submit"
+                            class="rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                        >
+                            Buscar
+                        </button>
+
+                        <button
+                            type="button"
+                            @click="clearFilters"
+                            class="rounded-lg border border-slate-300 bg-white px-5 py-2.5 text-sm font-medium text-slate-700 shadow-sm transition hover:bg-slate-50"
+                        >
+                            Limpiar
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Tabla -->
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-slate-200">
+
+                    <thead class="bg-slate-100">
+                        <tr>
+                            <th class="whitespace-nowrap px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-slate-600">
+                                Imagen
+                            </th>
+
+                            <th class="whitespace-nowrap px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-slate-600">
+                                Código
+                            </th>
+
+                            <th class="whitespace-nowrap px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-slate-600">
+                                Nombre
+                            </th>
+
+                            <th class="whitespace-nowrap px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-slate-600">
+                                Tipo de Tela
+                            </th>
+
+                            <th class="whitespace-nowrap px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-slate-600">
+                                Color
+                            </th>
+
+                            <th class="whitespace-nowrap px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-slate-600">
+                                Proveedor
+                            </th>
+
+                            <th class="whitespace-nowrap px-6 py-4 text-right text-xs font-semibold uppercase tracking-wider text-slate-600">
+                                Precio
+                            </th>
+
+                            <th class="whitespace-nowrap px-6 py-4 text-right text-xs font-semibold uppercase tracking-wider text-slate-600">
+                                Mayorista
+                            </th>
+
+                            <th class="whitespace-nowrap px-6 py-4 text-right text-xs font-semibold uppercase tracking-wider text-slate-600">
+                                Público
+                            </th>
+
+                            <th class="whitespace-nowrap px-6 py-4 text-right text-xs font-semibold uppercase tracking-wider text-slate-600">
+                                Kilos
+                            </th>
+
+                            <th class="whitespace-nowrap px-6 py-4 text-right text-xs font-semibold uppercase tracking-wider text-slate-600">
+                                Metros
+                            </th>
+
+                            <th class="whitespace-nowrap px-6 py-4 text-center text-xs font-semibold uppercase tracking-wider text-slate-600">
+                                Estado
+                            </th>
+
+                            <th class="whitespace-nowrap px-6 py-4 text-center text-xs font-semibold uppercase tracking-wider text-slate-600">
+                                Acciones
+                            </th>
+                        </tr>
+                    </thead>
+
+                    <tbody class="divide-y divide-slate-200 bg-white">
+
+                        <tr
+                            v-for="product in products.data"
+                            :key="product.id"
+                            class="transition hover:bg-slate-50"
+                        >
+                            <!-- Imagen -->
+                            <td class="whitespace-nowrap px-6 py-4">
+                                <img
+                                    v-if="product.image_url"
+                                    :src="product.image_url"
+                                    alt="Imagen producto"
+                                    class="h-12 w-12 rounded-lg border border-slate-200 object-cover shadow-sm"
+                                />
+
+                                <div
+                                    v-else
+                                    class="flex h-12 w-12 items-center justify-center rounded-lg border border-slate-200 bg-slate-100 text-slate-400"
+                                    aria-hidden="true"
+                                >
+                                    —
+                                </div>
+                            </td>
+
+                            <!-- Código -->
+                            <td class="whitespace-nowrap px-6 py-4 text-sm font-semibold text-slate-800">
+                                {{ product.code_product }}
+                            </td>
+
+                            <!-- Nombre -->
+                            <td class="px-6 py-4 text-sm font-medium text-slate-800">
+                                {{ product.name_product }}
+                            </td>
+
+                            <!-- Tela -->
+                            <td class="whitespace-nowrap px-6 py-4 text-sm text-slate-600">
+                                {{ product.fabric_type }}
+                            </td>
+
+                            <!-- Color -->
+                            <td class="whitespace-nowrap px-6 py-4 text-sm text-slate-600">
+                                {{ product.color }}
+                            </td>
+
+                            <!-- Proveedor -->
+                            <td class="whitespace-nowrap px-6 py-4 text-sm text-slate-600">
+                                {{ product.proveedor }}
+                            </td>
+
+                            <!-- Precio -->
+                            <td class="whitespace-nowrap px-6 py-4 text-right text-sm font-medium text-slate-700">
+                                ${{ product.price }}
+                            </td>
+
+                            <!-- Mayorista -->
+                            <td class="whitespace-nowrap px-6 py-4 text-right text-sm text-slate-600">
+                                ${{ product.wholesale_price }}
+                            </td>
+
+                            <!-- Público -->
+                            <td class="whitespace-nowrap px-6 py-4 text-right text-sm text-slate-600">
+                                ${{ product.public_price }}
+                            </td>
+
+                            <!-- Kilos -->
+                            <td class="whitespace-nowrap px-6 py-4 text-right text-sm text-slate-600">
+                                {{ product.kilos }}
+                            </td>
+
+                            <!-- Metros -->
+                            <td class="whitespace-nowrap px-6 py-4 text-right text-sm text-slate-600">
+                                {{ product.metros }}
+                            </td>
+
+                            <!-- Estado -->
+                            <td class="whitespace-nowrap px-6 py-4 text-center">
+                                <span
+                                    :class="
+                                        product.is_active
+                                            ? 'bg-green-100 text-green-700'
+                                            : 'bg-red-100 text-red-700'
+                                    "
+                                    class="inline-flex rounded-full px-3 py-1 text-xs font-semibold"
+                                >
+                                    {{
+                                        product.is_active
+                                            ? 'Activo'
+                                            : 'Desactivado'
+                                    }}
+                                </span>
+                            </td>
+
+                            <!-- Acciones -->
+                            <td class="whitespace-nowrap px-6 py-4 text-center">
+                                <div class="flex items-center justify-center gap-3">
+
+                                    <Link
+                                        :href="`/stores/${product.id}/edit`"
+                                        class="font-medium text-blue-600 transition hover:text-blue-800"
+                                    >
+                                        Editar
+                                    </Link>
+
+                                    <button
+                                        type="button"
+                                        class="font-medium transition"
+                                        :class="
+                                            product.is_active
+                                                ? 'text-red-600 hover:text-red-800'
+                                                : 'text-green-600 hover:text-green-800'
+                                        "
+                                        @click="toggleProductStatus(product)"
+                                    >
+                                        {{
+                                            product.is_active
+                                                ? 'Desactivar'
+                                                : 'Activar'
+                                        }}
+                                    </button>
+
+                                </div>
                             </td>
                         </tr>
+
+                        <!-- Sin resultados -->
+                        <tr v-if="products.data.length === 0">
+                            <td
+                                colspan="13"
+                                class="px-6 py-14 text-center"
+                            >
+                                <div class="flex flex-col items-center justify-center">
+                                    <div class="mb-3 rounded-full bg-slate-100 p-4">
+                                        <span class="text-2xl">📦</span>
+                                    </div>
+
+                                    <p class="text-sm font-medium text-slate-700">
+                                        No se encontraron productos
+                                    </p>
+
+                                    <p class="mt-1 text-sm text-slate-500">
+                                        Intenta realizar otra búsqueda.
+                                    </p>
+                                </div>
+                            </td>
+                        </tr>
+
                     </tbody>
-                    </table>
+                </table>
+            </div>
+
+            <!-- Paginación -->
+            <div class="flex flex-col gap-4 border-t border-slate-200 bg-slate-50 px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
+
+                <div class="text-sm text-slate-500">
+                    Mostrando
+                    <span class="font-semibold text-slate-700">
+                        {{ products.from }}
+                    </span>
+                    a
+                    <span class="font-semibold text-slate-700">
+                        {{ products.to }}
+                    </span>
+                    de
+                    <span class="font-semibold text-slate-700">
+                        {{ products.total }}
+                    </span>
+                    resultados
                 </div>
-                <div class="mt-4 flex justify-between items-center">
-                    <div class="text-sm text-gray-700">
-                        Mostrando {{ products.from }} a {{ products.to }} de {{ products.total }} resultados
-                    </div>
-                    <div class="flex space-x-2">
-                        <Link
-                            v-if="products.current_page > 1"
-                            :href="`/stores?page=${products.current_page - 1}${filters.search ? `&search=${encodeURIComponent(filters.search)}` : ''}`"
-                            class="px-3 py-2 text-sm border rounded bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
-                        >
-                            Anterior
-                        </Link>
-                        <span class="px-3 py-2 text-sm border rounded bg-blue-500 text-white border-blue-500">
-                            {{ products.current_page }}
-                        </span>
-                        <Link
-                            v-if="products.current_page < products.last_page"
-                            :href="`/stores?page=${products.current_page + 1}${filters.search ? `&search=${encodeURIComponent(filters.search)}` : ''}`"
-                            class="px-3 py-2 text-sm border rounded bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
-                        >
-                            Siguiente
-                        </Link>
-                    </div>
+
+                <div class="flex items-center gap-2">
+
+                    <Link
+                        v-if="products.current_page > 1"
+                        :href="`/stores?page=${products.current_page - 1}${filters.search ? `&search=${encodeURIComponent(filters.search)}` : ''}`"
+                        class="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-sm transition hover:bg-slate-100"
+                    >
+                        ← Anterior
+                    </Link>
+
+                    <span
+                        class="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm"
+                    >
+                        {{ products.current_page }}
+                    </span>
+
+                    <Link
+                        v-if="products.current_page < products.last_page"
+                        :href="`/stores?page=${products.current_page + 1}${filters.search ? `&search=${encodeURIComponent(filters.search)}` : ''}`"
+                        class="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-sm transition hover:bg-slate-100"
+                    >
+                        Siguiente →
+                    </Link>
+
                 </div>
+            </div>
+
         </div>
-    </AppLayout>
+    </div>
+</AppLayout>
+```
+
 </template>

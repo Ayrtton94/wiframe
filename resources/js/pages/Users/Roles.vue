@@ -74,64 +74,211 @@ const updateUserAccess = (userId: number) => {
 
 <template>
     <Head title="Gestión de roles" />
+    ```vue
+<AppLayout :breadcrumbs="breadcrumbs">
+    <div class="flex h-full flex-1 flex-col gap-6 overflow-x-auto rounded-xl p-4">
 
-    <AppLayout :breadcrumbs="breadcrumbs">
-        <div class="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
-            <div class="rounded-lg border bg-white p-4 shadow-sm">
-                <h1 class="mb-1 text-lg font-semibold">Asignar roles y almacenes</h1>
-                <p class="mb-4 text-sm text-gray-600">
-                    Puedes definir el rol del usuario y los almacenes que puede operar.
+        <!-- Encabezado -->
+        <div>
+            <h1 class="text-2xl font-bold text-slate-800">
+                Asignar roles y almacenes
+            </h1>
+
+            <p class="mt-1 text-sm text-slate-500">
+                Define el rol de cada usuario y los almacenes que puede operar.
+            </p>
+        </div>
+
+        <!-- Card principal -->
+        <div class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+
+            <!-- Cabecera de la tabla -->
+            <div class="border-b border-slate-200 bg-slate-50 px-6 py-4">
+                <h2 class="text-sm font-semibold text-slate-700">
+                    Usuarios del sistema
+                </h2>
+
+                <p class="mt-1 text-xs text-slate-500">
+                    Modifica los permisos de acceso y guarda los cambios.
                 </p>
+            </div>
 
-                <table class="min-w-full divide-y divide-gray-200">
-                    <thead class="bg-gray-50">
+            <!-- Tabla -->
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-slate-200">
+
+                    <thead class="bg-slate-100">
                         <tr>
-                            <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Usuario</th>
-                            <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Correo</th>
-                            <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Rol</th>
-                            <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Almacenes asignados</th>
-                            <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Acción</th>
+                            <th
+                                class="whitespace-nowrap px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-slate-600"
+                            >
+                                Usuario
+                            </th>
+
+                            <th
+                                class="whitespace-nowrap px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-slate-600"
+                            >
+                                Correo
+                            </th>
+
+                            <th
+                                class="whitespace-nowrap px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-slate-600"
+                            >
+                                Rol
+                            </th>
+
+                            <th
+                                class="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-slate-600"
+                            >
+                                Almacenes asignados
+                            </th>
+
+                            <th
+                                class="whitespace-nowrap px-6 py-4 text-center text-xs font-semibold uppercase tracking-wider text-slate-600"
+                            >
+                                Acción
+                            </th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-gray-200 bg-white">
-                        <tr v-for="user in editableUsers" :key="user.id">
-                            <td class="whitespace-nowrap px-4 py-3 text-sm text-gray-900">{{ user.name }}</td>
-                            <td class="whitespace-nowrap px-4 py-3 text-sm text-gray-700">{{ user.email }}</td>
-                            <td class="whitespace-nowrap px-4 py-3 text-sm">
+
+                    <tbody class="divide-y divide-slate-200 bg-white">
+
+                        <tr
+                            v-for="user in editableUsers"
+                            :key="user.id"
+                            class="transition hover:bg-slate-50"
+                        >
+
+                            <!-- Usuario -->
+                            <td class="whitespace-nowrap px-6 py-5">
+                                <div class="flex items-center gap-3">
+
+                                    <div
+                                        class="flex h-9 w-9 items-center justify-center rounded-full bg-blue-100 text-sm font-semibold text-blue-700"
+                                    >
+                                        {{ user.name.charAt(0).toUpperCase() }}
+                                    </div>
+
+                                    <div>
+                                        <p class="text-sm font-semibold text-slate-800">
+                                            {{ user.name }}
+                                        </p>
+
+                                        <p class="text-xs text-slate-500">
+                                            ID: {{ user.id }}
+                                        </p>
+                                    </div>
+
+                                </div>
+                            </td>
+
+                            <!-- Correo -->
+                            <td class="whitespace-nowrap px-6 py-5">
+                                <span class="text-sm text-slate-600">
+                                    {{ user.email }}
+                                </span>
+                            </td>
+
+                            <!-- Rol -->
+                            <td class="whitespace-nowrap px-6 py-5">
                                 <select
                                     v-model="user.selectedRole"
-                                    class="rounded border px-3 py-2"
                                     @change="onRoleChange(user)"
+                                    class="w-full min-w-44 rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-700 shadow-sm transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
                                 >
-                                    <option value="" disabled>Seleccionar rol</option>
-                                    <option v-for="role in props.roles" :key="role" :value="role">
+                                    <option
+                                        value=""
+                                        disabled
+                                    >
+                                        Seleccionar rol
+                                    </option>
+
+                                    <option
+                                        v-for="role in props.roles"
+                                        :key="role"
+                                        :value="role"
+                                    >
                                         {{ role }}
                                     </option>
                                 </select>
                             </td>
-                            <td class="px-4 py-3 text-sm">
+
+                            <!-- Almacenes -->
+                            <td class="px-6 py-5">
                                 <select
                                     v-model="user.selectedWarehouses"
-                                    class="min-w-64 rounded border px-3 py-2"
                                     multiple
+                                    class="min-h-28 w-full min-w-72 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 shadow-sm transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
                                 >
-                                    <option v-for="warehouse in props.warehouses" :key="warehouse.id" :value="String(warehouse.id)">
+                                    <option
+                                        v-for="warehouse in props.warehouses"
+                                        :key="warehouse.id"
+                                        :value="String(warehouse.id)"
+                                        class="py-1"
+                                    >
                                         {{ warehouse.code }} - {{ warehouse.name }}
                                     </option>
                                 </select>
+
+                                <p class="mt-2 text-xs text-slate-400">
+                                    Mantén presionado Ctrl para seleccionar varios.
+                                </p>
                             </td>
-                            <td class="whitespace-nowrap px-4 py-3 text-sm">
+
+                            <!-- Guardar -->
+                            <td class="whitespace-nowrap px-6 py-5 text-center">
                                 <button
-                                    class="rounded bg-blue-600 px-3 py-2 text-white"
+                                    type="button"
                                     @click="updateUserAccess(user.id)"
+                                    class="inline-flex items-center justify-center rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
                                 >
                                     Guardar
                                 </button>
                             </td>
+
                         </tr>
+
+                        <!-- Sin usuarios -->
+                        <tr v-if="editableUsers.length === 0">
+                            <td
+                                colspan="5"
+                                class="px-6 py-14 text-center"
+                            >
+                                <div class="flex flex-col items-center justify-center">
+
+                                    <div class="mb-3 rounded-full bg-slate-100 p-4">
+                                        <span class="text-2xl">👥</span>
+                                    </div>
+
+                                    <p class="text-sm font-medium text-slate-700">
+                                        No hay usuarios disponibles
+                                    </p>
+
+                                    <p class="mt-1 text-sm text-slate-500">
+                                        Los usuarios registrados aparecerán aquí.
+                                    </p>
+
+                                </div>
+                            </td>
+                        </tr>
+
                     </tbody>
                 </table>
             </div>
+
+            <!-- Footer -->
+            <div class="border-t border-slate-200 bg-slate-50 px-6 py-4">
+                <p class="text-sm text-slate-500">
+                    Total de usuarios:
+                    <span class="font-semibold text-slate-700">
+                        {{ editableUsers.length }}
+                    </span>
+                </p>
+            </div>
+
         </div>
-    </AppLayout>
+    </div>
+</AppLayout>
+```
+
 </template>

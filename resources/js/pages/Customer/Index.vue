@@ -25,43 +25,182 @@ const props = defineProps<{
 </script>
 <template>
      <Head title="Listar Cliente" />
+```vue
+<AppLayout :breadcrumbs="breadcrumbs">
+    <div class="flex h-full flex-1 flex-col gap-6 overflow-x-auto rounded-xl p-4">
 
-      <AppLayout :breadcrumbs="breadcrumbs">
-        <div class="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
+        <!-- Encabezado -->
+        <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+                <h1 class="text-2xl font-bold text-slate-800">
+                    Clientes
+                </h1>
+
+                <p class="text-sm text-slate-500">
+                    Administra la información de tus clientes registrados.
+                </p>
+            </div>
+
+            <Link
+                href="/customers/create"
+                class="inline-flex items-center justify-center rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+            >
+                + Crear Nuevo
+            </Link>
+        </div>
+
+        <!-- Card principal -->
+        <div class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+
             <div class="overflow-x-auto">
-                <div>
-                    <Link href="customers/create" class="mb-4 inline-block rounded bg-blue-500 px-4 py-2 text-white hover:bg-blue-600">
-                        Crear Nuevo
-                    </Link>
-                </div>
+                <table class="min-w-full divide-y divide-slate-200">
 
-                <table class="min-w-full divide-y divide-gray-200">
-                    <thead class="bg-gray-50">
+                    <!-- Encabezado de tabla -->
+                    <thead class="bg-slate-100">
                         <tr>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Numero de identificación</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Razon Social/Nombre</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Telefono</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Correo Electronico</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cargo</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
+                            <th
+                                class="whitespace-nowrap px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-slate-600"
+                            >
+                                Número de identificación
+                            </th>
+
+                            <th
+                                class="whitespace-nowrap px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-slate-600"
+                            >
+                                Razón Social / Nombre
+                            </th>
+
+                            <th
+                                class="whitespace-nowrap px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-slate-600"
+                            >
+                                Teléfono
+                            </th>
+
+                            <th
+                                class="whitespace-nowrap px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-slate-600"
+                            >
+                                Correo Electrónico
+                            </th>
+
+                            <th
+                                class="whitespace-nowrap px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-slate-600"
+                            >
+                                Cargo
+                            </th>
+
+                            <th
+                                class="whitespace-nowrap px-6 py-4 text-center text-xs font-semibold uppercase tracking-wider text-slate-600"
+                            >
+                                Acciones
+                            </th>
                         </tr>
                     </thead>
-                    <tbody class="bg-white divide-y divide-gray-200">
-                        <tr v-for="customer in props.customers" :key="customer.id">
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ customer.dni }}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ customer.name }}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ customer.phone }}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ customer.email }}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ customer.position }}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                <Link :href="`/customers/${customer.id}/edit`" class="text-blue-600 hover:text-blue-900 mr-4">Editar</Link>
-                                <Link :href="`/customers/${customer.id}`" method="delete" as="button" class="text-red-600 hover:text-red-900">Eliminar</Link>
+
+                    <!-- Datos -->
+                    <tbody class="divide-y divide-slate-200 bg-white">
+
+                        <tr
+                            v-for="customer in props.customers"
+                            :key="customer.id"
+                            class="transition hover:bg-slate-50"
+                        >
+                            <!-- DNI -->
+                            <td class="whitespace-nowrap px-6 py-4 text-sm font-medium text-slate-800">
+                                {{ customer.dni }}
+                            </td>
+
+                            <!-- Nombre -->
+                            <td class="px-6 py-4 text-sm font-medium text-slate-800">
+                                {{ customer.name }}
+                            </td>
+
+                            <!-- Teléfono -->
+                            <td class="whitespace-nowrap px-6 py-4 text-sm text-slate-600">
+                                {{ customer.phone }}
+                            </td>
+
+                            <!-- Correo -->
+                            <td class="px-6 py-4 text-sm text-slate-600">
+                                {{ customer.email }}
+                            </td>
+
+                            <!-- Cargo -->
+                            <td class="whitespace-nowrap px-6 py-4 text-sm text-slate-600">
+                                {{ customer.position }}
+                            </td>
+
+                            <!-- Acciones -->
+                            <td class="whitespace-nowrap px-6 py-4 text-center">
+                                <div class="flex items-center justify-center gap-3">
+
+                                    <Link
+                                        :href="`/customers/${customer.id}`"
+                                        class="font-medium text-green-600 transition hover:text-green-800"
+                                    >
+                                        Ver
+                                    </Link>
+
+                                    <Link
+                                        :href="`/customers/${customer.id}/edit`"
+                                        class="font-medium text-blue-600 transition hover:text-blue-800"
+                                    >
+                                        Editar
+                                    </Link>
+
+                                    <Link
+                                        :href="`/customers/${customer.id}`"
+                                        method="delete"
+                                        as="button"
+                                        class="font-medium text-red-600 transition hover:text-red-800"
+                                    >
+                                        Eliminar
+                                    </Link>
+
+                                </div>
                             </td>
                         </tr>
+
+                        <!-- Sin resultados -->
+                        <tr v-if="props.customers.length === 0">
+                            <td
+                                colspan="6"
+                                class="px-6 py-14 text-center"
+                            >
+                                <div class="flex flex-col items-center justify-center">
+
+                                    <div class="mb-3 rounded-full bg-slate-100 p-4">
+                                        <span class="text-2xl">👥</span>
+                                    </div>
+
+                                    <p class="text-sm font-medium text-slate-700">
+                                        No hay clientes registrados
+                                    </p>
+
+                                    <p class="mt-1 text-sm text-slate-500">
+                                        Los clientes que registres aparecerán aquí.
+                                    </p>
+
+                                </div>
+                            </td>
+                        </tr>
+
                     </tbody>
                 </table>
             </div>
+
+            <!-- Footer -->
+            <div class="border-t border-slate-200 bg-slate-50 px-6 py-4">
+                <p class="text-sm text-slate-500">
+                    Total de clientes:
+                    <span class="font-semibold text-slate-700">
+                        {{ props.customers.length }}
+                    </span>
+                </p>
+            </div>
+
         </div>
-        
-        </AppLayout>
+    </div>
+</AppLayout>
+```
+
 </template>
