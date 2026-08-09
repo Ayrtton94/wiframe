@@ -35,9 +35,6 @@ const breadcrumbs: BreadcrumbItem[] = [
                         {{ props.customer.dni }}
                     </p>
                 </div>
-                <Link href="/customers" class="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white">
-                    Volver
-                </Link>
             </section>
 
             <section class="grid gap-4 md:grid-cols-2">
@@ -60,11 +57,8 @@ const breadcrumbs: BreadcrumbItem[] = [
             </section>
 
             <section class="flex gap-3">
-                <Link :href="`/customers/${props.customer.id}/edit`" class="rounded-lg bg-blue-500 px-4 py-2 text-sm font-medium text-white hover:bg-blue-600">
-                    Editar
-                </Link>
-                <Link :href="`/customers/${props.customer.id}`" method="delete" as="button" class="rounded-lg bg-red-500 px-4 py-2 text-sm font-medium text-white hover:bg-red-600">
-                    Eliminar
+                <Link href="/customers" class="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white">
+                    Volver
                 </Link>
             </section>
         </div>

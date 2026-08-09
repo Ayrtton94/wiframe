@@ -392,6 +392,12 @@ const clearFilters = () => {
                             <!-- Acciones -->
                             <td class="whitespace-nowrap px-6 py-4 text-center">
                                 <div class="flex items-center justify-center gap-3">
+                                    <Link
+                                        :href="`/stores/${product.id}`"
+                                        class="font-medium text-green-600 transition hover:text-green-800"
+                                    >
+                                        Ver
+                                    </Link>
 
                                     <Link
                                         :href="`/stores/${product.id}/edit`"

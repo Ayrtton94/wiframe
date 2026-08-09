@@ -77,9 +77,29 @@ class SuppliersController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(Suppliers $suppliers)
+    public function show(Suppliers $supplier)
     {
-        //
+        return Inertia::render('Supplier/Show', [
+            'supplier' => [
+                'id' => $supplier->id,
+                'name' => $supplier->name,
+                'company_name' => $supplier->company_name,
+                'ruc' => $supplier->ruc,
+                'category' => $supplier->category,
+                'phone' => $supplier->phone,
+                'email' => $supplier->email,
+                'address' => $supplier->address,
+                'city' => $supplier->city,
+                'country' => $supplier->country,
+                'account' => $supplier->account,
+                'bank_name' => $supplier->bank_name,
+                'bank_address' => $supplier->bank_address,
+                'bank_city' => $supplier->bank_city,
+                'bank_country' => $supplier->bank_country,
+                'bank_cod_swift' => $supplier->bank_cod_swift,
+                'cod_swift' => $supplier->cod_swift,
+            ],
+        ]);
     }
 
     /**

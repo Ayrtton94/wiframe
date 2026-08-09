@@ -63,7 +63,6 @@ const clearFilters = () => {
 </script>
 <template>
      <Head title="Listar Proveedores" />
-     ```vue
 <AppLayout :breadcrumbs="breadcrumbs">
     <div class="flex h-full flex-1 flex-col gap-6 overflow-x-auto rounded-xl p-4">
 
@@ -182,6 +181,13 @@ const clearFilters = () => {
 
                             <td class="whitespace-nowrap px-6 py-4 text-center text-sm">
                                 <div class="flex items-center justify-center gap-3">
+                                    <Link
+                                        :href="`/suppliers/${supplier.id}`"
+                                        class="font-medium text-green-600 transition hover:text-green-800"
+                                    >
+                                        Ver
+                                    </Link>
+
                                     <Link
                                         :href="`/suppliers/${supplier.id}/edit`"
                                         class="font-medium text-blue-600 transition hover:text-blue-800"

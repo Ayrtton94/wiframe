@@ -171,7 +171,29 @@ class StoreController extends Controller
      */
     public function show(Store $store)
     {
-        //
+        return Inertia::render("Store/Show", [
+            'store' => [
+                'id' => $store->id,
+                'code_product' => $store->code_product,
+                'name_product' => $store->name_product,
+                'fabric_type' => $store->fabric_type,
+                'color' => $store->color,
+                'proveedor' => $store->proveedor,
+                'kilos' => $store->kilos,
+                'metros' => $store->metros,
+                'minimum_stock' => $store->minimum_stock,
+                'price' => $store->price,
+                'public_price' => $store->public_price,
+                'wholesale_price' => $store->wholesale_price,
+                'price_roll' => $store->price_roll,
+                'special_price' => $store->special_price,
+                'location' => $store->location,
+                'description' => $store->description,
+                'is_active' => $store->is_active,
+                'image_url' => $store->image_path ? asset('storage/' . $store->image_path) : ($store->image ? asset('storage/' . $store->image) : null),
+               
+            ],
+        ]);
     }
 
     /**

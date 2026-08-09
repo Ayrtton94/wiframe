@@ -114,138 +114,594 @@ const submit = () => {
 
 <template>
     <Head title="Almacen Editar" />
+```vue
+<AppLayout :breadcrumbs="breadcrumbs">
+    <div class="flex h-full flex-1 flex-col gap-6 overflow-x-auto p-4">
 
-    <AppLayout :breadcrumbs="breadcrumbs">
-        <div class="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
-            <div>
-                <Link href="/stores" class="mb-4 inline-block rounded bg-blue-500 px-4 py-2 text-white hover:bg-blue-600">
-                    Volver al Inventario
+        <!-- Encabezado -->
+        <div class="mx-auto w-full max-w-6xl">
+            <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+
+                <div>
+                    <h1 class="text-2xl font-bold text-slate-800">
+                        Editar Producto
+                    </h1>
+
+                    <p class="mt-1 text-sm text-slate-500">
+                        Actualiza la información, precios y configuración del producto.
+                    </p>
+                </div>
+
+                <Link
+                    href="/stores"
+                    class="inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-5 py-2.5 text-sm font-medium text-slate-700 shadow-sm transition hover:bg-slate-50"
+                >
+                    ← Volver al Inventario
                 </Link>
+
+            </div>
+        </div>
+
+
+        <!-- Formulario -->
+        <form
+            class="mx-auto w-full max-w-6xl space-y-6"
+            @submit.prevent="submit"
+        >
+
+            <!-- Información del producto -->
+            <div class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+
+                <div class="border-b border-slate-200 bg-slate-50 px-6 py-5">
+                    <h2 class="text-lg font-semibold text-slate-800">
+                        Información del producto
+                    </h2>
+
+                    <p class="mt-1 text-sm text-slate-500">
+                        Datos principales del producto.
+                    </p>
+                </div>
+
+                <div class="p-6">
+                    <div class="grid grid-cols-1 gap-5 md:grid-cols-2">
+
+                        <!-- Código -->
+                        <div>
+                            <Label
+                                for="code_product"
+                                class="mb-2 block text-sm font-medium text-slate-700"
+                            >
+                                Código de Producto
+                            </Label>
+
+                            <Input
+                                id="code_product"
+                                v-model="form.code_product"
+                                class="w-full"
+                            />
+
+                            <InputError
+                                :message="form.errors.code_product"
+                                class="mt-1"
+                            />
+                        </div>
+
+
+                        <!-- Nombre -->
+                        <div>
+                            <Label
+                                for="name_product"
+                                class="mb-2 block text-sm font-medium text-slate-700"
+                            >
+                                Nombre del Producto
+                            </Label>
+
+                            <Input
+                                id="name_product"
+                                v-model="form.name_product"
+                                class="w-full"
+                            />
+
+                            <InputError
+                                :message="form.errors.name_product"
+                                class="mt-1"
+                            />
+                        </div>
+
+
+                        <!-- Tipo de tela -->
+                        <div>
+                            <Label
+                                for="fabric_type"
+                                class="mb-2 block text-sm font-medium text-slate-700"
+                            >
+                                Tipo de Tela
+                            </Label>
+
+                            <Input
+                                id="fabric_type"
+                                v-model="form.fabric_type"
+                                class="w-full"
+                            />
+
+                            <InputError
+                                :message="form.errors.fabric_type"
+                                class="mt-1"
+                            />
+                        </div>
+
+
+                        <!-- Color -->
+                        <div>
+                            <Label
+                                for="color"
+                                class="mb-2 block text-sm font-medium text-slate-700"
+                            >
+                                Color
+                            </Label>
+
+                            <Input
+                                id="color"
+                                v-model="form.color"
+                                class="w-full"
+                            />
+
+                            <InputError
+                                :message="form.errors.color"
+                                class="mt-1"
+                            />
+                        </div>
+
+                    </div>
+                </div>
             </div>
 
-            <form class="space-y-4" @submit.prevent="submit">
-                <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
-                    <div>
-                        <Label for="code_product">Código de Producto</Label>
-                        <Input id="code_product" v-model="form.code_product" class="w-full" />
-                        <InputError :message="form.errors.code_product" />
-                    </div>
 
-                    <div>
-                        <Label for="name_product">Nombre del Producto</Label>
-                        <Input id="name_product" v-model="form.name_product" class="w-full" />
-                        <InputError :message="form.errors.name_product" />
-                    </div>
+            <!-- Proveedor y Stock -->
+            <div class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
 
-                    <div>
-                        <Label for="fabric_type">Tipo de Tela</Label>
-                        <Input id="fabric_type" v-model="form.fabric_type" class="w-full" />
-                        <InputError :message="form.errors.fabric_type" />
-                    </div>
+                <div class="border-b border-slate-200 bg-slate-50 px-6 py-5">
+                    <h2 class="text-lg font-semibold text-slate-800">
+                        Proveedor y Stock
+                    </h2>
 
-                    <div>
-                        <Label for="color">Color</Label>
-                        <Input id="color" v-model="form.color" class="w-full" />
-                        <InputError :message="form.errors.color" />
-                    </div>
+                    <p class="mt-1 text-sm text-slate-500">
+                        Configura el proveedor y las cantidades del producto.
+                    </p>
+                </div>
 
+                <div class="space-y-6 p-6">
+
+                    <!-- Proveedor -->
                     <div>
-                        <Label for="proveedor">Proveedor</Label>
-                        <select id="proveedor" v-model="form.proveedor" class="w-full rounded border px-3 py-2">
-                            <option value="" disabled>Selecciona un proveedor</option>
-                            <option v-for="supplier in props.suppliers" :key="supplier.id" :value="supplier.company_name">
+                        <Label
+                            for="proveedor"
+                            class="mb-2 block text-sm font-medium text-slate-700"
+                        >
+                            Proveedor
+                        </Label>
+
+                        <select
+                            id="proveedor"
+                            v-model="form.proveedor"
+                            class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-700 shadow-sm transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                        >
+                            <option
+                                value=""
+                                disabled
+                            >
+                                Selecciona un proveedor
+                            </option>
+
+                            <option
+                                v-for="supplier in props.suppliers"
+                                :key="supplier.id"
+                                :value="supplier.company_name"
+                            >
                                 {{ supplier.company_name }}
                             </option>
                         </select>
-                        <InputError :message="form.errors.proveedor" />
+
+                        <InputError
+                            :message="form.errors.proveedor"
+                            class="mt-1"
+                        />
                     </div>
 
-                    <div>
-                        <Label for="minimum_stock">Stock Mínimo</Label>
-                        <Input id="minimum_stock" v-model.number="form.minimum_stock" type="number" min="0" class="w-full" @input="clampNumberField('minimum_stock', $event)" @invalid="setNegativeMessage" />
-                        <InputError :message="form.errors.minimum_stock" />
-                    </div>
 
-                    <div>
-                        <Label for="kilos">Rollo</Label>
-                        <Input id="kilos" v-model.number="form.kilos" type="number" min="0" step="0.01" class="w-full" @input="clampNumberField('kilos', $event)" @invalid="setNegativeMessage" />
-                        <InputError :message="form.errors.kilos" />
-                    </div>
+                    <!-- Stock -->
+                    <div class="grid grid-cols-1 gap-5 md:grid-cols-3">
 
-                    <div>
-                        <Label for="metros">Metros</Label>
-                        <Input id="metros" v-model.number="form.metros" type="number" min="0" step="0.01" class="w-full" @input="clampNumberField('metros', $event)" @invalid="setNegativeMessage" />
-                        <InputError :message="form.errors.metros" />
-                    </div>
+                        <div>
+                            <Label
+                                for="minimum_stock"
+                                class="mb-2 block text-sm font-medium text-slate-700"
+                            >
+                                Stock Mínimo
+                            </Label>
 
-                    <div>
-                        <Label for="price">Precio</Label>
-                        <Input id="price" v-model.number="form.price" type="number" min="0" step="0.01" class="w-full" @input="clampNumberField('price', $event)" @invalid="setNegativeMessage" />
-                        <InputError :message="form.errors.price" />
-                    </div>
+                            <Input
+                                id="minimum_stock"
+                                v-model.number="form.minimum_stock"
+                                type="number"
+                                min="0"
+                                class="w-full"
+                                @input="clampNumberField('minimum_stock', $event)"
+                                @invalid="setNegativeMessage"
+                            />
 
-                    <div>
-                        <Label for="public_price">Precio Público</Label>
-                        <Input id="public_price" v-model.number="form.public_price" type="number" min="0" step="0.01" class="w-full" @input="clampNumberField('public_price', $event)" @invalid="setNegativeMessage" />
-                        <InputError :message="form.errors.public_price" />
-                    </div>
-
-                    <div>
-                        <Label for="wholesale_price">Precio Mayorista</Label>
-                        <Input id="wholesale_price" v-model.number="form.wholesale_price" type="number" min="0" step="0.01" class="w-full" @input="clampNumberField('wholesale_price', $event)" @invalid="setNegativeMessage" />
-                        <InputError :message="form.errors.wholesale_price" />
-                    </div>
-
-                    <div>
-                        <Label for="price_roll">Precio por Rollo</Label>
-                        <Input id="price_roll" v-model.number="form.price_roll" type="number" min="0" step="0.01" class="w-full" @input="clampNumberField('price_roll', $event)" @invalid="setNegativeMessage" />
-                        <InputError :message="form.errors.price_roll" />
-                    </div>
-
-                    <div>
-                        <Label for="special_price">Precio Especial</Label>
-                        <Input id="special_price" v-model.number="form.special_price" type="number" min="0" step="0.01" class="w-full" @input="clampNumberField('special_price', $event)" @invalid="setNegativeMessage" />
-                        <InputError :message="form.errors.special_price" />
-                    </div>
-
-                    <div>
-                        <Label for="location">Ubicación</Label>
-                        <Input id="location" v-model="form.location" class="w-full" />
-                        <InputError :message="form.errors.location" />
-                    </div>
-                    
-                    <div class="flex items-center gap-2">
-                        <input id="is_active" v-model="form.is_active" type="checkbox" class="h-4 w-4 rounded border-gray-300" />
-                        <Label for="is_active">Producto activo</Label>
-                    </div>
-
-                    <div>
-                        <Label for="image">Imagen del producto</Label>
-                        <div v-if="currentImageSrc" class="mb-2">
-                            <img :src="currentImageSrc" alt="Imagen actual" class="h-20 w-20 rounded object-cover" />
+                            <InputError
+                                :message="form.errors.minimum_stock"
+                                class="mt-1"
+                            />
                         </div>
-                        <Input id="image" type="file" accept="image/*" @change="handleImage" class="w-full" />
-                        <InputError :message="form.errors.image" />
+
+
+                        <div>
+                            <Label
+                                for="kilos"
+                                class="mb-2 block text-sm font-medium text-slate-700"
+                            >
+                                Rollo
+                            </Label>
+
+                            <Input
+                                id="kilos"
+                                v-model.number="form.kilos"
+                                type="number"
+                                min="0"
+                                step="0.01"
+                                class="w-full"
+                                @input="clampNumberField('kilos', $event)"
+                                @invalid="setNegativeMessage"
+                            />
+
+                            <InputError
+                                :message="form.errors.kilos"
+                                class="mt-1"
+                            />
+                        </div>
+
+
+                        <div>
+                            <Label
+                                for="metros"
+                                class="mb-2 block text-sm font-medium text-slate-700"
+                            >
+                                Metros
+                            </Label>
+
+                            <Input
+                                id="metros"
+                                v-model.number="form.metros"
+                                type="number"
+                                min="0"
+                                step="0.01"
+                                class="w-full"
+                                @input="clampNumberField('metros', $event)"
+                                @invalid="setNegativeMessage"
+                            />
+
+                            <InputError
+                                :message="form.errors.metros"
+                                class="mt-1"
+                            />
+                        </div>
+
                     </div>
                 </div>
+            </div>
 
-                <div>
-                    <Label for="description">Descripción</Label>
-                    <textarea
-                        id="description"
-                        v-model="form.description"
-                        class="w-full rounded border border-gray-300 px-3 py-2"
-                    />
-                    <InputError :message="form.errors.description" />
-                </div>
-                <div class="mt-4">
-                    <Button type="submit" :disabled="form.processing" class="rounded bg-green-500 px-4 py-2 text-white hover:bg-green-600 disabled:opacity-50">
-                        Actualizar Producto
-                    </Button>
-                </div>
-            </form>
 
-        </div>
-    </AppLayout>
+            <!-- Precios -->
+            <div class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+
+                <div class="border-b border-slate-200 bg-slate-50 px-6 py-5">
+                    <h2 class="text-lg font-semibold text-slate-800">
+                        Precios
+                    </h2>
+
+                    <p class="mt-1 text-sm text-slate-500">
+                        Actualiza los precios del producto.
+                    </p>
+                </div>
+
+                <div class="p-6">
+                    <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+
+                        <div>
+                            <Label
+                                for="price"
+                                class="mb-2 block text-sm font-medium text-slate-700"
+                            >
+                                Precio
+                            </Label>
+
+                            <Input
+                                id="price"
+                                v-model.number="form.price"
+                                type="number"
+                                min="0"
+                                step="0.01"
+                                class="w-full"
+                                @input="clampNumberField('price', $event)"
+                                @invalid="setNegativeMessage"
+                            />
+
+                            <InputError
+                                :message="form.errors.price"
+                                class="mt-1"
+                            />
+                        </div>
+
+
+                        <div>
+                            <Label
+                                for="public_price"
+                                class="mb-2 block text-sm font-medium text-slate-700"
+                            >
+                                Precio Público
+                            </Label>
+
+                            <Input
+                                id="public_price"
+                                v-model.number="form.public_price"
+                                type="number"
+                                min="0"
+                                step="0.01"
+                                class="w-full"
+                                @input="clampNumberField('public_price', $event)"
+                                @invalid="setNegativeMessage"
+                            />
+
+                            <InputError
+                                :message="form.errors.public_price"
+                                class="mt-1"
+                            />
+                        </div>
+
+
+                        <div>
+                            <Label
+                                for="wholesale_price"
+                                class="mb-2 block text-sm font-medium text-slate-700"
+                            >
+                                Precio Mayorista
+                            </Label>
+
+                            <Input
+                                id="wholesale_price"
+                                v-model.number="form.wholesale_price"
+                                type="number"
+                                min="0"
+                                step="0.01"
+                                class="w-full"
+                                @input="clampNumberField('wholesale_price', $event)"
+                                @invalid="setNegativeMessage"
+                            />
+
+                            <InputError
+                                :message="form.errors.wholesale_price"
+                                class="mt-1"
+                            />
+                        </div>
+
+
+                        <div>
+                            <Label
+                                for="price_roll"
+                                class="mb-2 block text-sm font-medium text-slate-700"
+                            >
+                                Precio por Rollo
+                            </Label>
+
+                            <Input
+                                id="price_roll"
+                                v-model.number="form.price_roll"
+                                type="number"
+                                min="0"
+                                step="0.01"
+                                class="w-full"
+                                @input="clampNumberField('price_roll', $event)"
+                                @invalid="setNegativeMessage"
+                            />
+
+                            <InputError
+                                :message="form.errors.price_roll"
+                                class="mt-1"
+                            />
+                        </div>
+
+
+                        <div class="sm:col-span-2 lg:col-span-4">
+
+                            <Label
+                                for="special_price"
+                                class="mb-2 block text-sm font-medium text-slate-700"
+                            >
+                                Precio Especial
+                            </Label>
+
+                            <Input
+                                id="special_price"
+                                v-model.number="form.special_price"
+                                type="number"
+                                min="0"
+                                step="0.01"
+                                class="w-full"
+                                @input="clampNumberField('special_price', $event)"
+                                @invalid="setNegativeMessage"
+                            />
+
+                            <InputError
+                                :message="form.errors.special_price"
+                                class="mt-1"
+                            />
+
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+
+            <!-- Configuración -->
+            <div class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+
+                <div class="border-b border-slate-200 bg-slate-50 px-6 py-5">
+                    <h2 class="text-lg font-semibold text-slate-800">
+                        Configuración
+                    </h2>
+
+                    <p class="mt-1 text-sm text-slate-500">
+                        Configura la ubicación, estado, imagen y descripción.
+                    </p>
+                </div>
+
+                <div class="space-y-6 p-6">
+
+                    <!-- Ubicación -->
+                    <div>
+                        <Label
+                            for="location"
+                            class="mb-2 block text-sm font-medium text-slate-700"
+                        >
+                            Ubicación
+                        </Label>
+
+                        <Input
+                            id="location"
+                            v-model="form.location"
+                            class="w-full"
+                        />
+
+                        <InputError
+                            :message="form.errors.location"
+                            class="mt-1"
+                        />
+                    </div>
+
+
+                    <!-- Estado -->
+                    <label
+                        for="is_active"
+                        class="flex cursor-pointer items-center gap-3 rounded-lg border border-slate-200 bg-slate-50 px-4 py-4 transition hover:bg-slate-100"
+                    >
+                        <input
+                            id="is_active"
+                            v-model="form.is_active"
+                            type="checkbox"
+                            class="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                        />
+
+                        <div>
+                            <span class="block text-sm font-medium text-slate-700">
+                                Producto activo
+                            </span>
+
+                            <span class="text-xs text-slate-500">
+                                El producto estará disponible para las operaciones del sistema.
+                            </span>
+                        </div>
+                    </label>
+
+
+                    <!-- Imagen -->
+                    <div>
+                        <Label
+                            for="image"
+                            class="mb-2 block text-sm font-medium text-slate-700"
+                        >
+                            Imagen del producto
+                        </Label>
+
+                        <div
+                            v-if="currentImageSrc"
+                            class="mb-4 flex items-center gap-4 rounded-lg border border-slate-200 bg-slate-50 p-4"
+                        >
+                            <img
+                                :src="currentImageSrc"
+                                alt="Imagen actual"
+                                class="h-24 w-24 rounded-lg border border-slate-200 object-cover shadow-sm"
+                            />
+
+                            <div>
+                                <p class="text-sm font-medium text-slate-700">
+                                    Imagen actual
+                                </p>
+
+                                <p class="mt-1 text-xs text-slate-500">
+                                    Selecciona una nueva imagen si deseas reemplazarla.
+                                </p>
+                            </div>
+                        </div>
+
+                        <Input
+                            id="image"
+                            type="file"
+                            accept="image/*"
+                            @change="handleImage"
+                            class="w-full"
+                        />
+
+                        <InputError
+                            :message="form.errors.image"
+                            class="mt-1"
+                        />
+                    </div>
+
+
+                    <!-- Descripción -->
+                    <div>
+                        <Label
+                            for="description"
+                            class="mb-2 block text-sm font-medium text-slate-700"
+                        >
+                            Descripción
+                        </Label>
+
+                        <textarea
+                            id="description"
+                            v-model="form.description"
+                            rows="4"
+                            placeholder="Escribe una descripción del producto..."
+                            class="w-full resize-y rounded-lg border border-slate-300 px-4 py-3 text-sm text-slate-700 shadow-sm transition placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                        ></textarea>
+
+                        <InputError
+                            :message="form.errors.description"
+                            class="mt-1"
+                        />
+                    </div>
+
+                </div>
+            </div>
+
+
+            <!-- Acciones -->
+            <div class="flex flex-col-reverse gap-3 rounded-xl border border-slate-200 bg-white p-5 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+
+                <Link
+                    href="/stores"
+                    class="inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-5 py-2.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+                >
+                    Cancelar
+                </Link>
+
+                <Button
+                    type="submit"
+                    :disabled="form.processing"
+                    class="inline-flex items-center justify-center rounded-lg bg-blue-600 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                    {{ form.processing ? 'Actualizando...' : 'Actualizar Producto' }}
+                </Button>
+
+            </div>
+
+        </form>
+    </div>
+</AppLayout>
+```
+
     
 </template>
