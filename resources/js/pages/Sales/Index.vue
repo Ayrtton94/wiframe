@@ -21,20 +21,48 @@ type ProductOption = {
 
 const props = defineProps<{
     sales: {
-        data: Array<{
-            id: number;
+    data: Array<{
+        id: number;
+        code: string;
+        status: string;
+        total: number;
+        notes: string | null;
+
+        customer: {
+            name: string;
+        };
+
+        warehouse: {
+            name: string;
             code: string;
-            status: string;
-            total: number;
-            customer: { name: string };
-            warehouse: { name: string; code: string };
-            seller: { name: string };
-            created_at: string;
+        };
+
+        seller: {
+            name: string;
+        };
+
+        items: Array<{
+            id: number;
+            store_id: number;
+            unit: string;
+            quantity: number | string;
+            unit_price: number | string;
+            line_total: number | string;
+
+            store: {
+                id: number;
+                code_product: string;
+                name_product: string;
+            };
         }>;
-    };
+
+        created_at: string;
+    }>;
+};
     customers: Array<{ id: number; name: string; dni: string }>;
     warehouses: Array<{ id: number; name: string; code: string }>;
     defaultWarehouseId: number | null;
+
     warehouseStocks: Array<{
         warehouse_id: number;
         store_id: number;
@@ -514,14 +542,14 @@ const submit = () => {
                             Guardar salida
                         </button>
                     </div>
+                    <div>
+                        <Label for="minimum_stock" class="mb-2 block text-sm font-medium text-slate-700"  >
+                            Ingresar motivo: REPOSICION Y/O SALIDA
+                        </Label>
+                        <textarea v-model="form.notes" rows="3" maxlength="1000" placeholder="Notas de la salida (opcional)" class="w-full rounded-lg border px-3 py-2" />
+                    </div>
 
-                    <textarea
-                        v-model="form.notes"
-                        rows="3"
-                        maxlength="1000"
-                        placeholder="Notas de la salida (opcional)"
-                        class="w-full rounded-lg border px-3 py-2"
-                    />
+                    
 
                     <p
                         v-if="form.errors.customer_id"
@@ -549,78 +577,135 @@ const submit = () => {
                 </div>
 
                 <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-slate-200">
-                        <thead class="bg-slate-50">
-                            <tr>
-                                <th
-                                    class="px-4 py-3 text-left text-xs font-semibold uppercase"
-                                >
-                                    Código
-                                </th>
-                                <th
-                                    class="px-4 py-3 text-left text-xs font-semibold uppercase"
-                                >
-                                    Cliente
-                                </th>
-                                <th
-                                    class="px-4 py-3 text-left text-xs font-semibold uppercase"
-                                >
-                                    Ubicación
-                                </th>
-                                <th
-                                    class="px-4 py-3 text-left text-xs font-semibold uppercase"
-                                >
-                                    Vendedor
-                                </th>
-                                <th
-                                    class="px-4 py-3 text-left text-xs font-semibold uppercase"
-                                >
-                                    Total
-                                </th>
-                                <th
-                                    class="px-4 py-3 text-left text-xs font-semibold uppercase"
-                                >
-                                    Estado
-                                </th>
-                                <th
-                                    class="px-4 py-3 text-left text-xs font-semibold uppercase"
-                                >
-                                    Acción
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-slate-100">
-                            <tr v-for="sale in props.sales.data" :key="sale.id">
-                                <td class="px-4 py-3 text-sm">
-                                    {{ sale.code }}
-                                </td>
-                                <td class="px-4 py-3 text-sm">
-                                    {{ sale.customer.name }}
-                                </td>
-                                <td class="px-4 py-3 text-sm">
-                                    {{ sale.warehouse.code }} -
-                                    {{ sale.warehouse.name }}
-                                </td>
-                                <td class="px-4 py-3 text-sm">
-                                    {{ sale.seller.name }}
-                                </td>
-                                <td class="px-4 py-3 text-sm">
-                                    S/ {{ sale.total }}
-                                </td>
-                                <td class="px-4 py-3 text-sm">
-                                    {{ sale.status }}
-                                </td>
-                                <td class="px-4 py-3 text-sm">
-                                    <Link
-                                        :href="`/sales/${sale.id}`"
-                                        class="text-blue-600"
-                                        >Ver detalle</Link
-                                    >
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
+    <table class="min-w-full divide-y divide-slate-200">
+        <thead class="bg-slate-50">
+            <tr>
+                <th class="px-4 py-3 text-left text-xs font-semibold uppercase">
+                    Código de salida
+                </th>
+
+                <th class="px-4 py-3 text-left text-xs font-semibold uppercase">
+                    Cliente
+                </th>
+
+                <th class="px-4 py-3 text-left text-xs font-semibold uppercase">
+                    Ubicación
+                </th>
+
+                <th class="px-4 py-3 text-left text-xs font-semibold uppercase">
+                    Responsable
+                </th>
+
+                <th class="px-4 py-3 text-left text-xs font-semibold uppercase">
+                    Código
+                </th>
+
+                <th class="px-4 py-3 text-left text-xs font-semibold uppercase">
+                    Nombre del producto
+                </th>
+
+                <th class="px-4 py-3 text-left text-xs font-semibold uppercase">
+                    Rollos o Metros
+                </th>
+
+                <th class="px-4 py-3 text-left text-xs font-semibold uppercase">
+                    Total
+                </th>
+
+                <th class="px-4 py-3 text-left text-xs font-semibold uppercase">
+                    Estado
+                </th>
+
+                <th class="px-4 py-3 text-left text-xs font-semibold uppercase">
+                    Motivo
+                </th>
+
+                <th class="px-4 py-3 text-left text-xs font-semibold uppercase">
+                    Acción
+                </th>
+            </tr>
+        </thead>
+
+        <tbody class="divide-y divide-slate-100">
+
+            <template
+                v-for="sale in props.sales.data"
+                :key="sale.id"
+            >
+
+                <tr
+                    v-for="(item, index) in sale.items"
+                    :key="`${sale.id}-${item.id}`"
+                >
+
+                    <!-- Código de salida -->
+                    <td class="px-4 py-3 text-sm">
+                        {{ sale.code }}
+                    </td>
+
+                    <!-- Cliente -->
+                    <td class="px-4 py-3 text-sm">
+                        {{ sale.customer.name }}
+                    </td>
+
+                    <!-- Ubicación -->
+                    <td class="px-4 py-3 text-sm">
+                        {{ sale.warehouse.code }} -
+                        {{ sale.warehouse.name }}
+                    </td>
+
+                    <!-- Responsable -->
+                    <td class="px-4 py-3 text-sm">
+                        {{ sale.seller.name }}
+                    </td>
+
+                    <!-- Código producto -->
+                    <td class="px-4 py-3 text-sm">
+                        {{ item.store.code_product }}
+                    </td>
+
+                    <!-- Nombre producto -->
+                    <td class="px-4 py-3 text-sm">
+                        {{ item.store.name_product }}
+                    </td>
+
+                    <!-- Rollos o metros -->
+                    <td class="px-4 py-3 text-sm">
+                        {{ item.quantity }} {{ item.unit }}
+                    </td>
+
+                    <!-- Total -->
+                    <td class="px-4 py-3 text-sm">
+                        S/ {{ Number(item.line_total).toFixed(2) }}
+                    </td>
+
+                    <!-- Estado -->
+                    <td class="px-4 py-3 text-sm">
+                        {{ sale.status }}
+                    </td>
+
+                    <!-- Motivo -->
+                    <td class="px-4 py-3 text-sm">
+                        {{ sale.notes || '-' }}
+                    </td>
+
+                    <!-- Acción -->
+                    <td class="px-4 py-3 text-sm">
+                        <Link
+                            :href="`/sales/${sale.id}`"
+                            class="text-blue-600 hover:text-blue-800"
+                        >
+                            Ver detalle
+                        </Link>
+                    </td>
+
+                </tr>
+
+            </template>
+
+        </tbody>
+    </table>
+</div>
             </section>
         </div>
     </AppLayout>

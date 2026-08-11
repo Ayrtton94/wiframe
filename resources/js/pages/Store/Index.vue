@@ -18,10 +18,21 @@ const props = defineProps<{
             price: number;
             wholesale_price: number;
             public_price: number;
+            minimum_stock: number;
             kilos: number | string;
             metros: number | string;
             image_url: string | null;
             is_active: boolean;
+
+            warehouse_stocks: Array<{
+                id: number;
+                warehouse_id: number;
+                warehouse_name: string | null;
+                kilos_available: number | string;
+                metros_available: number | string;
+                kilos_reserved: number | string;
+                metros_reserved: number | string;
+            }>;
         }>;
         current_page: number;
         last_page: number;
@@ -196,6 +207,13 @@ const clearFilters = () => {
                 >
                     + Crear Nuevo
                 </Link>
+
+                <a
+                    href="/stores/export"
+                    class="inline-flex items-center rounded-md bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700"
+                >
+                    Exportar productos
+                </a>
             </div>
         </div>
 
@@ -266,24 +284,24 @@ const clearFilters = () => {
                                 Proveedor
                             </th>
 
+                            <th class="whitespace-nowrap px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-slate-600">
+                                Ubicación
+                            </th>
+
                             <th class="whitespace-nowrap px-6 py-4 text-right text-xs font-semibold uppercase tracking-wider text-slate-600">
                                 Precio
                             </th>
 
                             <th class="whitespace-nowrap px-6 py-4 text-right text-xs font-semibold uppercase tracking-wider text-slate-600">
-                                Mayorista
-                            </th>
-
-                            <th class="whitespace-nowrap px-6 py-4 text-right text-xs font-semibold uppercase tracking-wider text-slate-600">
-                                Público
-                            </th>
-
-                            <th class="whitespace-nowrap px-6 py-4 text-right text-xs font-semibold uppercase tracking-wider text-slate-600">
-                                Kilos
+                                Rollos
                             </th>
 
                             <th class="whitespace-nowrap px-6 py-4 text-right text-xs font-semibold uppercase tracking-wider text-slate-600">
                                 Metros
+                            </th>
+
+                            <th class="whitespace-nowrap px-6 py-4 text-right text-xs font-semibold uppercase tracking-wider text-slate-600">
+                                Kilos
                             </th>
 
                             <th class="whitespace-nowrap px-6 py-4 text-center text-xs font-semibold uppercase tracking-wider text-slate-600">
@@ -344,6 +362,16 @@ const clearFilters = () => {
                             <!-- Proveedor -->
                             <td class="whitespace-nowrap px-6 py-4 text-sm text-slate-600">
                                 {{ product.proveedor }}
+                            </td>                           
+
+                            <!-- Ubicacion -->
+                            <td class="whitespace-nowrap px-6 py-4 text-sm text-slate-600">
+                                {{
+                                    product.warehouse_stocks
+                                        .map(stock => stock.warehouse_name)
+                                        .filter(Boolean)
+                                        .join(', ') || '-'
+                                }}
                             </td>
 
                             <!-- Precio -->
@@ -351,24 +379,19 @@ const clearFilters = () => {
                                 ${{ product.price }}
                             </td>
 
-                            <!-- Mayorista -->
-                            <td class="whitespace-nowrap px-6 py-4 text-right text-sm text-slate-600">
-                                ${{ product.wholesale_price }}
-                            </td>
-
-                            <!-- Público -->
-                            <td class="whitespace-nowrap px-6 py-4 text-right text-sm text-slate-600">
-                                ${{ product.public_price }}
-                            </td>
-
-                            <!-- Kilos -->
+                            <!-- Kilos = rollos -->
                             <td class="whitespace-nowrap px-6 py-4 text-right text-sm text-slate-600">
                                 {{ product.kilos }}
                             </td>
 
-                            <!-- Metros -->
+                            <!-- Metros es metros -->
                             <td class="whitespace-nowrap px-6 py-4 text-right text-sm text-slate-600">
                                 {{ product.metros }}
+                            </td>
+
+                            <!-- Stock minimo = kilos -->
+                            <td class="whitespace-nowrap px-6 py-4 text-sm text-slate-600">
+                                {{ product.minimum_stock }}
                             </td>
 
                             <!-- Estado -->

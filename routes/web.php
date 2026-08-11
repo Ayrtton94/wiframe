@@ -49,6 +49,8 @@ Route::middleware('auth')->group(function () {
         Route::delete('warehouse-stocks/{warehouseStock}', [WarehouseStockController::class, 'destroy'])->name('warehouse-stocks.destroy');
     });
 
+    Route::get('/stores/export', [StoreController::class, 'export'])->name('stores.export');
+
     // ADMIN + ALMACEN: gestión de traslados
     Route::middleware('role:admin,almacen')->group(function () {
         Route::resource('stores', StoreController::class);
@@ -67,7 +69,7 @@ Route::middleware('auth')->group(function () {
     });
 
     // VENDEDOR: Acceso a clientes y productos
-    Route::middleware('role:vendedor')->group(function () {
+    Route::middleware('role:vendedor')->group(function () {        
         Route::resource('customers', CustomerController::class);
         Route::resource('stores', StoreController::class);
     });
@@ -82,7 +84,7 @@ Route::middleware('auth')->group(function () {
 
     Route::post('stores/import', [StoreController::class, 'import'])
         ->name('stores.import')
-        ->middleware(['role:admin,almacen', 'permission:view_products']);   
+        ->middleware(['role:admin,almacen', 'permission:view_products']);  
     
     Route::resource('catalog', CatalogController::class);
     Route::get('/catalog/{id}', [CatalogController::class, 'show']);

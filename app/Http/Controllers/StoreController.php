@@ -2,16 +2,19 @@
 
 namespace App\Http\Controllers;
 
-use Inertia\Inertia;
+use App\Exports\ProductsExport;
+use App\Http\Requests\StoreRequest;
 use App\Models\Store;
 use App\Models\Suppliers;
 use App\Models\Warehouse;
+use App\Models\WarehouseStock;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
-use App\Http\Requests\StoreRequest;
+use Inertia\Inertia;
+use Maatwebsite\Excel\Facades\Excel;
 
 class StoreController extends Controller
 {
@@ -19,35 +22,57 @@ class StoreController extends Controller
     {
         return 'code_product';
     }
-    public function index(Request $request)
-    {
-        $search = trim((string) $request->input('search', ''));
 
-        $products = Store::query()
-            ->when($search !== '', function ($query) use ($search) {
-                $query->where(function ($subQuery) use ($search) {
-                    $subQuery->where('code_product', 'like', "%{$search}%")
-                        ->orWhere('name_product', 'like', "%{$search}%")
-                        ->orWhere('proveedor', 'like', "%{$search}%");
-                });
-            })
-            ->orderBy('name_product')
-            ->paginate(10)
-            ->appends(['search' => $search]);
+public function index(Request $request)
+{
+    $search = trim((string) $request->input('search', ''));
 
-        $products->getCollection()->transform(function ($product) {
-            $imagePath = $product->image_path ?? $product->image ?? null;
-            $product->image_url = $imagePath ? asset('storage/' . $imagePath) : null;
+    $products = Store::query()
+        ->with([
+            'warehouseStocks.warehouse',
+        ])
+        ->when($search !== '', function ($query) use ($search) {
+            $query->where(function ($subQuery) use ($search) {
+                $subQuery->where('code_product', 'like', "%{$search}%")
+                    ->orWhere('name_product', 'like', "%{$search}%")
+                    ->orWhere('proveedor', 'like', "%{$search}%");
+            });
+        })
+        ->orderBy('name_product')
+        ->paginate(10)
+        ->appends(['search' => $search]);
 
-            return $product;
-        });
+    $products->getCollection()->transform(function ($product) {
+        $imagePath = $product->image_path ?? $product->image ?? null;
 
-        return Inertia::render("Store/Index", [
-            'products' => $products,
-            'filters' => ['search' => $search],
-        ]);
-    }
+        $product->image_url = $imagePath
+            ? asset('storage/' . $imagePath)
+            : null;
 
+        $product->warehouse_stocks = $product->warehouseStocks->map(function ($stock) {
+            return [
+                'id' => $stock->id,
+                'warehouse_id' => $stock->warehouse_id,
+                'warehouse_name' => $stock->warehouse?->name,
+                'kilos_available' => $stock->kilos_available,
+                'metros_available' => $stock->metros_available,
+                'kilos_reserved' => $stock->kilos_reserved,
+                'metros_reserved' => $stock->metros_reserved,
+            ];
+        })->values();
+
+        unset($product->warehouseStocks);
+
+        return $product;
+    });
+
+    return Inertia::render('Store/Index', [
+        'products' => $products,
+        'filters' => [
+            'search' => $search,
+        ],
+    ]);
+}
     /**
      * Show the form for creating a new resource.
      */
@@ -169,47 +194,110 @@ class StoreController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(Store $store)
-    {
-        return Inertia::render("Store/Show", [
-            'store' => [
-                'id' => $store->id,
-                'code_product' => $store->code_product,
-                'name_product' => $store->name_product,
-                'fabric_type' => $store->fabric_type,
-                'color' => $store->color,
-                'proveedor' => $store->proveedor,
-                'kilos' => $store->kilos,
-                'metros' => $store->metros,
-                'minimum_stock' => $store->minimum_stock,
-                'price' => $store->price,
-                'public_price' => $store->public_price,
-                'wholesale_price' => $store->wholesale_price,
-                'price_roll' => $store->price_roll,
-                'special_price' => $store->special_price,
-                'location' => $store->location,
-                'description' => $store->description,
-                'is_active' => $store->is_active,
-                'image_url' => $store->image_path ? asset('storage/' . $store->image_path) : ($store->image ? asset('storage/' . $store->image) : null),
-               
-            ],
-        ]);
-    }
+public function show(Store $store)
+{
+    $store->load([
+        'warehouseStocks.warehouse',
+    ]);
+
+    return Inertia::render('Store/Show', [
+        'store' => [
+            'id' => $store->id,
+            'code_product' => $store->code_product,
+            'name_product' => $store->name_product,
+            'fabric_type' => $store->fabric_type,
+            'color' => $store->color,
+            'proveedor' => $store->proveedor,
+            'kilos' => $store->kilos,
+            'metros' => $store->metros,
+            'minimum_stock' => $store->minimum_stock,
+            'price' => $store->price,
+            'public_price' => $store->public_price,
+            'wholesale_price' => $store->wholesale_price,
+            'price_roll' => $store->price_roll,
+            'special_price' => $store->special_price,
+            'location' => $store->location,
+            'description' => $store->description,
+            'is_active' => $store->is_active,
+
+            'image_url' => $store->image_path
+                ? asset('storage/' . $store->image_path)
+                : ($store->image
+                    ? asset('storage/' . $store->image)
+                    : null),
+
+            'warehouse_stocks' => $store->warehouseStocks->map(function ($stock) {
+                return [
+                    'id' => $stock->id,
+                    'warehouse_id' => $stock->warehouse_id,
+                    'warehouse_name' => $stock->warehouse?->name,
+                    'kilos_available' => $stock->kilos_available,
+                    'metros_available' => $stock->metros_available,
+                    'kilos_reserved' => $stock->kilos_reserved,
+                    'metros_reserved' => $stock->metros_reserved,
+                ];
+            })->values(),
+        ],
+    ]);
+}
 
     /**
      * Show the form for editing the specified resource.
      */
     public function edit(Store $store)
-    {
-        $imagePath = $store->image_path ?? $store->image ?? null;
-        $store->image_url = $imagePath ? asset('storage/' . $imagePath) : null;
-        return Inertia::render('Store/Edit', [
-            'product' => $store,
-            'suppliers' => Suppliers::query()
-                ->orderBy('company_name')
-                ->get(['id', 'company_name']),
-        ]);
+{
+    $user = auth()->user();
+
+    $warehouses = collect();
+    $warehouseSelectionRequired = false;
+    $defaultWarehouseId = null;
+
+    if ($user && $user->hasRole('admin')) {
+
+        $warehouses = Warehouse::query()
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get(['id', 'name', 'code']);
+
+        $warehouseSelectionRequired = true;
+
+    } elseif ($user) {
+
+        $assignedWarehouseIds = $user->warehouses()
+            ->where('warehouses.is_active', true)
+            ->pluck('warehouses.id');
+
+        $warehouses = Warehouse::query()
+            ->whereIn('id', $assignedWarehouseIds)
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get(['id', 'name', 'code']);
+
+        $defaultWarehouseId = $warehouses->first()?->id;
     }
+
+    $store->load('warehouseStocks');
+
+    $imagePath = $store->image_path ?? $store->image ?? null;
+
+    $store->image_url = $imagePath
+        ? asset('storage/' . $imagePath)
+        : null;
+
+    return Inertia::render('Store/Edit', [
+        'product' => $store,
+
+        'warehouses' => $warehouses,
+
+        'warehouseSelectionRequired' => $warehouseSelectionRequired,
+
+        'defaultWarehouseId' => $defaultWarehouseId,
+
+        'suppliers' => Suppliers::query()
+            ->orderBy('company_name')
+            ->get(['id', 'company_name']),
+    ]);
+}
 
     /**
      * Update the specified resource in storage.
@@ -217,25 +305,68 @@ class StoreController extends Controller
 public function update(StoreRequest $request, Store $store)
 {
     $validated = $request->validated();
-    unset($validated['image'], $validated['image_path']);
+
+    $warehouseId = $request->input('warehouse_id');
+
+    unset(
+        $validated['image'],
+        $validated['image_path'],
+        $validated['warehouse_id']
+    );
+
     $validated['is_active'] = $request->boolean('is_active', true);
 
-        $imageColumn = Schema::hasColumn('stores', 'image_path')
-            ? 'image_path'
-            : (Schema::hasColumn('stores', 'image') ? 'image' : null);
- 
-            $imageFile = $request->file('image') ?? $request->file('image_path');
+    $imageColumn = Schema::hasColumn('stores', 'image_path')
+        ? 'image_path'
+        : (Schema::hasColumn('stores', 'image')
+            ? 'image'
+            : null);
 
-        if ($imageColumn !== null && $imageFile) {
+    $imageFile = $request->file('image')
+        ?? $request->file('image_path');
+
+    DB::transaction(function () use (
+        $store,
+        &$validated,
+        $warehouseId,
+        $imageColumn,
+        $imageFile,
+        $request
+    ) {
+
+        // Imagen
+        if ($imageColumn && $imageFile) {
+
             $existingPath = $store->{$imageColumn};
+
             if ($existingPath) {
                 Storage::disk('public')->delete($existingPath);
             }
 
-            $validated[$imageColumn] = $imageFile->store('stores', 'public');
+            $validated[$imageColumn] = $imageFile->store(
+                'stores',
+                'public'
+            );
         }
 
+        // Actualizar datos generales del producto
         $store->update($validated);
+
+        // Actualizar stock del almacén
+        if ($warehouseId) {
+
+            $stock = WarehouseStock::updateOrCreate(
+                [
+                    'store_id' => $store->id,
+                    'warehouse_id' => $warehouseId,
+                ],
+                [
+                    'kilos_available' => (float) $request->input('kilos', 0),
+                    'metros_available' => (float) $request->input('metros', 0),
+                ]
+            );
+        }
+    });
 
     return redirect()
         ->route('stores.index')
@@ -368,5 +499,13 @@ public function update(StoreRequest $request, Store $store)
 
         return true;
     }
+
+    public function export()
+{
+    return Excel::download(
+        new ProductsExport(),
+        'productos.xlsx'
+    );
+}
 
 }

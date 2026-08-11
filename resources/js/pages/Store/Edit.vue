@@ -25,48 +25,83 @@ const props = defineProps<{
         proveedor: string;
         kilos: number | string;
         metros: number | string;
-        price: number;
-        minimum_stock: number;
-        wholesale_price: number;
-        public_price: number;
-        price_roll?: number;
-        special_price?: number;
-        location?: string;
-        description?: string;
-        image_path?: string | null;
-        image_url?: string | null;
+        minimum_stock: number | string;
+        price: number | string;
+        public_price: number | string;
+        wholesale_price: number | string;
+        price_roll: number | string;
+        special_price: number | string;
+        location: string;
+        description: string;
         is_active: boolean;
+        image_path: string | null;
+
+        warehouse_stocks: Array<{
+            id: number;
+            warehouse_id: number;
+            store_id: number;
+            kilos_available: number | string;
+            metros_available: number | string;
+            kilos_reserved: number | string;
+            metros_reserved: number | string;
+        }>;
     };
+
+    warehouses: Array<{
+        id: number;
+        name: string;
+        code: string;
+    }>;
+
+    warehouseSelectionRequired: boolean;
+
+    defaultWarehouseId: number | null;
+
     suppliers: Array<{
         id: number;
         company_name: string;
     }>;
 }>();
 
+const initialWarehouseId = props.defaultWarehouseId;
+
+const initialStock = props.product.warehouse_stocks.find(
+    stock => Number(stock.warehouse_id) === Number(initialWarehouseId)
+);
+
 const form = useForm({
     code_product: props.product.code_product,
     name_product: props.product.name_product,
     fabric_type: props.product.fabric_type,
     color: props.product.color,
+    proveedor: props.product.proveedor,
+
     kilos: props.product.kilos,
     metros: props.product.metros,
-    proveedor: props.product.proveedor,
-    price: props.product.price,
+
     minimum_stock: props.product.minimum_stock,
-    wholesale_price: props.product.wholesale_price,
+    price: props.product.price,
     public_price: props.product.public_price,
-    price_roll: props.product.price_roll || null,
-    special_price: props.product.special_price || null,
-    location: props.product.location || null,
-    description: props.product.description || null,
-    image: null as File | null,
+    wholesale_price: props.product.wholesale_price,
+    price_roll: props.product.price_roll,
+    special_price: props.product.special_price,
+
+    location: props.product.location,
+    description: props.product.description,
+
+    warehouse_id: initialWarehouseId
+        ? String(initialWarehouseId)
+        : '',
+
+    image_path: null as File | null,
+
     is_active: props.product.is_active,
 });
 
 const handleImage = (event: Event) => {
     const target = event.target as HTMLInputElement;
     const file = target.files ? target.files[0] : null;
-    form.image = file;
+    form.image_path = file;
 };
 
 const setNegativeMessage = (event: Event) => {
@@ -114,7 +149,6 @@ const submit = () => {
 
 <template>
     <Head title="Almacen Editar" />
-```vue
 <AppLayout :breadcrumbs="breadcrumbs">
     <div class="flex h-full flex-1 flex-col gap-6 overflow-x-auto p-4">
 
@@ -310,33 +344,7 @@ const submit = () => {
 
 
                     <!-- Stock -->
-                    <div class="grid grid-cols-1 gap-5 md:grid-cols-3">
-
-                        <div>
-                            <Label
-                                for="minimum_stock"
-                                class="mb-2 block text-sm font-medium text-slate-700"
-                            >
-                                Stock Mínimo
-                            </Label>
-
-                            <Input
-                                id="minimum_stock"
-                                v-model.number="form.minimum_stock"
-                                type="number"
-                                min="0"
-                                class="w-full"
-                                @input="clampNumberField('minimum_stock', $event)"
-                                @invalid="setNegativeMessage"
-                            />
-
-                            <InputError
-                                :message="form.errors.minimum_stock"
-                                class="mt-1"
-                            />
-                        </div>
-
-
+                    <div class="grid grid-cols-1 gap-5 md:grid-cols-3">                       
                         <div>
                             <Label
                                 for="kilos"
@@ -384,6 +392,30 @@ const submit = () => {
 
                             <InputError
                                 :message="form.errors.metros"
+                                class="mt-1"
+                            />
+                        </div>
+
+                        <div>
+                            <Label
+                                for="minimum_stock"
+                                class="mb-2 block text-sm font-medium text-slate-700"
+                            >
+                                Kilos
+                            </Label>
+
+                            <Input
+                                id="minimum_stock"
+                                v-model.number="form.minimum_stock"
+                                type="number"
+                                min="0"
+                                class="w-full"
+                                @input="clampNumberField('minimum_stock', $event)"
+                                @invalid="setNegativeMessage"
+                            />
+
+                            <InputError
+                                :message="form.errors.minimum_stock"
                                 class="mt-1"
                             />
                         </div>
@@ -560,26 +592,52 @@ const submit = () => {
 
                 <div class="space-y-6 p-6">
 
-                    <!-- Ubicación -->
-                    <div>
-                        <Label
-                            for="location"
-                            class="mb-2 block text-sm font-medium text-slate-700"
-                        >
-                            Ubicación
-                        </Label>
+                    <!-- Almacén -->
+                        <div>
+                            <Label
+                                for="warehouse_id"
+                                class="mb-2 block text-sm font-medium text-slate-700"
+                            >
+                                Almacén y/o Tienda
+                            </Label>
 
-                        <Input
-                            id="location"
-                            v-model="form.location"
-                            class="w-full"
-                        />
+                            <select
+                                v-if="props.warehouseSelectionRequired"
+                                id="warehouse_id"
+                                v-model="form.warehouse_id"
+                                class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-700 shadow-sm transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                            >
+                                <option
+                                    value=""
+                                    disabled
+                                >
+                                    Selecciona un almacén
+                                </option>
 
-                        <InputError
-                            :message="form.errors.location"
-                            class="mt-1"
-                        />
-                    </div>
+                                <option
+                                    v-for="warehouse in props.warehouses"
+                                    :key="warehouse.id"
+                                    :value="String(warehouse.id)"
+                                >
+                                    {{ warehouse.name }} ({{ warehouse.code }})
+                                </option>
+                            </select>
+
+                            <div
+                                v-else
+                                class="rounded-lg border border-blue-100 bg-blue-50 px-4 py-3 text-sm text-blue-700"
+                            >
+                                Se registrará stock automáticamente en
+                                <span class="font-semibold">
+                                    {{ props.warehouses[0]?.name || 'el almacén asignado' }}
+                                </span>.
+                            </div>
+
+                            <InputError
+                                :message="form.errors.warehouse_id"
+                                class="mt-1"
+                            />
+                        </div>
 
 
                     <!-- Estado -->
@@ -701,7 +759,5 @@ const submit = () => {
         </form>
     </div>
 </AppLayout>
-```
-
     
 </template>

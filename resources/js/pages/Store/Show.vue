@@ -24,6 +24,16 @@ const props = defineProps<{
         is_active: boolean;
         description: string;
         image_url: string | null;
+
+        warehouse_stocks: {
+            id: number;
+            warehouse_id: number;
+            warehouse_name: string | null;
+            kilos_available: number;
+            metros_available: number;
+            kilos_reserved: number;
+            metros_reserved: number;
+        }[];
     };
 }>();
 
@@ -191,13 +201,13 @@ const breadcrumbs: BreadcrumbItem[] = [
                             </p>
                         </div>
 
-                        <div hidden>
+                        <div>
                             <p class="text-xs font-semibold uppercase tracking-wide text-slate-400">
-                                Ubicación
+                                Almacén y/o Tienda
                             </p>
 
                             <p class="mt-1 text-sm text-slate-700">
-                                {{ props.store.location || '-' }}
+                                {{ props.store.warehouse_stocks.map(stock => stock.warehouse_name).join(', ') || '-' }}
                             </p>
                         </div>
 
@@ -216,15 +226,7 @@ const breadcrumbs: BreadcrumbItem[] = [
 
                     <div class="grid grid-cols-1 gap-4 p-6 sm:grid-cols-3">
 
-                        <div class="rounded-lg border border-slate-200 bg-slate-50 p-5">
-                            <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                                Stock Mínimo
-                            </p>
-
-                            <p class="mt-2 text-2xl font-bold text-slate-800">
-                                {{ props.store.minimum_stock }}
-                            </p>
-                        </div>
+                        
 
                         <div class="rounded-lg border border-slate-200 bg-slate-50 p-5">
                             <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">
@@ -243,6 +245,15 @@ const breadcrumbs: BreadcrumbItem[] = [
 
                             <p class="mt-2 text-2xl font-bold text-blue-600">
                                 {{ props.store.metros }}
+                            </p>
+                        </div>
+                        <div class="rounded-lg border border-slate-200 bg-slate-50 p-5">
+                            <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                                kilos
+                            </p>
+
+                            <p class="mt-2 text-2xl font-bold text-slate-800">
+                                {{ props.store.minimum_stock }}
                             </p>
                         </div>
 

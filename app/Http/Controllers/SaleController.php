@@ -26,7 +26,12 @@ class SaleController extends Controller
             : $user->warehouses()->pluck('warehouses.id');
 
         $salesQuery = Sale::query()
-            ->with(['customer:id,name', 'warehouse:id,name,code', 'seller:id,name'])
+            ->with([
+                'customer:id,name', 
+                'warehouse:id,name,code', 
+                'seller:id,name',
+                'items.store:id,code_product,name_product',
+                ])
             ->latest();
 
         if ($assignedWarehouseIds !== null) {
