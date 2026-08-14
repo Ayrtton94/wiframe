@@ -98,7 +98,7 @@ Route::middleware('auth')->group(function () {
         ->name('reports.export');
 
     Route::middleware('role:admin,vendedor,tienda')->group(function () {
-        Route::resource('sales', SaleController::class)->only(['index', 'store', 'show']);
+        Route::resource('sales', SaleController::class);
     });
 
 

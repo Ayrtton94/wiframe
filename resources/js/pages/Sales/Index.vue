@@ -697,6 +697,12 @@ const submit = () => {
                         >
                             Ver detalle
                         </Link>
+                        <Link
+                            :href="`/sales/${sale.id}/edit`"
+                            class="ml-2 text-green-600 hover:text-green-800"
+                            >
+                            Editar
+                        </Link>
                     </td>
 
                 </tr>
