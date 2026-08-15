@@ -274,6 +274,16 @@ class SaleController extends Controller
         'code',
     ]);
 
+    $warehouseStocks = WarehouseStock::query()
+        ->whereHas('warehouse', fn ($query) => $query->where('is_active', true));
+
+    if (! $user->hasRole('admin')) {
+        $warehouseStocks->whereIn(
+            'warehouse_id',
+            $user->warehouses()->pluck('warehouses.id')
+        );
+    }
+
     $products = Store::query()
         ->where('is_active', true)
         ->orderBy('name_product')
@@ -300,6 +310,12 @@ class SaleController extends Controller
                 'dni',
             ]),
         'warehouses' => $warehouses,
+        'warehouseStocks' => $warehouseStocks->get([
+            'warehouse_id',
+            'store_id',
+            'kilos_available',
+            'metros_available',
+        ]),
         'products' => $products,
     ]);
 }
@@ -343,7 +359,7 @@ class SaleController extends Controller
 
             if ($oldStock) {
 
-                if ($oldItem->unit === 'kilos') {
+                if (in_array($oldItem->unit, ['kilos', 'rollos'], true)) {
 
                     $oldStock->increment(
                         'kilos_available',
@@ -364,7 +380,7 @@ class SaleController extends Controller
 
             if ($product) {
 
-                if ($oldItem->unit === 'kilos') {
+                if (in_array($oldItem->unit, ['kilos', 'rollos'], true)) {
 
                     $product->increment(
                         'kilos',

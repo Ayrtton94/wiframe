@@ -66,6 +66,14 @@ const props = defineProps<{
             code: string;
         };
 
+        warehouseStocks: Array<{
+            warehouse_id: number;
+            store_id: number;
+            kilos_available: number | string;
+            metros_available: number | string;
+        }>;
+
+
         items: SaleItem[];
     };
 
@@ -99,12 +107,41 @@ const productMap = computed(
     () => new Map(props.products.map((product) => [product.id, product])),
 );
 
+const warehouseStockMap = computed(() => {
+    const map = new Map<
+        string,
+        { kilos_available: number; metros_available: number }
+    >();
+
+    props.warehouseStocks.forEach((stock) => {
+        map.set(`${stock.warehouse_id}:${stock.store_id}`, {
+            kilos_available: Number(stock.kilos_available || 0),
+            metros_available: Number(stock.metros_available || 0),
+        });
+    });
+
+    return map;
+});
+
+const originalSaleStockMap = computed(() => {
+    const map = new Map<string, number>();
+
+    props.sale.items.forEach((item) => {
+        const unit = item.unit === 'rollos' ? 'kilos' : item.unit;
+        const key = `${item.store_id}:${unit}`;
+
+        map.set(key, (map.get(key) || 0) + Number(item.quantity || 0));
+    });
+
+    return map;
+});
+
 const getProductPriceOptions = (product?: Product) => {
     if (!product) {
         return [];
     }
 
-const options: Array<{ label: string; value: PriceType; price: number }> = [
+    const options: Array<{ label: string; value: PriceType; price: number }> = [
         {
             label: 'Precio base',
             value: 'price',
@@ -153,9 +190,6 @@ const resolveItemPriceType = (item: SaleItem): PriceType => {
         )?.value ?? 'public'
     );
 };
-
-
-
 
 const form = useForm({
     customer_id: String(props.sale.customer_id),
