@@ -2,7 +2,7 @@
 import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link, useForm } from '@inertiajs/vue3';
-import { computed } from 'vue';
+import { computed, watch } from 'vue';
 
 type PriceType = 'price' | 'public' | 'wholesale' | 'price_roll' | 'special';
 
@@ -67,11 +67,11 @@ const props = defineProps<{
         };
 
         warehouseStocks: Array<{
-            warehouse_id: number;
-            store_id: number;
-            kilos_available: number | string;
-            metros_available: number | string;
-        }>;
+        warehouse_id: number;
+        store_id: number;
+        kilos_available: number | string;
+        metros_available: number | string;
+    }>;
 
 
         items: SaleItem[];
@@ -113,7 +113,7 @@ const warehouseStockMap = computed(() => {
         { kilos_available: number; metros_available: number }
     >();
 
-    props.warehouseStocks.forEach((stock) => {
+    (props.warehouseStocks ?? []).forEach((stock) => {
         map.set(`${stock.warehouse_id}:${stock.store_id}`, {
             kilos_available: Number(stock.kilos_available || 0),
             metros_available: Number(stock.metros_available || 0),
@@ -127,7 +127,7 @@ const originalSaleStockMap = computed(() => {
     const map = new Map<string, number>();
 
     props.sale.items.forEach((item) => {
-        const unit = item.unit === 'rollos' ? 'kilos' : item.unit;
+        const unit = item.unit === 'kilos' ? 'rollos' : item.unit;
         const key = `${item.store_id}:${unit}`;
 
         map.set(key, (map.get(key) || 0) + Number(item.quantity || 0));
@@ -200,7 +200,7 @@ const form = useForm({
 
     items: props.sale.items.map((item) => ({
         store_id: item.store_id,
-        unit: item.unit === 'rollos' ? 'kilos' : item.unit,
+        unit: item.unit === 'kilos' ? 'rollos' : item.unit,
         quantity: Number(item.quantity),
 
         // Lo dejamos en public inicialmente
@@ -211,6 +211,47 @@ const form = useForm({
 const availableProducts = computed(() => {
     return props.products;
 });
+
+const getAvailableForItem = (item: { store_id: number; unit: string }) => {
+    const stock = warehouseStockMap.value.get(
+        `${Number(form.warehouse_id)}:${Number(item.store_id)}`,
+    );
+    const stockQuantity =
+        item.unit === 'metros'
+            ? Number(stock?.metros_available || 0)
+            : Number(stock?.kilos_available || 0);
+    const originalKey = `${Number(item.store_id)}:${item.unit === 'metros' ? 'metros' : 'rollos'}`;
+
+    return stockQuantity + (originalSaleStockMap.value.get(originalKey) || 0);
+};
+
+const normalizeItemAfterProductChange = (item: {
+    store_id: number;
+    unit: string;
+    quantity: number;
+    price_type: PriceType;
+}) => {
+    const product = getProduct(item.store_id);
+    const priceOptions = getProductPriceOptions(product);
+
+    if (!priceOptions.some((option) => option.value === item.price_type)) {
+        item.price_type = priceOptions[0]?.value ?? 'public';
+    }
+
+    const available = getAvailableForItem(item);
+
+    if (Number(item.quantity || 0) > available) {
+        item.quantity = available;
+    }
+};
+
+watch(
+    () => form.items.map((item) => `${item.store_id}:${item.unit}`).join('|'),
+    () => {
+        form.items.forEach(normalizeItemAfterProductChange);
+    },
+);
+
 
 const getProduct = (storeId: number) => {
     return productMap.value.get(Number(storeId));
@@ -257,7 +298,7 @@ const estimateLineTotal = (item: {
 const addItem = () => {
     form.items.push({
         store_id: 0,
-        unit: 'metros',
+        unit: 'rollos',
         quantity: 0,
         price_type: 'public' as PriceType,
     });
@@ -272,7 +313,17 @@ const removeItem = (index: number) => {
 };
 
 const submit = () => {
-    form.put(`/sales/${props.sale.id}`);
+     form.transform((data: any) => ({
+        ...data,
+        customer_id: Number(data.customer_id),
+        warehouse_id: Number(data.warehouse_id),
+        items: data.items.map((item: any) => ({
+            store_id: Number(item.store_id),
+            unit: item.unit,
+            quantity: Number(item.quantity),
+            price_type: item.price_type,
+        })),
+    })).put(`/sales/${props.sale.id}`);
 };
 </script>
 
@@ -418,7 +469,7 @@ const submit = () => {
                                 </label>
 
                                 <select
-                                    v-model="item.store_id"
+                                    v-model.number="item.store_id"
                                     class="w-full rounded-lg border border-slate-300 px-3 py-2"
                                 >
                                     <option :value="0">
@@ -444,13 +495,9 @@ const submit = () => {
                                     Unidad
                                 </label>
 
-                                <select
-                                    v-model="item.unit"
-                                    class="w-full rounded-lg border border-slate-300 px-3 py-2"
-                                >
-                                     <option value="metros">Metros</option>
-
-                                    <option value="kilos">Kilos</option>
+                                <select v-model="item.unit" class="w-full rounded-lg border border-slate-300 px-3 py-2">
+                                    <option value="metros">Metros</option>
+                                    <option value="kilos">Rollos</option>
                                 </select>
                             </div>
 
@@ -467,6 +514,7 @@ const submit = () => {
                                     type="number"
                                     min="0.01"
                                     step="0.01"
+                                    :max="getAvailableForItem(item) || undefined"
                                     class="w-full rounded-lg border border-slate-300 px-3 py-2"
                                 />
                             </div>
@@ -555,9 +603,7 @@ const submit = () => {
                                 </div>
 
                                 <div>
-                                    <span class="text-slate-500">
-                                        Total
-                                    </span>
+                                    <span class="text-slate-500"> Total </span>
 
                                     <p class="font-medium">
                                         S/
