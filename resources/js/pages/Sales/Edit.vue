@@ -4,6 +4,9 @@ import { type BreadcrumbItem } from '@/types';
 import { Head, Link, useForm } from '@inertiajs/vue3';
 import { computed } from 'vue';
 
+type PriceType = 'price' | 'public' | 'wholesale' | 'price_roll' | 'special';
+
+
 interface Product {
     id: number;
     code_product: string;
@@ -92,6 +95,68 @@ const breadcrumbs: BreadcrumbItem[] = [
     },
 ];
 
+const productMap = computed(
+    () => new Map(props.products.map((product) => [product.id, product])),
+);
+
+const getProductPriceOptions = (product?: Product) => {
+    if (!product) {
+        return [];
+    }
+
+const options: Array<{ label: string; value: PriceType; price: number }> = [
+        {
+            label: 'Precio base',
+            value: 'price',
+            price: Number(product.price || 0),
+        },
+        {
+            label: 'Precio público',
+            value: 'public',
+            price: Number(product.public_price || 0),
+        },
+        {
+            label: 'Precio mayorista',
+            value: 'wholesale',
+            price: Number(product.wholesale_price || 0),
+        },
+    ];
+
+    if (Number(product.price_roll || 0) > 0) {
+        options.push({
+            label: 'Precio por rollo',
+            value: 'price_roll',
+            price: Number(product.price_roll || 0),
+        });
+    }
+
+    if (Number(product.special_price || 0) > 0) {
+        options.push({
+            label: 'Precio especial',
+            value: 'special',
+            price: Number(product.special_price || 0),
+        });
+    }
+
+    return options.filter((option) => option.price > 0);
+};
+
+const resolveItemPriceType = (item: SaleItem): PriceType => {
+    const product = productMap.value.get(Number(item.store_id));
+    const unitPrice = Number(item.unit_price || 0);
+
+    return (
+        getProductPriceOptions(product).find(
+            (option) =>
+                Number(option.price.toFixed(2)) ===
+                Number(unitPrice.toFixed(2)),
+        )?.value ?? 'public'
+    );
+};
+
+
+
+
 const form = useForm({
     customer_id: String(props.sale.customer_id),
 
@@ -101,11 +166,11 @@ const form = useForm({
 
     items: props.sale.items.map((item) => ({
         store_id: item.store_id,
-        unit: item.unit,
+        unit: item.unit === 'rollos' ? 'kilos' : item.unit,
         quantity: Number(item.quantity),
 
         // Lo dejamos en public inicialmente
-        price_type: 'public',
+       price_type: resolveItemPriceType(item),
     })),
 });
 
@@ -114,39 +179,45 @@ const availableProducts = computed(() => {
 });
 
 const getProduct = (storeId: number) => {
-    return props.products.find(
-        (product) => product.id === Number(storeId),
-    );
+    return productMap.value.get(Number(storeId));
 };
 
-const getPrice = (
-    storeId: number,
-    priceType: string,
-) => {
-    const product = getProduct(storeId);
+const getSelectedProductPrice = (item: {
+    store_id: number;
+    price_type: PriceType;
+}) => {
+    const product = getProduct(item.store_id);
 
     if (!product) {
         return 0;
     }
 
-    switch (priceType) {
+    switch (item.price_type) {
         case 'wholesale':
-            return Number(product.wholesale_price);
+            return Number(product.wholesale_price || 0);
 
         case 'price_roll':
-            return Number(product.price_roll);
+            return Number(product.price_roll || 0);
 
         case 'special':
-            return Number(product.special_price) > 0
-                ? Number(product.special_price)
-                : Number(product.public_price);
+            return Number(product.special_price || 0);
 
         case 'price':
-            return Number(product.price);
+            return Number(product.price || 0);
 
         default:
-            return Number(product.public_price);
+            return Number(product.public_price || 0);
     }
+};
+
+const estimateLineTotal = (item: {
+    store_id: number;
+    quantity: number;
+    price_type: PriceType;
+}) => {
+    return (Number(item.quantity || 0) * getSelectedProductPrice(item)).toFixed(
+        2,
+    );
 };
 
 const addItem = () => {
@@ -154,7 +225,7 @@ const addItem = () => {
         store_id: 0,
         unit: 'metros',
         quantity: 0,
-        price_type: 'public',
+        price_type: 'public' as PriceType,
     });
 };
 
@@ -218,9 +289,7 @@ const submit = () => {
                         v-model="form.customer_id"
                         class="w-full rounded-lg border border-slate-300 px-3 py-2"
                     >
-                        <option value="">
-                            Seleccionar cliente
-                        </option>
+                        <option value="">Seleccionar cliente</option>
 
                         <option
                             v-for="customer in props.customers"
@@ -252,9 +321,7 @@ const submit = () => {
                         v-model="form.warehouse_id"
                         class="w-full rounded-lg border border-slate-300 px-3 py-2"
                     >
-                        <option value="">
-                            Seleccionar almacén
-                        </option>
+                        <option value="">Seleccionar almacén</option>
 
                         <option
                             v-for="warehouse in props.warehouses"
@@ -306,9 +373,7 @@ const submit = () => {
                         :key="index"
                         class="rounded-lg border border-slate-200 p-4"
                     >
-                        <div
-                            class="grid gap-4 md:grid-cols-5"
-                        >
+                        <div class="grid gap-4 md:grid-cols-5">
 
                             <!-- PRODUCTO -->
                             <div class="md:col-span-2">
@@ -349,17 +414,9 @@ const submit = () => {
                                     v-model="item.unit"
                                     class="w-full rounded-lg border border-slate-300 px-3 py-2"
                                 >
-                                    <option value="metros">
-                                        Metros
-                                    </option>
+                                     <option value="metros">Metros</option>
 
-                                    <option value="kilos">
-                                        Kilos
-                                    </option>
-
-                                    <option value="rollos">
-                                        Rollos
-                                    </option>
+                                    <option value="kilos">Kilos</option>
                                 </select>
                             </div>
 
@@ -389,29 +446,31 @@ const submit = () => {
                                 </label>
 
                                 <select
+                                     v-if="
+                                        getProductPriceOptions(
+                                            getProduct(item.store_id),
+                                        ).length > 1
+                                        "
                                     v-model="item.price_type"
-                                    class="w-full rounded-lg border border-slate-300 px-3 py-2"
-                                >
-                                    <option value="public">
-                                        Público
-                                    </option>
+                                    class="w-full rounded-lg border border-slate-300 px-3 py-2">
 
-                                    <option value="wholesale">
-                                        Mayorista
-                                    </option>
-
-                                    <option value="price_roll">
-                                        Rollo
-                                    </option>
-
-                                    <option value="special">
-                                        Especial
-                                    </option>
-
-                                    <option value="price">
-                                        Precio
-                                    </option>
+                                    <option
+                                        v-for="option in getProductPriceOptions(
+                                            getProduct(item.store_id),
+                                        )"
+                                        :key="option.value"
+                                        :value="option.value"
+                                    >
+                                        {{ option.label }}
+                                     </option>                                    
                                 </select>
+                                <div
+                                    v-else
+                                    class="flex items-center text-sm text-slate-500"
+                                >
+                                    Precio: S/
+                                    {{ getSelectedProductPrice(item) }}
+                                </div>
                             </div>
                         </div>
 
@@ -428,7 +487,10 @@ const submit = () => {
                                     </span>
 
                                     <p class="font-medium">
-                                        {{ getProduct(item.store_id)?.name_product }}
+                                         {{
+                                            getProduct(item.store_id)
+                                                ?.name_product
+                                        }}
                                     </p>
                                 </div>
 
@@ -440,9 +502,8 @@ const submit = () => {
                                     <p class="font-medium">
                                         S/
                                         {{
-                                            getPrice(
-                                                item.store_id,
-                                                item.price_type,
+                                            getSelectedProductPrice(
+                                                item,
                                             ).toFixed(2)
                                         }}
                                     </p>
@@ -466,15 +527,7 @@ const submit = () => {
 
                                     <p class="font-medium">
                                         S/
-                                        {{
-                                            (
-                                                Number(item.quantity) *
-                                                getPrice(
-                                                    item.store_id,
-                                                    item.price_type,
-                                                )
-                                            ).toFixed(2)
-                                        }}
+                                        {{ estimateLineTotal(item) }}
                                     </p>
                                 </div>
 
@@ -494,21 +547,14 @@ const submit = () => {
                     </div>
                 </div>
 
-                <p
-                    v-if="form.errors.items"
-                    class="mt-3 text-sm text-red-600"
-                >
+                <p v-if="form.errors.items" class="mt-3 text-sm text-red-600">
                     {{ form.errors.items }}
                 </p>
             </section>
 
             <!-- OBSERVACIONES -->
-            <section
-                class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm"
-            >
-                <label
-                    class="mb-1 block text-sm font-medium text-slate-700"
-                >
+            <section class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+                <label class="mb-1 block text-sm font-medium text-slate-700">
                     Motivo / Observaciones
                 </label>
 
@@ -536,11 +582,7 @@ const submit = () => {
                     :disabled="form.processing"
                     class="rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
                 >
-                    {{
-                        form.processing
-                            ? 'Guardando...'
-                            : 'Guardar cambios'
-                    }}
+                    {{ form.processing ? 'Guardando...' : 'Guardar cambios' }}
                 </button>
 
             </section>
