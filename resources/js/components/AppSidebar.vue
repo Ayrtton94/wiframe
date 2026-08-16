@@ -11,12 +11,16 @@ import {
     SidebarMenu,
     SidebarMenuButton,
     SidebarMenuItem,
+    SidebarMenuSub,
+    SidebarMenuSubButton,
+    SidebarMenuSubItem,
 } from '@/components/ui/sidebar';
 import { type NavItem } from '@/types';
 import { Link, usePage } from '@inertiajs/vue3';
 import {
     BarChart3,
     Boxes,
+    ChevronDown,
     LayoutGrid,
     Factory,
     ShoppingCart,
@@ -90,6 +94,26 @@ const mainNavItems: NavItem[] = [
               {
                   title: 'Reportes',
                   href: '/reports',
+                  icon: BarChart3,
+              },
+              {
+                  title: 'Salidas',
+                  href: '/reports/salidas',
+                  icon: BarChart3,
+              },
+              {
+                  title: 'Movimiento productos',
+                  href: '/reports/movimiento-productos',
+                  icon: BarChart3,
+              },
+              {
+                  title: 'Transferencias',
+                  href: '/reports/transferencias',
+                  icon: BarChart3,
+              },
+              {
+                  title: 'Inventario',
+                  href: '/reports/inventario',
                   icon: BarChart3,
               },
               {

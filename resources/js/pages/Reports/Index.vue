@@ -195,25 +195,64 @@ const formatNumber = (value: number | string, fractionDigits = 0) => {
                 </form>
 
                 <div class="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-                    <div class="rounded-2xl border border-gray-200 bg-slate-50 p-4">
-                        <p class="text-sm font-medium text-gray-600">Total ventas</p>
-                        <p class="mt-3 text-3xl font-semibold text-slate-900">{{ formatNumber(totalSalesCount.value) }}</p>
-                        <p class="text-sm text-gray-500">salidas</p>
-                    </div>
-                    <div class="rounded-2xl border border-gray-200 bg-emerald-50 p-4">
-                        <p class="text-sm font-medium text-gray-600">Total vendido</p>
-                        <p class="mt-3 text-3xl font-semibold text-slate-900">{{ currency(totalSalesAmount.value) }}</p>
-                        <p class="text-sm text-gray-500">en el rango</p>
-                    </div>
+    <!-- TOTAL VENTAS -->
+    <div class="rounded-2xl border border-gray-200 bg-slate-50 p-4">
+        <p class="text-sm font-medium text-gray-600">
+            Total ventas
+        </p>
+
+        <p class="mt-3 text-3xl font-semibold text-slate-900">
+            {{ formatNumber(totalSalesCount) }}
+        </p>
+
+        <p class="text-sm text-gray-500">
+            salidas
+        </p>
+    </div>
+
+    <!-- TOTAL VENDIDO -->
+    <div class="rounded-2xl border border-gray-200 bg-emerald-50 p-4">
+        <p class="text-sm font-medium text-gray-600">
+            Total vendido
+        </p>
+
+        <p class="mt-3 text-3xl font-semibold text-slate-900">
+            {{ currency(totalSalesAmount) }}
+        </p>
+
+        <p class="text-sm text-gray-500">
+            en el rango
+        </p>
+    </div>
+
+                    <!-- TOTAL PRODUCTOS -->
                     <div class="rounded-2xl border border-gray-200 bg-yellow-50 p-4">
-                        <p class="text-sm font-medium text-gray-600">Total productos</p>
-                        <p class="mt-3 text-3xl font-semibold text-slate-900">{{ formatNumber(totalProductsCount.value) }}</p>
-                        <p class="text-sm text-gray-500">productos</p>
+                        <p class="text-sm font-medium text-gray-600">
+                            Total productos
+                        </p>
+
+                        <p class="mt-3 text-3xl font-semibold text-slate-900">
+                            {{ formatNumber(totalProductsCount) }}
+                        </p>
+
+                        <p class="text-sm text-gray-500">
+                            productos
+                        </p>
                     </div>
+
+                    <!-- RESPONSABLES -->
                     <div class="rounded-2xl border border-gray-200 bg-violet-50 p-4">
-                        <p class="text-sm font-medium text-gray-600">Responsables</p>
-                        <p class="mt-3 text-3xl font-semibold text-slate-900">{{ formatNumber(totalResponsiblesCount.value) }}</p>
-                        <p class="text-sm text-gray-500">vendedores</p>
+                        <p class="text-sm font-medium text-gray-600">
+                            Responsables
+                        </p>
+
+                        <p class="mt-3 text-3xl font-semibold text-slate-900">
+                            {{ formatNumber(totalResponsiblesCount) }}
+                        </p>
+
+                        <p class="text-sm text-gray-500">
+                            vendedores
+                        </p>
                     </div>
                 </div>
             </section>

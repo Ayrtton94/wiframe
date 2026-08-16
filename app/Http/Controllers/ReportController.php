@@ -877,8 +877,8 @@ public function salidas(Request $request)
                 'saldo_inicial' => $saldoInicial,
                 'ingresos' => (float) (clone $periodMovements)->where('im.type', 'INGRESO')->sum('im.quantity'),
                 'salidas' => (float) $sales->sum('si.quantity'),
-                'transferencias_recibidas' => (float) (clone $period)->where('im.type', 'TRANSFERENCIA_ENTRADA')->sum('im.quantity'),
-                'transferencias_enviadas' => (float) (clone $period)->where('im.type', 'TRANSFERENCIA_SALIDA')->sum('im.quantity'),
+                'transferencias_recibidas' => $transferenciasRecibidas,
+                'transferencias_enviadas' => $transferenciasEnviadas,
                 'saldo_actual' => $stock
                     ? (float) ($row->unidad === 'ROLLOS' ? $stock->kilos_available : $stock->metros_available)
                     : 0.0,
