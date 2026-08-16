@@ -6,6 +6,7 @@ use App\Exports\ReportsExport;
 use App\Models\Warehouse;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Illuminate\Validation\Rule;
@@ -668,6 +669,38 @@ public function salidas(Request $request)
     ]);
 }
 
+ private function assignedWarehouseIds(Request $request)
+    {
+        $user = $request->user();
+
+        return $user->hasRole('admin')
+            ? null
+            : $user->warehouses()->pluck('warehouses.id');
+    }
+
+    private function reportPerPage(Request $request): int
+    {
+        return max(10, min(100, $request->integer('per_page', 25)));
+    }
+
+    private function reportWarehouses($assignedWarehouseIds)
+    {
+        return Warehouse::query()
+            ->where('is_active', true)
+            ->when($assignedWarehouseIds !== null, fn ($query) => $query->whereIn('id', $assignedWarehouseIds))
+            ->orderBy('name')
+            ->get(['id', 'name', 'code']);
+    }
+
+    private function reportProducts()
+    {
+        return DB::table('stores')
+            ->where('is_active', true)
+            ->orderBy('name_product')
+            ->get(['id', 'code_product', 'name_product']);
+    }
+
+
     /**
      * Reporte 2: Movimiento / saldo por producto.
      *
@@ -691,6 +724,12 @@ public function salidas(Request $request)
             'unit' => ['nullable', Rule::in(['ROLLOS', 'METROS'])],
         ]);
 
+        $assignedWarehouseIds = $this->assignedWarehouseIds($request);
+        $perPage = $this->reportPerPage($request);
+        $warehouses = $this->reportWarehouses($assignedWarehouseIds);
+        $productsCatalog = $this->reportProducts();
+
+
         $from = !empty($data['from'])
             ? Carbon::parse($data['from'])->startOfDay()
             : null;
@@ -699,13 +738,18 @@ public function salidas(Request $request)
             ? Carbon::parse($data['to'])->endOfDay()
             : null;
 
-        /*
-         * Se agrupa por producto + almacén + unidad.
-         * El saldo inicial se calcula con movimientos anteriores al periodo.
-         */
-        $products = DB::table('inventory_movements as im')
+
+        $movementRows = DB::table('inventory_movements as im')
             ->join('stores as p', 'p.id', '=', 'im.store_id')
             ->join('warehouses as w', 'w.id', '=', 'im.warehouse_id')
+            ->where('p.is_active', true)
+            ->where('w.is_active', true)
+            ->when($assignedWarehouseIds !== null, fn ($query) => $query->whereIn('im.warehouse_id', $assignedWarehouseIds))
+            ->when($data['warehouse_id'] ?? null, fn ($query, $id) => $query->where('im.warehouse_id', $id))
+            ->when($data['product_id'] ?? null, fn ($query, $id) => $query->where('im.store_id', $id))
+            ->when($data['unit'] ?? null, fn ($query, $unit) => $query->where('im.unit', $unit))
+            ->when($from, fn ($query) => $query->where('im.created_at', '>=', $from))
+            ->when($to, fn ($query) => $query->where('im.created_at', '<=', $to))
             ->select([
                 'p.id as product_id',
                 'p.code_product as codigo_producto',
@@ -714,70 +758,27 @@ public function salidas(Request $request)
                 'w.name as almacen',
                 'im.unit as unidad',
             ])
-            ->when($data['warehouse_id'] ?? null, fn ($q, $id) => $q->where('im.warehouse_id', $id))
-            ->when($data['product_id'] ?? null, fn ($q, $id) => $q->where('im.store_id', $id))
-            ->when($data['unit'] ?? null, fn ($q, $unit) => $q->where('im.unit', $unit))
-            ->when($from, fn ($q) => $q->where('im.created_at', '>=', $from))
-            ->when($to, fn ($q) => $q->where('im.created_at', '<=', $to))
-            ->groupBy(
-                'p.id',
-                'p.code_product',
-                'p.name_product',
-                'w.id',
-                'w.name',
-                'im.unit'
-            )
+            ->groupBy('p.id', 'p.code_product', 'p.name_product', 'w.id', 'w.name', 'im.unit')
             ->orderBy('p.name_product')
+            ->orderBy('w.name')
             ->get();
 
-        $result = $products->map(function ($row) use ($from, $to) {
+        $items = $movementRows->map(function ($row) use ($from, $to) {
             $base = DB::table('inventory_movements as im')
                 ->where('im.store_id', $row->product_id)
                 ->where('im.warehouse_id', $row->warehouse_id)
                 ->where('im.unit', $row->unidad);
 
-            $saldoInicial = 0;
+            $saldoInicial = 0.0;
             if ($from) {
                 $saldoInicial = (float) (clone $base)
                     ->where('im.created_at', '<', $from)
-                    ->selectRaw("
-                        COALESCE(SUM(
-                            CASE
-                                WHEN im.type IN ('INGRESO', 'TRANSFERENCIA_ENTRADA') THEN im.quantity
-                                WHEN im.type IN ('SALIDA', 'TRANSFERENCIA_SALIDA') THEN -im.quantity
-                                ELSE 0
-                            END
-                        ), 0) as saldo
-                    ")
+                    ->selectRaw("COALESCE(SUM(CASE WHEN im.type IN ('INGRESO', 'TRANSFERENCIA_ENTRADA') THEN im.quantity WHEN im.type IN ('SALIDA', 'TRANSFERENCIA_SALIDA') THEN -im.quantity ELSE 0 END), 0) as saldo")                   
                     ->value('saldo');
             }
 
             $period = clone $base;
-
-            if ($from) {
-                $period->where('im.created_at', '>=', $from);
-            }
-
-            if ($to) {
-                $period->where('im.created_at', '<=', $to);
-            }
-
-            $ingresos = (float) (clone $period)
-                ->where('im.type', 'INGRESO')
-                ->sum('im.quantity');
-
-            $salidas = (float) (clone $period)
-                ->where('im.type', 'SALIDA')
-                ->sum('im.quantity');
-
-            $transferenciasRecibidas = (float) (clone $period)
-                ->where('im.type', 'TRANSFERENCIA_ENTRADA')
-                ->sum('im.quantity');
-
-            $transferenciasEnviadas = (float) (clone $period)
-                ->where('im.type', 'TRANSFERENCIA_SALIDA')
-                ->sum('im.quantity');
-
+            $period->when($from, fn ($query) => $query->where('im.created_at', '>=', $from))->when($to, fn ($query) => $query->where('im.created_at', '<=', $to));
             /*
              * Saldo actual se toma de warehouse_stocks, que representa
              * el estado actual del inventario.
@@ -790,14 +791,6 @@ public function salidas(Request $request)
                 ->where('store_id', $row->product_id)
                 ->first();
 
-            $saldoActual = 0;
-
-            if ($stock) {
-                $saldoActual = $row->unidad === 'ROLLOS'
-                    ? (float) $stock->kilos_available
-                    : (float) $stock->metros_available;
-            }
-
             return [
                 'product_id' => $row->product_id,
                 'codigo_producto' => $row->codigo_producto,
@@ -806,17 +799,27 @@ public function salidas(Request $request)
                 'almacen' => $row->almacen,
                 'unidad' => $row->unidad,
                 'saldo_inicial' => $saldoInicial,
-                'ingresos' => $ingresos,
-                'salidas' => $salidas,
-                'transferencias_recibidas' => $transferenciasRecibidas,
-                'transferencias_enviadas' => $transferenciasEnviadas,
-                'saldo_actual' => $saldoActual,
+                'ingresos' => (float) (clone $period)->where('im.type', 'INGRESO')->sum('im.quantity'),
+                'salidas' => (float) (clone $period)->where('im.type', 'SALIDA')->sum('im.quantity'),
+                'transferencias_recibidas' => (float) (clone $period)->where('im.type', 'TRANSFERENCIA_ENTRADA')->sum('im.quantity'),
+                'transferencias_enviadas' => (float) (clone $period)->where('im.type', 'TRANSFERENCIA_SALIDA')->sum('im.quantity'),
+                'saldo_actual' => $stock
+                    ? (float) ($row->unidad === 'ROLLOS' ? $stock->kilos_available : $stock->metros_available)
+                    : 0.0,
             ];
         });
 
+        $page = LengthAwarePaginator::resolveCurrentPage();
+        $rows = new LengthAwarePaginator(
+            $items->forPage($page, $perPage)->values(),
+            $items->count(),
+            $perPage,
+            $page,
+            ['path' => $request->url(), 'query' => $request->query()]
+        );
+
         return Inertia::render('Reports/MovimientoProductos', [
             'rows' => $rows,
-
             'filters' => [
                 'from' => $data['from'] ?? '',
                 'to' => $data['to'] ?? '',
@@ -825,10 +828,8 @@ public function salidas(Request $request)
                 'unit' => $data['unit'] ?? '',
                 'per_page' => $perPage,
             ],
-
             'warehouses' => $warehouses,
-
-            'products' => $products,
+            'products' => $productsCatalog,
         ]);
     }
 
@@ -846,6 +847,11 @@ public function salidas(Request $request)
             'search' => ['nullable', 'string', 'max:100'],
         ]);
 
+        $assignedWarehouseIds = $this->assignedWarehouseIds($request);
+        $perPage = $this->reportPerPage($request);
+        $warehouses = $this->reportWarehouses($assignedWarehouseIds);
+
+
         $query = DB::table('transfers as t')
             ->join('warehouses as wo', 'wo.id', '=', 't.from_warehouse_id')
             ->join('warehouses as wd', 'wd.id', '=', 't.to_warehouse_id')
@@ -854,6 +860,13 @@ public function salidas(Request $request)
             ->leftJoin('users as ue', 'ue.id', '=', 't.received_by')
             ->join('transfer_items as ti', 'ti.transfer_id', '=', 't.id')
             ->join('stores as p', 'p.id', '=', 'ti.store_id')
+            ->where('p.is_active', true)
+            ->when($assignedWarehouseIds !== null, function ($query) use ($assignedWarehouseIds) {
+                $query->where(function ($query) use ($assignedWarehouseIds) {
+                    $query->whereIn('t.from_warehouse_id', $assignedWarehouseIds)
+                        ->orWhereIn('t.to_warehouse_id', $assignedWarehouseIds);
+                });
+            })
             ->select([
                 't.id',
                 't.code as transferencia_code',
@@ -874,50 +887,33 @@ public function salidas(Request $request)
                 'ti.metros_shipped as metros_despachados',
                 'ti.kilos_received as rollos_recibidos',
                 'ti.metros_received as metros_recibidos',
-            ]);
+            ])
+            ->when(!empty($data['from']), fn ($query) => $query->where('t.created_at', '>=', Carbon::parse($data['from'])->startOfDay()))
+            ->when(!empty($data['to']), fn ($query) => $query->where('t.created_at', '<=', Carbon::parse($data['to'])->endOfDay()))
+            ->when($data['from_warehouse_id'] ?? null, fn ($query, $id) => $query->where('t.from_warehouse_id', $id))
+            ->when($data['to_warehouse_id'] ?? null, fn ($query, $id) => $query->where('t.to_warehouse_id', $id))
+            ->when(!empty($data['status']), fn ($query) => $query->where('t.status', $data['status']))
+            ->when(!empty($data['search']), function ($query) use ($data) {
+                $search = trim($data['search']);
 
-        if (!empty($data['from'])) {
-            $query->where('t.created_at', '>=', Carbon::parse($data['from'])->startOfDay());
-        }
-
-        if (!empty($data['to'])) {
-            $query->where('t.created_at', '<=', Carbon::parse($data['to'])->endOfDay());
-        }
-
-        if (!empty($data['from_warehouse_id'])) {
-            $query->where('t.from_warehouse_id', $data['from_warehouse_id']);
-        }
-
-        if (!empty($data['to_warehouse_id'])) {
-            $query->where('t.to_warehouse_id', $data['to_warehouse_id']);
-        }
-
-        if (!empty($data['status'])) {
-            $query->where('t.status', $data['status']);
-        }
-
-        if (!empty($data['search'])) {
-            $search = trim($data['search']);
-
-            $query->where(function ($q) use ($search) {
-                $q->where('t.code', 'like', "%{$search}%")
-                    ->orWhere('p.code_product', 'like', "%{$search}%")
-                    ->orWhere('p.name_product', 'like', "%{$search}%")
-                    ->orWhere('wo.name', 'like', "%{$search}%")
-                    ->orWhere('wd.name', 'like', "%{$search}%");
+                $query->where(function ($query) use ($search) {
+                    $query->where('t.code', 'like', "%{$search}%")
+                        ->orWhere('p.code_product', 'like', "%{$search}%")
+                        ->orWhere('p.name_product', 'like', "%{$search}%")
+                        ->orWhere('wo.name', 'like', "%{$search}%")
+                        ->orWhere('wd.name', 'like', "%{$search}%");
+                });
             });
-        }
-
+ 
         $rows = $query
             ->orderByDesc('t.created_at')
             ->orderBy('t.id')
             ->orderBy('ti.id')
-            ->paginate(25)
+            ->paginate($perPage)
             ->withQueryString();
 
         return Inertia::render('Reports/Transferencias', [
             'rows' => $rows,
-
             'filters' => [
                 'from' => $data['from'] ?? '',
                 'to' => $data['to'] ?? '',
@@ -927,7 +923,6 @@ public function salidas(Request $request)
                 'search' => $data['search'] ?? '',
                 'per_page' => $perPage,
             ],
-
             'warehouses' => $warehouses,
         ]);
     }
@@ -943,9 +938,17 @@ public function salidas(Request $request)
             'search' => ['nullable', 'string', 'max:100'],
         ]);
 
+        $assignedWarehouseIds = $this->assignedWarehouseIds($request);
+        $perPage = $this->reportPerPage($request);
+        $warehouses = $this->reportWarehouses($assignedWarehouseIds);
+        $products = $this->reportProducts();
+
         $query = DB::table('warehouse_stocks as ws')
             ->join('warehouses as w', 'w.id', '=', 'ws.warehouse_id')
             ->join('stores as p', 'p.id', '=', 'ws.store_id')
+            ->where('p.is_active', true)
+            ->where('w.is_active', true)
+            ->when($assignedWarehouseIds !== null, fn ($query) => $query->whereIn('ws.warehouse_id', $assignedWarehouseIds))
             ->select([
                 'ws.id',
                 'w.id as warehouse_id',
@@ -956,30 +959,23 @@ public function salidas(Request $request)
                 DB::raw('ws.kilos_available as rollos'),
                 DB::raw('ws.metros_available as metros'),
                 'p.minimum_stock as stock_minimo',
-            ]);
+            ]) 
+            ->when($data['warehouse_id'] ?? null, fn ($query, $id) => $query->where('ws.warehouse_id', $id))
+            ->when($data['product_id'] ?? null, fn ($query, $id) => $query->where('ws.store_id', $id))
+            ->when(!empty($data['search']), function ($query) use ($data) {
+                $search = trim($data['search']);
 
-        if (!empty($data['warehouse_id'])) {
-            $query->where('ws.warehouse_id', $data['warehouse_id']);
-        }
-
-        if (!empty($data['product_id'])) {
-            $query->where('ws.store_id', $data['product_id']);
-        }
-
-        if (!empty($data['search'])) {
-            $search = trim($data['search']);
-
-            $query->where(function ($q) use ($search) {
-                $q->where('p.code_product', 'like', "%{$search}%")
-                    ->orWhere('p.name_product', 'like', "%{$search}%")
-                    ->orWhere('w.name', 'like', "%{$search}%");
+                $query->where(function ($query) use ($search) {
+                    $query->where('p.code_product', 'like', "%{$search}%")
+                        ->orWhere('p.name_product', 'like', "%{$search}%")
+                        ->orWhere('w.name', 'like', "%{$search}%");
+                });
             });
-        }
 
         $rows = $query
             ->orderBy('w.name')
             ->orderBy('p.name_product')
-            ->paginate(25)
+            ->paginate($perPage)
             ->withQueryString();
 
         return Inertia::render('Reports/Inventario', [
