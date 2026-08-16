@@ -497,7 +497,7 @@ public function salidas(Request $request)
 
         ->where(
             's.status',
-            'completed'
+            ['completed', 'completo']
         );
 
     /*

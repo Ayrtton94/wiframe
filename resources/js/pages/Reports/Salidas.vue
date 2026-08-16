@@ -62,6 +62,7 @@ const props = defineProps<{
         current_page: number;
         last_page: number;
         total: number;
+        per_page: number
         from: number | null;
         to: number | null;
     };
@@ -225,7 +226,7 @@ const formatDateTime = (value: string | null) => {
                         </label>
 
                         <input
-                            v-model="filters.from"
+                            v-model="form.from"
                             type="date"
                             class="w-full rounded border px-3 py-2"
                         />
@@ -238,7 +239,7 @@ const formatDateTime = (value: string | null) => {
                         </label>
 
                         <input
-                            v-model="filters.to"
+                            v-model="form.to"
                             type="date"
                             class="w-full rounded border px-3 py-2"
                         />
@@ -251,9 +252,8 @@ const formatDateTime = (value: string | null) => {
                         </label>
 
                         <select
-                            v-model="filters.warehouse_id"
-                            class="w-full rounded border px-3 py-2"
-                        >
+                            v-model="form.warehouse_id"
+                            class="w-full rounded border px-3 py-2">
                             <option value="">
                                 Todos
                             </option>
@@ -275,7 +275,7 @@ const formatDateTime = (value: string | null) => {
                         </label>
 
                         <select
-                            v-model="filters.responsible_id"
+                            v-model="form.responsible_id"
                             class="w-full rounded border px-3 py-2"
                         >
                             <option value="">
@@ -285,8 +285,7 @@ const formatDateTime = (value: string | null) => {
                             <option
                                 v-for="responsible in props.responsibles"
                                 :key="responsible.id"
-                                :value="String(responsible.id)"
-                            >
+                                :value="String(responsible.id)">
                                 {{ responsible.name }}
                             </option>
                         </select>
@@ -299,9 +298,8 @@ const formatDateTime = (value: string | null) => {
                         </label>
 
                         <select
-                            v-model="filters.customer_id"
-                            class="w-full rounded border px-3 py-2"
-                        >
+                            v-model="form.customer_id"
+                            class="w-full rounded border px-3 py-2">
                             <option value="">
                                 Todos
                             </option>
@@ -323,12 +321,28 @@ const formatDateTime = (value: string | null) => {
                         </label>
 
                         <input
-                            v-model="filters.search"
+                            v-model="form.search"
                             type="search"
                             placeholder="Código salida, cliente, código o producto..."
                             class="w-full rounded border px-3 py-2"
                             @keyup.enter="applyFilters"
                         />
+                    </div>
+
+                    <!-- REGISTROS POR PÁGINA -->
+                    <div>
+                        <label class="mb-1 block text-sm font-medium">
+                            Registros por página
+                        </label>
+
+                        <select
+                            v-model.number="form.per_page"
+                            class="w-full rounded border px-3 py-2">
+                            <option :value="10">10</option>
+                            <option :value="25">25</option>
+                            <option :value="50">50</option>
+                            <option :value="100">100</option>
+                        </select>
                     </div>
 
                     <!-- BOTONES -->
