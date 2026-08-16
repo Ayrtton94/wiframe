@@ -97,6 +97,23 @@ Route::middleware('auth')->group(function () {
         ->middleware('role:admin,almacen,tienda,vendedor')
         ->name('reports.export');
 
+    Route::get('reports/salidas', [ReportController::class, 'salidas'])
+        ->middleware('role:admin,almacen,tienda,vendedor')
+        ->name('reports.salidas');
+
+    Route::get('reports/movimiento-productos', [ReportController::class, 'movimientoProductos'])
+        ->middleware('role:admin,almacen,tienda,vendedor')
+        ->name('reports.movimiento-productos');
+
+    Route::get('reports/transferencias', [ReportController::class, 'transferencias'])
+        ->middleware('role:admin,almacen,tienda,vendedor')
+        ->name('reports.transferencias');
+
+    Route::get('reports/inventario', [ReportController::class, 'inventario'])
+        ->middleware('role:admin,almacen,tienda,vendedor')
+        ->name('reports.inventario');
+
+
     Route::middleware('role:admin,vendedor,tienda')->group(function () {
         Route::resource('sales', SaleController::class);
     });
