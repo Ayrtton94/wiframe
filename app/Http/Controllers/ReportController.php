@@ -487,18 +487,18 @@ public function salidas(Request $request)
             'si.line_total as total',
 
             'im.reason as motivo',
-        ])
+        ]);
 
-        /*
-        |--------------------------------------------------------------------------
-        | SOLO SALIDAS COMPLETADAS
-        |--------------------------------------------------------------------------
-        */
+         /*
+    |--------------------------------------------------------------------------
+    | VENTAS REGISTRADAS COMO SALIDAS
+    |--------------------------------------------------------------------------
+    | El módulo de ventas del sistema guarda las salidas con el estado
+    | vigente que corresponda en cada instalación. No filtramos por status
+    | para evitar ocultar ventas registradas con variantes como
+    | completed/completo.
+    */
 
-        ->where(
-            's.status',
-            ['completed', 'completo']
-        );
 
     /*
     |--------------------------------------------------------------------------
@@ -738,6 +738,53 @@ public function salidas(Request $request)
             ? Carbon::parse($data['to'])->endOfDay()
             : null;
 
+        $unitFilter = $data['unit'] ?? null;
+
+        $stockRows = DB::table('warehouse_stocks as ws')
+            ->join('stores as p', 'p.id', '=', 'ws.store_id')
+            ->join('warehouses as w', 'w.id', '=', 'ws.warehouse_id')
+            ->where('p.is_active', true)
+            ->where('w.is_active', true)
+            ->when($assignedWarehouseIds !== null, fn ($query) => $query->whereIn('ws.warehouse_id', $assignedWarehouseIds))
+            ->when($data['warehouse_id'] ?? null, fn ($query, $id) => $query->where('ws.warehouse_id', $id))
+            ->when($data['product_id'] ?? null, fn ($query, $id) => $query->where('ws.store_id', $id))
+            ->select([
+                'p.id as product_id',
+                'p.code_product as codigo_producto',
+                'p.name_product as producto',
+                'w.id as warehouse_id',
+                'w.name as almacen',
+                'ws.kilos_available',
+                'ws.metros_available',
+            ])
+            ->get()
+            ->flatMap(function ($row) use ($unitFilter) {
+                $rows = collect();
+
+                if ($unitFilter === null || $unitFilter === 'ROLLOS') {
+                    $rows->push((object) [
+                        'product_id' => $row->product_id,
+                        'codigo_producto' => $row->codigo_producto,
+                        'producto' => $row->producto,
+                        'warehouse_id' => $row->warehouse_id,
+                        'almacen' => $row->almacen,
+                        'unidad' => 'ROLLOS',
+                    ]);
+                }
+
+                if ($unitFilter === null || $unitFilter === 'METROS') {
+                    $rows->push((object) [
+                        'product_id' => $row->product_id,
+                        'codigo_producto' => $row->codigo_producto,
+                        'producto' => $row->producto,
+                        'warehouse_id' => $row->warehouse_id,
+                        'almacen' => $row->almacen,
+                        'unidad' => 'METROS',
+                    ]);
+                }
+
+                return $rows;
+            });
 
         $movementRows = DB::table('inventory_movements as im')
             ->join('stores as p', 'p.id', '=', 'im.store_id')
@@ -756,36 +803,65 @@ public function salidas(Request $request)
                 'p.name_product as producto',
                 'w.id as warehouse_id',
                 'w.name as almacen',
-                'im.unit as unidad',
+                 DB::raw("CASE WHEN im.unit IN ('ROLLOS', 'rollos', 'kilos') THEN 'ROLLOS' ELSE 'METROS' END as unidad"),
             ])
             ->groupBy('p.id', 'p.code_product', 'p.name_product', 'w.id', 'w.name', 'im.unit')
-            ->orderBy('p.name_product')
-            ->orderBy('w.name')
             ->get();
 
-        $items = $movementRows->map(function ($row) use ($from, $to) {
-            $base = DB::table('inventory_movements as im')
+            $movementKeys = $stockRows
+            ->merge($movementRows)
+            ->unique(fn ($row) => $row->product_id.'-'.$row->warehouse_id.'-'.$row->unidad)
+            ->sortBy([['producto', 'asc'], ['almacen', 'asc'], ['unidad', 'asc']])
+            ->values();
+
+        $items = $movementKeys->map(function ($row) use ($from, $to) {
+                 $unitAliases = $row->unidad === 'ROLLOS'
+                ? ['ROLLOS', 'rollos', 'kilos']
+                : ['METROS', 'metros'];
+
+                $movementsBase = DB::table('inventory_movements as im')
                 ->where('im.store_id', $row->product_id)
                 ->where('im.warehouse_id', $row->warehouse_id)
-                ->where('im.unit', $row->unidad);
+                ->whereIn('im.unit', $unitAliases);
 
             $saldoInicial = 0.0;
             if ($from) {
-                $saldoInicial = (float) (clone $base)
+                 $saldoInicial = (float) (clone $movementsBase)
                     ->where('im.created_at', '<', $from)
                     ->selectRaw("COALESCE(SUM(CASE WHEN im.type IN ('INGRESO', 'TRANSFERENCIA_ENTRADA') THEN im.quantity WHEN im.type IN ('SALIDA', 'TRANSFERENCIA_SALIDA') THEN -im.quantity ELSE 0 END), 0) as saldo")                   
                     ->value('saldo');
             }
 
-            $period = clone $base;
-            $period->when($from, fn ($query) => $query->where('im.created_at', '>=', $from))->when($to, fn ($query) => $query->where('im.created_at', '<=', $to));
-            /*
-             * Saldo actual se toma de warehouse_stocks, que representa
-             * el estado actual del inventario.
-             *
-             * La base actual conserva los nombres kilos_available/metros_available.
-             * En la lógica del proyecto, kilos_available se interpreta como ROLLOS.
-             */
+            $periodMovements = clone $movementsBase;
+            $periodMovements->when($from, fn ($query) => $query->where('im.created_at', '>=', $from))
+                ->when($to, fn ($query) => $query->where('im.created_at', '<=', $to));
+
+            $sales = DB::table('sale_items as si')
+                ->join('sales as s', 's.id', '=', 'si.sale_id')
+                ->where('si.store_id', $row->product_id)
+                ->where('s.warehouse_id', $row->warehouse_id)
+                ->whereIn('si.unit', $unitAliases)
+                ->when($from, fn ($query) => $query->where('s.created_at', '>=', $from))
+                ->when($to, fn ($query) => $query->where('s.created_at', '<=', $to));
+
+            $transferColumn = $row->unidad === 'ROLLOS' ? 'kilos' : 'metros';
+
+            $transferenciasRecibidas = (float) DB::table('transfer_items as ti')
+                ->join('transfers as t', 't.id', '=', 'ti.transfer_id')
+                ->where('ti.store_id', $row->product_id)
+                ->where('t.to_warehouse_id', $row->warehouse_id)
+                ->when($from, fn ($query) => $query->where('t.created_at', '>=', $from))
+                ->when($to, fn ($query) => $query->where('t.created_at', '<=', $to))
+                ->sum("ti.{$transferColumn}_received");
+
+            $transferenciasEnviadas = (float) DB::table('transfer_items as ti')
+                ->join('transfers as t', 't.id', '=', 'ti.transfer_id')
+                ->where('ti.store_id', $row->product_id)
+                ->where('t.from_warehouse_id', $row->warehouse_id)
+                ->when($from, fn ($query) => $query->where('t.created_at', '>=', $from))
+                ->when($to, fn ($query) => $query->where('t.created_at', '<=', $to))
+                ->sum("ti.{$transferColumn}_shipped");
+            
             $stock = DB::table('warehouse_stocks')
                 ->where('warehouse_id', $row->warehouse_id)
                 ->where('store_id', $row->product_id)
@@ -799,8 +875,8 @@ public function salidas(Request $request)
                 'almacen' => $row->almacen,
                 'unidad' => $row->unidad,
                 'saldo_inicial' => $saldoInicial,
-                'ingresos' => (float) (clone $period)->where('im.type', 'INGRESO')->sum('im.quantity'),
-                'salidas' => (float) (clone $period)->where('im.type', 'SALIDA')->sum('im.quantity'),
+                'ingresos' => (float) (clone $periodMovements)->where('im.type', 'INGRESO')->sum('im.quantity'),
+                'salidas' => (float) $sales->sum('si.quantity'),
                 'transferencias_recibidas' => (float) (clone $period)->where('im.type', 'TRANSFERENCIA_ENTRADA')->sum('im.quantity'),
                 'transferencias_enviadas' => (float) (clone $period)->where('im.type', 'TRANSFERENCIA_SALIDA')->sum('im.quantity'),
                 'saldo_actual' => $stock

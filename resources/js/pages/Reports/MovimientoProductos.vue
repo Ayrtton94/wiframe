@@ -311,11 +311,24 @@ const changePage = (page: number) => {
                             </option>
                         </select>
                     </div>
+                    <!-- REGISTROS POR PÁGINA -->
+                    <div>
+                        <label class="mb-1 block text-sm font-medium">
+                            Registros por página
+                        </label>
 
+                        <select
+                            v-model.number="filters.per_page"
+                            class="w-full rounded border px-3 py-2">
+                            <option :value="10">10</option>
+                            <option :value="25">25</option>
+                            <option :value="50">50</option>
+                            <option :value="100">100</option>
+                        </select>
+                    </div>
                     <!-- BOTONES -->
                     <div
-                        class="flex gap-2 md:col-span-2 lg:col-span-3"
-                    >
+                        class="flex gap-2 md:col-span-2 lg:col-span-2">
                         <Button
                             type="submit"
                             class="flex-1"
