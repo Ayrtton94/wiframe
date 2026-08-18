@@ -133,158 +133,614 @@ const formatNumber = (value: number | string, fractionDigits = 0) => {
     return numberValue.toFixed(fractionDigits).replace(/\.0+$/, '');
 };
 </script>
-
 <template>
     <Head title="Reportes" />
 
     <AppLayout :breadcrumbs="breadcrumbs">
-        <div class="space-y-6 p-4">
-            <section class="rounded-xl border bg-white p-4">
-                <h1 class="text-xl font-semibold">Reportes de salidas e inventario</h1>
-                <p class="mt-1 text-sm text-gray-500">
-                    Consulta salidas y stock por tienda/almacén en un solo lugar.
-                </p>
+        <div
+            class="space-y-6 bg-slate-50 p-4
+                   dark:bg-slate-950"
+        >
+            <!-- ENCABEZADO + FILTROS -->
+            <section
+                class="rounded-xl border
+                       border-slate-200
+                       bg-white p-5 shadow-sm
+                       dark:border-slate-700
+                       dark:bg-slate-900"
+            >
+                <div>
+                    <h1
+                        class="text-xl font-semibold
+                               text-slate-900
+                               dark:text-slate-100"
+                    >
+                        Reportes de salidas e inventario
+                    </h1>
 
-                <form class="mt-4 grid gap-3 md:grid-cols-4" @submit.prevent="applyFilters">
+                    <p
+                        class="mt-1 text-sm
+                               text-slate-500
+                               dark:text-slate-400"
+                    >
+                        Consulta salidas y stock por tienda/almacén
+                        en un solo lugar.
+                    </p>
+                </div>
+
+                <form
+                    class="mt-5 grid gap-4
+                           md:grid-cols-4"
+                    @submit.prevent="applyFilters"
+                >
+                    <!-- FECHA INICIO -->
                     <div>
-                        <label class="mb-1 block text-sm font-medium">Fecha inicio</label>
-                        <input v-model="form.start_date" type="date" class="w-full rounded border px-3 py-2" />
+                        <label
+                            class="mb-1 block text-sm
+                                   font-medium
+                                   text-slate-700
+                                   dark:text-slate-300"
+                        >
+                            Fecha inicio
+                        </label>
+
+                        <input
+                            v-model="form.start_date"
+                            type="date"
+                            class="w-full rounded-lg
+                                   border border-slate-300
+                                   bg-white px-3 py-2
+                                   text-slate-900
+                                   shadow-sm outline-none
+                                   focus:border-blue-500
+                                   focus:ring-2
+                                   focus:ring-blue-500/20
+                                   dark:border-slate-600
+                                   dark:bg-slate-800
+                                   dark:text-slate-100"
+                        />
                     </div>
+
+                    <!-- FECHA FIN -->
                     <div>
-                        <label class="mb-1 block text-sm font-medium">Fecha fin</label>
-                        <input v-model="form.end_date" type="date" class="w-full rounded border px-3 py-2" />
+                        <label
+                            class="mb-1 block text-sm
+                                   font-medium
+                                   text-slate-700
+                                   dark:text-slate-300"
+                        >
+                            Fecha fin
+                        </label>
+
+                        <input
+                            v-model="form.end_date"
+                            type="date"
+                            class="w-full rounded-lg
+                                   border border-slate-300
+                                   bg-white px-3 py-2
+                                   text-slate-900
+                                   shadow-sm outline-none
+                                   focus:border-blue-500
+                                   focus:ring-2
+                                   focus:ring-blue-500/20
+                                   dark:border-slate-600
+                                   dark:bg-slate-800
+                                   dark:text-slate-100"
+                        />
                     </div>
+
+                    <!-- ALMACÉN -->
                     <div>
-                        <label class="mb-1 block text-sm font-medium">Tienda / Almacén</label>
-                        <select v-model="form.warehouse_id" class="w-full rounded border px-3 py-2">
-                            <option value="">Todos</option>
-                            <option v-for="warehouse in props.warehouses" :key="warehouse.id" :value="String(warehouse.id)">
-                                {{ warehouse.code }} - {{ warehouse.name }}
+                        <label
+                            class="mb-1 block text-sm
+                                   font-medium
+                                   text-slate-700
+                                   dark:text-slate-300"
+                        >
+                            Tienda / Almacén
+                        </label>
+
+                        <select
+                            v-model="form.warehouse_id"
+                            class="w-full rounded-lg
+                                   border border-slate-300
+                                   bg-white px-3 py-2
+                                   text-slate-900
+                                   shadow-sm outline-none
+                                   focus:border-blue-500
+                                   focus:ring-2
+                                   focus:ring-blue-500/20
+                                   dark:border-slate-600
+                                   dark:bg-slate-800
+                                   dark:text-slate-100"
+                        >
+                            <option value="">
+                                Todos
+                            </option>
+
+                            <option
+                                v-for="warehouse in props.warehouses"
+                                :key="warehouse.id"
+                                :value="
+                                    String(
+                                        warehouse.id,
+                                    )
+                                "
+                            >
+                                {{ warehouse.code }} -
+                                {{ warehouse.name }}
                             </option>
                         </select>
                     </div>
+
+                    <!-- RESPONSABLE -->
                     <div>
-                        <label class="mb-1 block text-sm font-medium">Responsable</label>
-                        <select v-model="form.seller_id" class="w-full rounded border px-3 py-2">
-                            <option value="">Todos</option>
-                            <option v-for="seller in props.sellers" :key="seller.id" :value="String(seller.id)">
+                        <label
+                            class="mb-1 block text-sm
+                                   font-medium
+                                   text-slate-700
+                                   dark:text-slate-300"
+                        >
+                            Responsable
+                        </label>
+
+                        <select
+                            v-model="form.seller_id"
+                            class="w-full rounded-lg
+                                   border border-slate-300
+                                   bg-white px-3 py-2
+                                   text-slate-900
+                                   shadow-sm outline-none
+                                   focus:border-blue-500
+                                   focus:ring-2
+                                   focus:ring-blue-500/20
+                                   dark:border-slate-600
+                                   dark:bg-slate-800
+                                   dark:text-slate-100"
+                        >
+                            <option value="">
+                                Todos
+                            </option>
+
+                            <option
+                                v-for="seller in props.sellers"
+                                :key="seller.id"
+                                :value="
+                                    String(
+                                        seller.id,
+                                    )
+                                "
+                            >
                                 {{ seller.name }}
                             </option>
                         </select>
                     </div>
-                    <div class="md:col-span-2">
-                        <label class="mb-1 block text-sm font-medium">Buscar</label>
+
+                    <!-- BÚSQUEDA -->
+                    <div
+                        class="md:col-span-2"
+                    >
+                        <label
+                            class="mb-1 block text-sm
+                                   font-medium
+                                   text-slate-700
+                                   dark:text-slate-300"
+                        >
+                            Buscar
+                        </label>
+
                         <input
                             v-model="form.search"
                             type="search"
                             placeholder="N° Salida, cliente, producto..."
-                            class="w-full rounded border px-3 py-2"
+                            class="w-full rounded-lg
+                                   border border-slate-300
+                                   bg-white px-3 py-2
+                                   text-slate-900
+                                   placeholder:text-slate-400
+                                   shadow-sm outline-none
+                                   focus:border-blue-500
+                                   focus:ring-2
+                                   focus:ring-blue-500/20
+                                   dark:border-slate-600
+                                   dark:bg-slate-800
+                                   dark:text-slate-100
+                                   dark:placeholder:text-slate-500"
                         />
                     </div>
-                    <div class="md:col-span-2 flex flex-col gap-2 sm:flex-row">
-                        <Button type="submit" class="w-full">Aplicar filtros</Button>
-                        <Button type="button" variant="outline" class="w-full" @click="clearFilters">
+
+                    <!-- FILTROS -->
+                     <div
+                        class="flex flex-col gap-2
+                            md:col-span-2
+                            sm:flex-row"
+                    >
+                        <Button
+                            type="submit"
+                            class="w-full sm:flex-1
+                                bg-blue-600 text-white
+                                hover:bg-blue-700
+                                dark:hover:bg-blue-500"
+                        >
+                            Aplicar filtros
+                        </Button>
+
+                        <Button
+                            type="button"
+                            variant="outline"
+                            class="w-full sm:flex-1
+                                border-slate-300
+                                bg-white
+                                text-slate-700
+                                hover:bg-slate-50
+                                dark:border-slate-600
+                                dark:bg-slate-800
+                                dark:text-slate-300
+                                dark:hover:bg-slate-700"
+                            @click="clearFilters"
+                        >
                             Limpiar filtros
                         </Button>
                     </div>
-                    <div class="md:col-span-2 flex flex-col gap-2 sm:flex-row">
-                        <Button type="button" variant="outline" class="w-full" @click="exportExcel">
+                    
+                    <!-- EXPORTAR -->
+                    <div
+                        class="flex flex-col gap-2
+                               md:col-span-2
+                               sm:flex-row"
+                    >
+                        <Button
+                            type="button"
+                            variant="outline"
+                            class="w-full
+                                   border-emerald-300
+                                   bg-white
+                                   text-emerald-700
+                                   hover:bg-emerald-50
+                                   dark:border-emerald-500/40
+                                   dark:bg-slate-800
+                                   dark:text-emerald-400
+                                   dark:hover:bg-emerald-500/10"
+                            @click="exportExcel"
+                        >
                             Exportar Excel
                         </Button>
                     </div>
                 </form>
 
-                <div class="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-    <!-- TOTAL VENTAS -->
-    <div class="rounded-2xl border border-gray-200 bg-slate-50 p-4">
-        <p class="text-sm font-medium text-gray-600">
-            Total ventas
-        </p>
+                <!-- RESUMEN -->
+                <div
+                    class="mt-6 grid gap-4
+                           sm:grid-cols-2
+                           xl:grid-cols-4"
+                >
+                    <!-- TOTAL VENTAS -->
+                    <div
+                        class="rounded-2xl border
+                               border-slate-200
+                               bg-slate-50 p-4
+                               dark:border-slate-700
+                               dark:bg-slate-800"
+                    >
+                        <p
+                            class="text-sm font-medium
+                                   text-slate-600
+                                   dark:text-slate-300"
+                        >
+                            Total ventas
+                        </p>
 
-        <p class="mt-3 text-3xl font-semibold text-slate-900">
-            {{ formatNumber(totalSalesCount) }}
-        </p>
+                        <p
+                            class="mt-3 text-3xl font-semibold
+                                   text-slate-900
+                                   dark:text-slate-100"
+                        >
+                            {{ formatNumber(totalSalesCount) }}
+                        </p>
 
-        <p class="text-sm text-gray-500">
-            salidas
-        </p>
-    </div>
+                        <p
+                            class="text-sm
+                                   text-slate-500
+                                   dark:text-slate-400"
+                        >
+                            salidas
+                        </p>
+                    </div>
 
-    <!-- TOTAL VENDIDO -->
-    <div class="rounded-2xl border border-gray-200 bg-emerald-50 p-4">
-        <p class="text-sm font-medium text-gray-600">
-            Total vendido
-        </p>
+                    <!-- TOTAL VENDIDO -->
+                    <div
+                        class="rounded-2xl border
+                               border-emerald-200
+                               bg-emerald-50 p-4
+                               dark:border-emerald-500/30
+                               dark:bg-emerald-500/10"
+                    >
+                        <p
+                            class="text-sm font-medium
+                                   text-emerald-700
+                                   dark:text-emerald-400"
+                        >
+                            Total vendido
+                        </p>
 
-        <p class="mt-3 text-3xl font-semibold text-slate-900">
-            {{ currency(totalSalesAmount) }}
-        </p>
+                        <p
+                            class="mt-3 text-3xl font-semibold
+                                   text-slate-900
+                                   dark:text-slate-100"
+                        >
+                            {{ currency(totalSalesAmount) }}
+                        </p>
 
-        <p class="text-sm text-gray-500">
-            en el rango
-        </p>
-    </div>
+                        <p
+                            class="text-sm
+                                   text-slate-500
+                                   dark:text-slate-400"
+                        >
+                            en el rango
+                        </p>
+                    </div>
 
                     <!-- TOTAL PRODUCTOS -->
-                    <div class="rounded-2xl border border-gray-200 bg-yellow-50 p-4">
-                        <p class="text-sm font-medium text-gray-600">
+                    <div
+                        class="rounded-2xl border
+                               border-yellow-200
+                               bg-yellow-50 p-4
+                               dark:border-yellow-500/30
+                               dark:bg-yellow-500/10"
+                    >
+                        <p
+                            class="text-sm font-medium
+                                   text-yellow-700
+                                   dark:text-yellow-400"
+                        >
                             Total productos
                         </p>
 
-                        <p class="mt-3 text-3xl font-semibold text-slate-900">
+                        <p
+                            class="mt-3 text-3xl font-semibold
+                                   text-slate-900
+                                   dark:text-slate-100"
+                        >
                             {{ formatNumber(totalProductsCount) }}
                         </p>
 
-                        <p class="text-sm text-gray-500">
+                        <p
+                            class="text-sm
+                                   text-slate-500
+                                   dark:text-slate-400"
+                        >
                             productos
                         </p>
                     </div>
 
                     <!-- RESPONSABLES -->
-                    <div class="rounded-2xl border border-gray-200 bg-violet-50 p-4">
-                        <p class="text-sm font-medium text-gray-600">
+                    <div
+                        class="rounded-2xl border
+                               border-violet-200
+                               bg-violet-50 p-4
+                               dark:border-violet-500/30
+                               dark:bg-violet-500/10"
+                    >
+                        <p
+                            class="text-sm font-medium
+                                   text-violet-700
+                                   dark:text-violet-400"
+                        >
                             Responsables
                         </p>
 
-                        <p class="mt-3 text-3xl font-semibold text-slate-900">
+                        <p
+                            class="mt-3 text-3xl font-semibold
+                                   text-slate-900
+                                   dark:text-slate-100"
+                        >
                             {{ formatNumber(totalResponsiblesCount) }}
                         </p>
 
-                        <p class="text-sm text-gray-500">
+                        <p
+                            class="text-sm
+                                   text-slate-500
+                                   dark:text-slate-400"
+                        >
                             vendedores
                         </p>
                     </div>
                 </div>
             </section>
 
-            <section class="rounded-xl border bg-white p-4">
-                <h2 class="mb-3 text-lg font-semibold">Reporte de ventas por tienda</h2>
-                <div class="overflow-x-auto">
-                    <table class="w-full min-w-[700px] divide-y divide-gray-200">
-                        <thead class="bg-gray-50">
+            <!-- REPORTE DE VENTAS -->
+            <section
+                class="rounded-xl border
+                       border-slate-200
+                       bg-white p-5 shadow-sm
+                       dark:border-slate-700
+                       dark:bg-slate-900"
+            >
+                <div class="mb-4">
+                    <h2
+                        class="text-lg font-semibold
+                               text-slate-900
+                               dark:text-slate-100"
+                    >
+                        Reporte de ventas por tienda
+                    </h2>
+                </div>
+
+                <div
+                    class="overflow-x-auto"
+                >
+                    <table
+                        class="w-full min-w-[700px]
+                               divide-y
+                               divide-slate-200
+                               dark:divide-slate-700"
+                    >
+                        <thead
+                            class="bg-slate-50
+                                   dark:bg-slate-800"
+                        >
                             <tr>
-                                <th class="px-4 py-2 text-left text-xs font-semibold uppercase">Código</th>
-                                <th class="px-4 py-2 text-left text-xs font-semibold uppercase">Nombre</th>
-                                <th class="px-4 py-2 text-left text-xs font-semibold uppercase">Fecha</th>
-                                <th class="px-4 py-2 text-left text-xs font-semibold uppercase">Vendedor</th>
-                                <th class="px-4 py-2 text-right text-xs font-semibold uppercase">N° salida</th>
-                                <th class="px-4 py-2 text-right text-xs font-semibold uppercase">Unidades</th>
-                                <th class="px-4 py-2 text-right text-xs font-semibold uppercase">Total vendido</th>
+                                <th
+                                    class="px-4 py-3 text-left
+                                           text-xs font-semibold
+                                           uppercase
+                                           text-slate-600
+                                           dark:text-slate-300"
+                                >
+                                    Código
+                                </th>
+
+                                <th
+                                    class="px-4 py-3 text-left
+                                           text-xs font-semibold
+                                           uppercase
+                                           text-slate-600
+                                           dark:text-slate-300"
+                                >
+                                    Nombre
+                                </th>
+
+                                <th
+                                    class="px-4 py-3 text-left
+                                           text-xs font-semibold
+                                           uppercase
+                                           text-slate-600
+                                           dark:text-slate-300"
+                                >
+                                    Fecha
+                                </th>
+
+                                <th
+                                    class="px-4 py-3 text-left
+                                           text-xs font-semibold
+                                           uppercase
+                                           text-slate-600
+                                           dark:text-slate-300"
+                                >
+                                    Vendedor
+                                </th>
+
+                                <th
+                                    class="px-4 py-3 text-right
+                                           text-xs font-semibold
+                                           uppercase
+                                           text-slate-600
+                                           dark:text-slate-300"
+                                >
+                                    N° salida
+                                </th>
+
+                                <th
+                                    class="px-4 py-3 text-right
+                                           text-xs font-semibold
+                                           uppercase
+                                           text-slate-600
+                                           dark:text-slate-300"
+                                >
+                                    Unidades
+                                </th>
+
+                                <th
+                                    class="px-4 py-3 text-right
+                                           text-xs font-semibold
+                                           uppercase
+                                           text-slate-600
+                                           dark:text-slate-300"
+                                >
+                                    Total vendido
+                                </th>
                             </tr>
                         </thead>
-                        <tbody class="divide-y divide-gray-100">
-                            <tr v-for="row in props.sales_by_warehouse" :key="`${row.warehouse_id}-${row.sale_date}-${row.seller_name}`">
-                                <td class="px-4 py-2 text-sm">{{ row.warehouse_code }}</td>
-                                <td class="px-4 py-2 text-sm">{{ row.warehouse_name }}</td>
-                                <td class="px-4 py-2 text-sm">{{ row.sale_date }}</td>
-                                <td class="px-4 py-2 text-sm">{{ row.seller_name }}</td>
-                                <td class="px-4 py-2 text-right text-sm">{{ formatNumber(row.sales_count) }}</td>
-                                <td class="px-4 py-2 text-right text-sm">{{ formatNumber(row.total_units, 2) }}</td>
-                                <td class="px-4 py-2 text-right text-sm font-medium">{{ currency(row.total_sales) }}</td>
+
+                        <tbody
+                            class="divide-y
+                                   divide-slate-100
+                                   dark:divide-slate-700"
+                        >
+                            <tr
+                                v-for="row in props.sales_by_warehouse"
+                                :key="
+                                    `${row.warehouse_id}-${row.sale_date}-${row.seller_name}`
+                                "
+                                class="transition
+                                       hover:bg-slate-50
+                                       dark:hover:bg-slate-800/70"
+                            >
+                                <td
+                                    class="px-4 py-2 text-sm
+                                           text-slate-700
+                                           dark:text-slate-300"
+                                >
+                                    {{ row.warehouse_code }}
+                                </td>
+
+                                <td
+                                    class="px-4 py-2 text-sm
+                                           text-slate-700
+                                           dark:text-slate-300"
+                                >
+                                    {{ row.warehouse_name }}
+                                </td>
+
+                                <td
+                                    class="px-4 py-2 text-sm
+                                           text-slate-700
+                                           dark:text-slate-300"
+                                >
+                                    {{ row.sale_date }}
+                                </td>
+
+                                <td
+                                    class="px-4 py-2 text-sm
+                                           text-slate-700
+                                           dark:text-slate-300"
+                                >
+                                    {{ row.seller_name }}
+                                </td>
+
+                                <td
+                                    class="px-4 py-2 text-right
+                                           text-sm
+                                           text-slate-700
+                                           dark:text-slate-300"
+                                >
+                                    {{ formatNumber(row.sales_count) }}
+                                </td>
+
+                                <td
+                                    class="px-4 py-2 text-right
+                                           text-sm
+                                           text-slate-700
+                                           dark:text-slate-300"
+                                >
+                                    {{ formatNumber(row.total_units, 2) }}
+                                </td>
+
+                                <td
+                                    class="px-4 py-2 text-right
+                                           text-sm font-medium
+                                           text-slate-900
+                                           dark:text-slate-100"
+                                >
+                                    {{ currency(row.total_sales) }}
+                                </td>
                             </tr>
-                            <tr v-if="props.sales_by_warehouse.length === 0">
-                                <td colspan="5" class="px-4 py-4 text-center text-sm text-gray-500">
-                                    No hay ventas en el rango seleccionado.
+
+                            <tr
+                                v-if="
+                                    props.sales_by_warehouse
+                                        .length === 0
+                                "
+                            >
+                                <td
+                                    colspan="7"
+                                    class="px-4 py-6
+                                           text-center text-sm
+                                           text-slate-500
+                                           dark:text-slate-400"
+                                >
+                                    No hay ventas en el rango
+                                    seleccionado.
                                 </td>
                             </tr>
                         </tbody>
@@ -292,30 +748,161 @@ const formatNumber = (value: number | string, fractionDigits = 0) => {
                 </div>
             </section>
 
-            <section class="rounded-xl border bg-white p-4">
-                <h2 class="mb-3 text-lg font-semibold">Reporte de inventario por producto</h2>
-                <div class="overflow-x-auto">
-                    <table class="w-full min-w-[900px] divide-y divide-gray-200">
-                        <thead class="bg-gray-50">
+            <!-- REPORTE DE INVENTARIO -->
+            <section
+                class="rounded-xl border
+                       border-slate-200
+                       bg-white p-5 shadow-sm
+                       dark:border-slate-700
+                       dark:bg-slate-900"
+            >
+                <div class="mb-4">
+                    <h2
+                        class="text-lg font-semibold
+                               text-slate-900
+                               dark:text-slate-100"
+                    >
+                        Reporte de inventario por producto
+                    </h2>
+                </div>
+
+                <div
+                    class="overflow-x-auto"
+                >
+                    <table
+                        class="w-full min-w-[900px]
+                               divide-y
+                               divide-slate-200
+                               dark:divide-slate-700"
+                    >
+                        <thead
+                            class="bg-slate-50
+                                   dark:bg-slate-800"
+                        >
                             <tr>
-                                <th class="px-4 py-2 text-left text-xs font-semibold uppercase">Almacén</th>
-                                <th class="px-4 py-2 text-left text-xs font-semibold uppercase">Código prod.</th>
-                                <th class="px-4 py-2 text-left text-xs font-semibold uppercase">Producto</th>
-                                <th class="px-4 py-2 text-right text-xs font-semibold uppercase">Royos</th>
-                                <th class="px-4 py-2 text-right text-xs font-semibold uppercase">Metros disp.</th>
+                                <th
+                                    class="px-4 py-3 text-left
+                                           text-xs font-semibold
+                                           uppercase
+                                           text-slate-600
+                                           dark:text-slate-300"
+                                >
+                                    Almacén
+                                </th>
+
+                                <th
+                                    class="px-4 py-3 text-left
+                                           text-xs font-semibold
+                                           uppercase
+                                           text-slate-600
+                                           dark:text-slate-300"
+                                >
+                                    Código prod.
+                                </th>
+
+                                <th
+                                    class="px-4 py-3 text-left
+                                           text-xs font-semibold
+                                           uppercase
+                                           text-slate-600
+                                           dark:text-slate-300"
+                                >
+                                    Producto
+                                </th>
+
+                                <th
+                                    class="px-4 py-3 text-right
+                                           text-xs font-semibold
+                                           uppercase
+                                           text-slate-600
+                                           dark:text-slate-300"
+                                >
+                                    Rollos
+                                </th>
+
+                                <th
+                                    class="px-4 py-3 text-right
+                                           text-xs font-semibold
+                                           uppercase
+                                           text-slate-600
+                                           dark:text-slate-300"
+                                >
+                                    Metros disp.
+                                </th>
                             </tr>
                         </thead>
-                        <tbody class="divide-y divide-gray-100">
-                            <tr v-for="row in props.inventory_by_warehouse" :key="row.id">
-                                <td class="px-4 py-2 text-sm">{{ row.warehouse_code }} - {{ row.warehouse_name }}</td>
-                                <td class="px-4 py-2 text-sm">{{ row.code_product }}</td>
-                                <td class="px-4 py-2 text-sm">{{ row.name_product }}</td>
-                                <td class="px-4 py-2 text-right text-sm">{{ formatNumber(row.kilos_available, 3) }}</td>
-                                <td class="px-4 py-2 text-right text-sm">{{ formatNumber(row.metros_available, 3) }}</td>
+
+                        <tbody
+                            class="divide-y
+                                   divide-slate-100
+                                   dark:divide-slate-700"
+                        >
+                            <tr
+                                v-for="row in props.inventory_by_warehouse"
+                                :key="row.id"
+                                class="transition
+                                       hover:bg-slate-50
+                                       dark:hover:bg-slate-800/70"
+                            >
+                                <td
+                                    class="px-4 py-2 text-sm
+                                           text-slate-700
+                                           dark:text-slate-300"
+                                >
+                                    {{ row.warehouse_code }} -
+                                    {{ row.warehouse_name }}
+                                </td>
+
+                                <td
+                                    class="px-4 py-2 text-sm
+                                           text-slate-700
+                                           dark:text-slate-300"
+                                >
+                                    {{ row.code_product }}
+                                </td>
+
+                                <td
+                                    class="px-4 py-2 text-sm
+                                           text-slate-700
+                                           dark:text-slate-300"
+                                >
+                                    {{ row.name_product }}
+                                </td>
+
+                                <td
+                                    class="px-4 py-2 text-right
+                                           text-sm
+                                           text-slate-700
+                                           dark:text-slate-300"
+                                >
+                                    {{ formatNumber(row.kilos_available, 3) }}
+                                </td>
+
+                                <td
+                                    class="px-4 py-2 text-right
+                                           text-sm
+                                           text-slate-700
+                                           dark:text-slate-300"
+                                >
+                                    {{ formatNumber(row.metros_available, 3) }}
+                                </td>
                             </tr>
-                            <tr v-if="props.inventory_by_warehouse.length === 0">
-                                <td colspan="5" class="px-4 py-4 text-center text-sm text-gray-500">
-                                    No hay registros de stock para los filtros seleccionados.
+
+                            <tr
+                                v-if="
+                                    props.inventory_by_warehouse
+                                        .length === 0
+                                "
+                            >
+                                <td
+                                    colspan="5"
+                                    class="px-4 py-6
+                                           text-center text-sm
+                                           text-slate-500
+                                           dark:text-slate-400"
+                                >
+                                    No hay registros de stock para los
+                                    filtros seleccionados.
                                 </td>
                             </tr>
                         </tbody>

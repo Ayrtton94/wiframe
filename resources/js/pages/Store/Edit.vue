@@ -10,7 +10,7 @@ import { computed } from 'vue';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
-        title: 'Almacen Editar',
+        title: 'Almacén Editar',
         href: 'stores/edit',
     },
 ];
@@ -35,6 +35,7 @@ const props = defineProps<{
         description: string;
         is_active: boolean;
         image_path: string | null;
+        image_url?: string | null;
 
         warehouse_stocks: Array<{
             id: number;
@@ -54,7 +55,6 @@ const props = defineProps<{
     }>;
 
     warehouseSelectionRequired: boolean;
-
     defaultWarehouseId: number | null;
 
     suppliers: Array<{
@@ -63,11 +63,8 @@ const props = defineProps<{
     }>;
 }>();
 
-const initialWarehouseId = props.defaultWarehouseId;
-
-const initialStock = props.product.warehouse_stocks.find(
-    stock => Number(stock.warehouse_id) === Number(initialWarehouseId)
-);
+const initialWarehouseId =
+    props.defaultWarehouseId;
 
 const form = useForm({
     code_product: props.product.code_product,
@@ -78,8 +75,8 @@ const form = useForm({
 
     kilos: props.product.kilos,
     metros: props.product.metros,
-
     minimum_stock: props.product.minimum_stock,
+
     price: props.product.price,
     public_price: props.product.public_price,
     wholesale_price: props.product.wholesale_price,
@@ -99,25 +96,52 @@ const form = useForm({
 });
 
 const handleImage = (event: Event) => {
-    const target = event.target as HTMLInputElement;
-    const file = target.files ? target.files[0] : null;
+    const target =
+        event.target as HTMLInputElement;
+
+    const file = target.files
+        ? target.files[0]
+        : null;
+
     form.image_path = file;
 };
 
 const setNegativeMessage = (event: Event) => {
-    const target = event.target as HTMLInputElement;
+    const target =
+        event.target as HTMLInputElement;
+
     if (target.validity.rangeUnderflow) {
-        target.setCustomValidity('El valor no puede ser negativo');
+        target.setCustomValidity(
+            'El valor no puede ser negativo',
+        );
+    } else {
+        target.setCustomValidity('');
     }
 };
 
-const clearInvalidMessage = (event: Event) => {
-    const target = event.target as HTMLInputElement;
+const clearInvalidMessage = (
+    event: Event,
+) => {
+    const target =
+        event.target as HTMLInputElement;
+
     target.setCustomValidity('');
 };
 
-const clampNumberField = (field: 'kilos' | 'metros' | 'minimum_stock' | 'price' | 'public_price' | 'wholesale_price' | 'price_roll' | 'special_price', event: Event) => {
+const clampNumberField = (
+    field:
+        | 'kilos'
+        | 'metros'
+        | 'minimum_stock'
+        | 'price'
+        | 'public_price'
+        | 'wholesale_price'
+        | 'price_roll'
+        | 'special_price',
+    event: Event,
+) => {
     clearInvalidMessage(event);
+
     if (Number(form[field]) < 0) {
         form[field] = 0 as any;
     }
@@ -134,7 +158,6 @@ const currentImageSrc = computed(() => {
 
     return null;
 });
-  
 
 const submit = () => {
     form.transform((data) => ({
@@ -148,464 +171,782 @@ const submit = () => {
 </script>
 
 <template>
-    <Head title="Almacen Editar" />
-<AppLayout :breadcrumbs="breadcrumbs">
-    <div class="flex h-full flex-1 flex-col gap-6 overflow-x-auto p-4">
+    <Head title="Editar Producto" />
 
-        <!-- Encabezado -->
-        <div class="mx-auto w-full max-w-6xl">
-            <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-
-                <div>
-                    <h1 class="text-2xl font-bold text-slate-800">
-                        Editar Producto
-                    </h1>
-
-                    <p class="mt-1 text-sm text-slate-500">
-                        Actualiza la información, precios y configuración del producto.
-                    </p>
-                </div>
-
-                <Link
-                    href="/stores"
-                    class="inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-5 py-2.5 text-sm font-medium text-slate-700 shadow-sm transition hover:bg-slate-50"
-                >
-                    ← Volver al Inventario
-                </Link>
-
-            </div>
-        </div>
-
-
-        <!-- Formulario -->
-        <form
-            class="mx-auto w-full max-w-6xl space-y-6"
-            @submit.prevent="submit"
+    <AppLayout :breadcrumbs="breadcrumbs">
+        <div
+            class="flex h-full flex-1 flex-col gap-6
+                   overflow-x-auto bg-slate-50 p-4
+                   dark:bg-slate-950"
         >
-
-            <!-- Información del producto -->
-            <div class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-
-                <div class="border-b border-slate-200 bg-slate-50 px-6 py-5">
-                    <h2 class="text-lg font-semibold text-slate-800">
-                        Información del producto
-                    </h2>
-
-                    <p class="mt-1 text-sm text-slate-500">
-                        Datos principales del producto.
-                    </p>
-                </div>
-
-                <div class="p-6">
-                    <div class="grid grid-cols-1 gap-5 md:grid-cols-2">
-
-                        <!-- Código -->
-                        <div>
-                            <Label
-                                for="code_product"
-                                class="mb-2 block text-sm font-medium text-slate-700"
-                            >
-                                Código de Producto
-                            </Label>
-
-                            <Input
-                                id="code_product"
-                                v-model="form.code_product"
-                                class="w-full"
-                            />
-
-                            <InputError
-                                :message="form.errors.code_product"
-                                class="mt-1"
-                            />
-                        </div>
-
-
-                        <!-- Nombre -->
-                        <div>
-                            <Label
-                                for="name_product"
-                                class="mb-2 block text-sm font-medium text-slate-700"
-                            >
-                                Nombre del Producto
-                            </Label>
-
-                            <Input
-                                id="name_product"
-                                v-model="form.name_product"
-                                class="w-full"
-                            />
-
-                            <InputError
-                                :message="form.errors.name_product"
-                                class="mt-1"
-                            />
-                        </div>
-
-
-                        <!-- Tipo de tela -->
-                        <div>
-                            <Label
-                                for="fabric_type"
-                                class="mb-2 block text-sm font-medium text-slate-700"
-                            >
-                                Tipo de Tela
-                            </Label>
-
-                            <Input
-                                id="fabric_type"
-                                v-model="form.fabric_type"
-                                class="w-full"
-                            />
-
-                            <InputError
-                                :message="form.errors.fabric_type"
-                                class="mt-1"
-                            />
-                        </div>
-
-
-                        <!-- Color -->
-                        <div>
-                            <Label
-                                for="color"
-                                class="mb-2 block text-sm font-medium text-slate-700"
-                            >
-                                Color
-                            </Label>
-
-                            <Input
-                                id="color"
-                                v-model="form.color"
-                                class="w-full"
-                            />
-
-                            <InputError
-                                :message="form.errors.color"
-                                class="mt-1"
-                            />
-                        </div>
-
-                    </div>
-                </div>
-            </div>
-
-
-            <!-- Proveedor y Stock -->
-            <div class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-
-                <div class="border-b border-slate-200 bg-slate-50 px-6 py-5">
-                    <h2 class="text-lg font-semibold text-slate-800">
-                        Proveedor y Stock
-                    </h2>
-
-                    <p class="mt-1 text-sm text-slate-500">
-                        Configura el proveedor y las cantidades del producto.
-                    </p>
-                </div>
-
-                <div class="space-y-6 p-6">
-
-                    <!-- Proveedor -->
+            <!-- ENCABEZADO -->
+            <div class="mx-auto w-full max-w-6xl">
+                <div
+                    class="flex flex-col gap-3
+                           sm:flex-row sm:items-center
+                           sm:justify-between"
+                >
                     <div>
-                        <Label
-                            for="proveedor"
-                            class="mb-2 block text-sm font-medium text-slate-700"
+                        <h1
+                            class="text-2xl font-bold
+                                   text-slate-800
+                                   dark:text-slate-100"
                         >
-                            Proveedor
-                        </Label>
+                            Editar Producto
+                        </h1>
 
-                        <select
-                            id="proveedor"
-                            v-model="form.proveedor"
-                            class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-700 shadow-sm transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                        <p
+                            class="mt-1 text-sm
+                                   text-slate-500
+                                   dark:text-slate-400"
                         >
-                            <option
-                                value=""
-                                disabled
-                            >
-                                Selecciona un proveedor
-                            </option>
-
-                            <option
-                                v-for="supplier in props.suppliers"
-                                :key="supplier.id"
-                                :value="supplier.company_name"
-                            >
-                                {{ supplier.company_name }}
-                            </option>
-                        </select>
-
-                        <InputError
-                            :message="form.errors.proveedor"
-                            class="mt-1"
-                        />
+                            Actualiza la información, precios y
+                            configuración del producto.
+                        </p>
                     </div>
 
-
-                    <!-- Stock -->
-                    <div class="grid grid-cols-1 gap-5 md:grid-cols-3">                       
-                        <div>
-                            <Label
-                                for="kilos"
-                                class="mb-2 block text-sm font-medium text-slate-700"
-                            >
-                                Rollo
-                            </Label>
-
-                            <Input
-                                id="kilos"
-                                v-model.number="form.kilos"
-                                type="number"
-                                min="0"
-                                step="0.01"
-                                class="w-full"
-                                @input="clampNumberField('kilos', $event)"
-                                @invalid="setNegativeMessage"
-                            />
-
-                            <InputError
-                                :message="form.errors.kilos"
-                                class="mt-1"
-                            />
-                        </div>
-
-
-                        <div>
-                            <Label
-                                for="metros"
-                                class="mb-2 block text-sm font-medium text-slate-700"
-                            >
-                                Metros
-                            </Label>
-
-                            <Input
-                                id="metros"
-                                v-model.number="form.metros"
-                                type="number"
-                                min="0"
-                                step="0.01"
-                                class="w-full"
-                                @input="clampNumberField('metros', $event)"
-                                @invalid="setNegativeMessage"
-                            />
-
-                            <InputError
-                                :message="form.errors.metros"
-                                class="mt-1"
-                            />
-                        </div>
-
-                        <div>
-                            <Label
-                                for="minimum_stock"
-                                class="mb-2 block text-sm font-medium text-slate-700"
-                            >
-                                Kilos
-                            </Label>
-
-                            <Input
-                                id="minimum_stock"
-                                v-model.number="form.minimum_stock"
-                                type="number"
-                                min="0"
-                                class="w-full"
-                                @input="clampNumberField('minimum_stock', $event)"
-                                @invalid="setNegativeMessage"
-                            />
-
-                            <InputError
-                                :message="form.errors.minimum_stock"
-                                class="mt-1"
-                            />
-                        </div>
-
-                    </div>
+                    <Link
+                        href="/stores"
+                        class="inline-flex items-center
+                               justify-center rounded-lg
+                               border border-slate-300
+                               bg-white px-5 py-2.5
+                               text-sm font-medium
+                               text-slate-700 shadow-sm
+                               transition hover:bg-slate-50
+                               dark:border-slate-600
+                               dark:bg-slate-800
+                               dark:text-slate-300
+                               dark:hover:bg-slate-700"
+                    >
+                        ← Volver al Inventario
+                    </Link>
                 </div>
             </div>
 
+            <!-- FORMULARIO -->
+            <form
+                class="mx-auto w-full max-w-6xl space-y-6"
+                @submit.prevent="submit"
+            >
+                <!-- INFORMACIÓN DEL PRODUCTO -->
+                <div
+                    class="overflow-hidden rounded-xl
+                           border border-slate-200
+                           bg-white shadow-sm
+                           dark:border-slate-700
+                           dark:bg-slate-900"
+                >
+                    <div
+                        class="border-b border-slate-200
+                               bg-slate-50 px-6 py-5
+                               dark:border-slate-700
+                               dark:bg-slate-800"
+                    >
+                        <h2
+                            class="text-lg font-semibold
+                                   text-slate-800
+                                   dark:text-slate-100"
+                        >
+                            Información del producto
+                        </h2>
 
-            <!-- Precios -->
-            <div class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+                        <p
+                            class="mt-1 text-sm
+                                   text-slate-500
+                                   dark:text-slate-400"
+                        >
+                            Datos principales del producto.
+                        </p>
+                    </div>
 
-                <div class="border-b border-slate-200 bg-slate-50 px-6 py-5">
-                    <h2 class="text-lg font-semibold text-slate-800">
-                        Precios
-                    </h2>
+                    <div class="p-6">
+                        <div
+                            class="grid grid-cols-1 gap-5
+                                   md:grid-cols-2"
+                        >
+                            <div>
+                                <Label
+                                    for="code_product"
+                                    class="mb-2 block text-sm
+                                           font-medium
+                                           text-slate-700
+                                           dark:text-slate-300"
+                                >
+                                    Código de Producto
+                                </Label>
 
-                    <p class="mt-1 text-sm text-slate-500">
-                        Actualiza los precios del producto.
-                    </p>
-                </div>
+                                <Input
+                                    id="code_product"
+                                    v-model="
+                                        form.code_product
+                                    "
+                                    class="w-full
+                                           dark:border-slate-600
+                                           dark:bg-slate-800
+                                           dark:text-slate-100"
+                                />
 
-                <div class="p-6">
-                    <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+                                <InputError
+                                    :message="
+                                        form.errors
+                                            .code_product
+                                    "
+                                    class="mt-1"
+                                />
+                            </div>
 
-                        <div>
-                            <Label
-                                for="price"
-                                class="mb-2 block text-sm font-medium text-slate-700"
-                            >
-                                Precio
-                            </Label>
+                            <div>
+                                <Label
+                                    for="name_product"
+                                    class="mb-2 block text-sm
+                                           font-medium
+                                           text-slate-700
+                                           dark:text-slate-300"
+                                >
+                                    Nombre del Producto
+                                </Label>
 
-                            <Input
-                                id="price"
-                                v-model.number="form.price"
-                                type="number"
-                                min="0"
-                                step="0.01"
-                                class="w-full"
-                                @input="clampNumberField('price', $event)"
-                                @invalid="setNegativeMessage"
-                            />
+                                <Input
+                                    id="name_product"
+                                    v-model="
+                                        form.name_product
+                                    "
+                                    class="w-full
+                                           dark:border-slate-600
+                                           dark:bg-slate-800
+                                           dark:text-slate-100"
+                                />
 
-                            <InputError
-                                :message="form.errors.price"
-                                class="mt-1"
-                            />
+                                <InputError
+                                    :message="
+                                        form.errors
+                                            .name_product
+                                    "
+                                    class="mt-1"
+                                />
+                            </div>
+
+                            <div>
+                                <Label
+                                    for="fabric_type"
+                                    class="mb-2 block text-sm
+                                           font-medium
+                                           text-slate-700
+                                           dark:text-slate-300"
+                                >
+                                    Tipo de Tela
+                                </Label>
+
+                                <Input
+                                    id="fabric_type"
+                                    v-model="
+                                        form.fabric_type
+                                    "
+                                    class="w-full
+                                           dark:border-slate-600
+                                           dark:bg-slate-800
+                                           dark:text-slate-100"
+                                />
+
+                                <InputError
+                                    :message="
+                                        form.errors
+                                            .fabric_type
+                                    "
+                                    class="mt-1"
+                                />
+                            </div>
+
+                            <div>
+                                <Label
+                                    for="color"
+                                    class="mb-2 block text-sm
+                                           font-medium
+                                           text-slate-700
+                                           dark:text-slate-300"
+                                >
+                                    Color
+                                </Label>
+
+                                <Input
+                                    id="color"
+                                    v-model="form.color"
+                                    class="w-full
+                                           dark:border-slate-600
+                                           dark:bg-slate-800
+                                           dark:text-slate-100"
+                                />
+
+                                <InputError
+                                    :message="
+                                        form.errors.color
+                                    "
+                                    class="mt-1"
+                                />
+                            </div>
                         </div>
-
-
-                        <div>
-                            <Label
-                                for="public_price"
-                                class="mb-2 block text-sm font-medium text-slate-700"
-                            >
-                                Precio Público
-                            </Label>
-
-                            <Input
-                                id="public_price"
-                                v-model.number="form.public_price"
-                                type="number"
-                                min="0"
-                                step="0.01"
-                                class="w-full"
-                                @input="clampNumberField('public_price', $event)"
-                                @invalid="setNegativeMessage"
-                            />
-
-                            <InputError
-                                :message="form.errors.public_price"
-                                class="mt-1"
-                            />
-                        </div>
-
-
-                        <div>
-                            <Label
-                                for="wholesale_price"
-                                class="mb-2 block text-sm font-medium text-slate-700"
-                            >
-                                Precio Mayorista
-                            </Label>
-
-                            <Input
-                                id="wholesale_price"
-                                v-model.number="form.wholesale_price"
-                                type="number"
-                                min="0"
-                                step="0.01"
-                                class="w-full"
-                                @input="clampNumberField('wholesale_price', $event)"
-                                @invalid="setNegativeMessage"
-                            />
-
-                            <InputError
-                                :message="form.errors.wholesale_price"
-                                class="mt-1"
-                            />
-                        </div>
-
-
-                        <div>
-                            <Label
-                                for="price_roll"
-                                class="mb-2 block text-sm font-medium text-slate-700"
-                            >
-                                Precio por Rollo
-                            </Label>
-
-                            <Input
-                                id="price_roll"
-                                v-model.number="form.price_roll"
-                                type="number"
-                                min="0"
-                                step="0.01"
-                                class="w-full"
-                                @input="clampNumberField('price_roll', $event)"
-                                @invalid="setNegativeMessage"
-                            />
-
-                            <InputError
-                                :message="form.errors.price_roll"
-                                class="mt-1"
-                            />
-                        </div>
-
-
-                        <div class="sm:col-span-2 lg:col-span-4">
-
-                            <Label
-                                for="special_price"
-                                class="mb-2 block text-sm font-medium text-slate-700"
-                            >
-                                Precio Especial
-                            </Label>
-
-                            <Input
-                                id="special_price"
-                                v-model.number="form.special_price"
-                                type="number"
-                                min="0"
-                                step="0.01"
-                                class="w-full"
-                                @input="clampNumberField('special_price', $event)"
-                                @invalid="setNegativeMessage"
-                            />
-
-                            <InputError
-                                :message="form.errors.special_price"
-                                class="mt-1"
-                            />
-
-                        </div>
-
                     </div>
                 </div>
-            </div>
 
+                <!-- PROVEEDOR Y STOCK -->
+                <div
+                    class="overflow-hidden rounded-xl
+                           border border-slate-200
+                           bg-white shadow-sm
+                           dark:border-slate-700
+                           dark:bg-slate-900"
+                >
+                    <div
+                        class="border-b border-slate-200
+                               bg-slate-50 px-6 py-5
+                               dark:border-slate-700
+                               dark:bg-slate-800"
+                    >
+                        <h2
+                            class="text-lg font-semibold
+                                   text-slate-800
+                                   dark:text-slate-100"
+                        >
+                            Proveedor y Stock
+                        </h2>
 
-            <!-- Configuración -->
-            <div class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+                        <p
+                            class="mt-1 text-sm
+                                   text-slate-500
+                                   dark:text-slate-400"
+                        >
+                            Configura el proveedor y las cantidades
+                            del producto.
+                        </p>
+                    </div>
 
-                <div class="border-b border-slate-200 bg-slate-50 px-6 py-5">
-                    <h2 class="text-lg font-semibold text-slate-800">
-                        Configuración
-                    </h2>
+                    <div
+                        class="space-y-6 p-6"
+                    >
+                        <!-- PROVEEDOR -->
+                        <div>
+                            <Label
+                                for="proveedor"
+                                class="mb-2 block text-sm
+                                       font-medium
+                                       text-slate-700
+                                       dark:text-slate-300"
+                            >
+                                Proveedor
+                            </Label>
 
-                    <p class="mt-1 text-sm text-slate-500">
-                        Configura la ubicación, estado, imagen y descripción.
-                    </p>
+                            <select
+                                id="proveedor"
+                                v-model="
+                                    form.proveedor
+                                "
+                                class="w-full rounded-lg
+                                       border
+                                       border-slate-300
+                                       bg-white px-3 py-2.5
+                                       text-sm
+                                       text-slate-700
+                                       shadow-sm transition
+                                       focus:border-blue-500
+                                       focus:outline-none
+                                       focus:ring-2
+                                       focus:ring-blue-500/20
+                                       dark:border-slate-600
+                                       dark:bg-slate-800
+                                       dark:text-slate-100"
+                            >
+                                <option
+                                    value=""
+                                    disabled
+                                >
+                                    Selecciona un proveedor
+                                </option>
+
+                                <option
+                                    v-for="supplier in props.suppliers"
+                                    :key="supplier.id"
+                                    :value="
+                                        supplier.company_name
+                                    "
+                                >
+                                    {{
+                                        supplier.company_name
+                                    }}
+                                </option>
+                            </select>
+
+                            <InputError
+                                :message="
+                                    form.errors.proveedor
+                                "
+                                class="mt-1"
+                            />
+                        </div>
+
+                        <!-- STOCK -->
+                        <div
+                            class="grid grid-cols-1 gap-5
+                                   md:grid-cols-3"
+                        >
+                            <!-- ROLLOS -->
+                            <div>
+                                <Label
+                                    for="kilos"
+                                    class="mb-2 block text-sm
+                                           font-medium
+                                           text-slate-700
+                                           dark:text-slate-300"
+                                >
+                                    Rollos
+                                </Label>
+
+                                <Input
+                                    id="kilos"
+                                    v-model.number="
+                                        form.kilos
+                                    "
+                                    type="number"
+                                    min="0"
+                                    step="0.01"
+                                    class="w-full
+                                           dark:border-slate-600
+                                           dark:bg-slate-800
+                                           dark:text-slate-100"
+                                    @input="
+                                        clampNumberField(
+                                            'kilos',
+                                            $event,
+                                        )
+                                    "
+                                    @invalid="
+                                        setNegativeMessage
+                                    "
+                                />
+
+                                <InputError
+                                    :message="
+                                        form.errors.kilos
+                                    "
+                                    class="mt-1"
+                                />
+                            </div>
+
+                            <!-- METROS -->
+                            <div>
+                                <Label
+                                    for="metros"
+                                    class="mb-2 block text-sm
+                                           font-medium
+                                           text-slate-700
+                                           dark:text-slate-300"
+                                >
+                                    Metros
+                                </Label>
+
+                                <Input
+                                    id="metros"
+                                    v-model.number="
+                                        form.metros
+                                    "
+                                    type="number"
+                                    min="0"
+                                    step="0.01"
+                                    class="w-full
+                                           dark:border-slate-600
+                                           dark:bg-slate-800
+                                           dark:text-slate-100"
+                                    @input="
+                                        clampNumberField(
+                                            'metros',
+                                            $event,
+                                        )
+                                    "
+                                    @invalid="
+                                        setNegativeMessage
+                                    "
+                                />
+
+                                <InputError
+                                    :message="
+                                        form.errors.metros
+                                    "
+                                    class="mt-1"
+                                />
+                            </div>
+
+                            <!-- STOCK MÍNIMO -->
+                            <div>
+                                <Label
+                                    for="minimum_stock"
+                                    class="mb-2 block text-sm
+                                           font-medium
+                                           text-slate-700
+                                           dark:text-slate-300"
+                                >
+                                    Stock mínimo
+                                </Label>
+
+                                <Input
+                                    id="minimum_stock"
+                                    v-model.number="
+                                        form.minimum_stock
+                                    "
+                                    type="number"
+                                    min="0"
+                                    class="w-full
+                                           dark:border-slate-600
+                                           dark:bg-slate-800
+                                           dark:text-slate-100"
+                                    @input="
+                                        clampNumberField(
+                                            'minimum_stock',
+                                            $event,
+                                        )
+                                    "
+                                    @invalid="
+                                        setNegativeMessage
+                                    "
+                                />
+
+                                <InputError
+                                    :message="
+                                        form.errors
+                                            .minimum_stock
+                                    "
+                                    class="mt-1"
+                                />
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
-                <div class="space-y-6 p-6">
+                <!-- PRECIOS -->
+                <div
+                    class="overflow-hidden rounded-xl
+                           border border-slate-200
+                           bg-white shadow-sm
+                           dark:border-slate-700
+                           dark:bg-slate-900"
+                >
+                    <div
+                        class="border-b border-slate-200
+                               bg-slate-50 px-6 py-5
+                               dark:border-slate-700
+                               dark:bg-slate-800"
+                    >
+                        <h2
+                            class="text-lg font-semibold
+                                   text-slate-800
+                                   dark:text-slate-100"
+                        >
+                            Precios
+                        </h2>
 
-                    <!-- Almacén -->
+                        <p
+                            class="mt-1 text-sm
+                                   text-slate-500
+                                   dark:text-slate-400"
+                        >
+                            Actualiza los precios del producto.
+                        </p>
+                    </div>
+
+                    <div class="p-6">
+                        <div
+                            class="grid grid-cols-1 gap-5
+                                   sm:grid-cols-2
+                                   lg:grid-cols-4"
+                        >
+                            <div>
+                                <Label
+                                    for="price"
+                                    class="mb-2 block text-sm
+                                           font-medium
+                                           text-slate-700
+                                           dark:text-slate-300"
+                                >
+                                    Precio
+                                </Label>
+
+                                <Input
+                                    id="price"
+                                    v-model.number="
+                                        form.price
+                                    "
+                                    type="number"
+                                    min="0"
+                                    step="0.01"
+                                    class="w-full
+                                           dark:border-slate-600
+                                           dark:bg-slate-800
+                                           dark:text-slate-100"
+                                    @input="
+                                        clampNumberField(
+                                            'price',
+                                            $event,
+                                        )
+                                    "
+                                    @invalid="
+                                        setNegativeMessage
+                                    "
+                                />
+
+                                <InputError
+                                    :message="
+                                        form.errors.price
+                                    "
+                                    class="mt-1"
+                                />
+                            </div>
+
+                            <div>
+                                <Label
+                                    for="public_price"
+                                    class="mb-2 block text-sm
+                                           font-medium
+                                           text-slate-700
+                                           dark:text-slate-300"
+                                >
+                                    Precio Público
+                                </Label>
+
+                                <Input
+                                    id="public_price"
+                                    v-model.number="
+                                        form.public_price
+                                    "
+                                    type="number"
+                                    min="0"
+                                    step="0.01"
+                                    class="w-full
+                                           dark:border-slate-600
+                                           dark:bg-slate-800
+                                           dark:text-slate-100"
+                                    @input="
+                                        clampNumberField(
+                                            'public_price',
+                                            $event,
+                                        )
+                                    "
+                                    @invalid="
+                                        setNegativeMessage
+                                    "
+                                />
+
+                                <InputError
+                                    :message="
+                                        form.errors
+                                            .public_price
+                                    "
+                                    class="mt-1"
+                                />
+                            </div>
+
+                            <div>
+                                <Label
+                                    for="wholesale_price"
+                                    class="mb-2 block text-sm
+                                           font-medium
+                                           text-slate-700
+                                           dark:text-slate-300"
+                                >
+                                    Precio Mayorista
+                                </Label>
+
+                                <Input
+                                    id="wholesale_price"
+                                    v-model.number="
+                                        form.wholesale_price
+                                    "
+                                    type="number"
+                                    min="0"
+                                    step="0.01"
+                                    class="w-full
+                                           dark:border-slate-600
+                                           dark:bg-slate-800
+                                           dark:text-slate-100"
+                                    @input="
+                                        clampNumberField(
+                                            'wholesale_price',
+                                            $event,
+                                        )
+                                    "
+                                    @invalid="
+                                        setNegativeMessage
+                                    "
+                                />
+
+                                <InputError
+                                    :message="
+                                        form.errors
+                                            .wholesale_price
+                                    "
+                                    class="mt-1"
+                                />
+                            </div>
+
+                            <div>
+                                <Label
+                                    for="price_roll"
+                                    class="mb-2 block text-sm
+                                           font-medium
+                                           text-slate-700
+                                           dark:text-slate-300"
+                                >
+                                    Precio por Rollo
+                                </Label>
+
+                                <Input
+                                    id="price_roll"
+                                    v-model.number="
+                                        form.price_roll
+                                    "
+                                    type="number"
+                                    min="0"
+                                    step="0.01"
+                                    class="w-full
+                                           dark:border-slate-600
+                                           dark:bg-slate-800
+                                           dark:text-slate-100"
+                                    @input="
+                                        clampNumberField(
+                                            'price_roll',
+                                            $event,
+                                        )
+                                    "
+                                    @invalid="
+                                        setNegativeMessage
+                                    "
+                                />
+
+                                <InputError
+                                    :message="
+                                        form.errors
+                                            .price_roll
+                                    "
+                                    class="mt-1"
+                                />
+                            </div>
+
+                            <div
+                                class="sm:col-span-2
+                                       lg:col-span-4"
+                            >
+                                <Label
+                                    for="special_price"
+                                    class="mb-2 block text-sm
+                                           font-medium
+                                           text-slate-700
+                                           dark:text-slate-300"
+                                >
+                                    Precio Especial
+                                </Label>
+
+                                <Input
+                                    id="special_price"
+                                    v-model.number="
+                                        form.special_price
+                                    "
+                                    type="number"
+                                    min="0"
+                                    step="0.01"
+                                    class="w-full
+                                           dark:border-slate-600
+                                           dark:bg-slate-800
+                                           dark:text-slate-100"
+                                    @input="
+                                        clampNumberField(
+                                            'special_price',
+                                            $event,
+                                        )
+                                    "
+                                    @invalid="
+                                        setNegativeMessage
+                                    "
+                                />
+
+                                <InputError
+                                    :message="
+                                        form.errors
+                                            .special_price
+                                    "
+                                    class="mt-1"
+                                />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- CONFIGURACIÓN -->
+                <div
+                    class="overflow-hidden rounded-xl
+                           border border-slate-200
+                           bg-white shadow-sm
+                           dark:border-slate-700
+                           dark:bg-slate-900"
+                >
+                    <div
+                        class="border-b border-slate-200
+                               bg-slate-50 px-6 py-5
+                               dark:border-slate-700
+                               dark:bg-slate-800"
+                    >
+                        <h2
+                            class="text-lg font-semibold
+                                   text-slate-800
+                                   dark:text-slate-100"
+                        >
+                            Configuración
+                        </h2>
+
+                        <p
+                            class="mt-1 text-sm
+                                   text-slate-500
+                                   dark:text-slate-400"
+                        >
+                            Configura la ubicación, estado, imagen y
+                            descripción.
+                        </p>
+                    </div>
+
+                    <div
+                        class="space-y-6 p-6"
+                    >
+                        <!-- ALMACÉN -->
                         <div>
                             <Label
                                 for="warehouse_id"
-                                class="mb-2 block text-sm font-medium text-slate-700"
+                                class="mb-2 block text-sm
+                                       font-medium
+                                       text-slate-700
+                                       dark:text-slate-300"
                             >
                                 Almacén y/o Tienda
                             </Label>
 
                             <select
-                                v-if="props.warehouseSelectionRequired"
+                                v-if="
+                                    props.warehouseSelectionRequired
+                                "
                                 id="warehouse_id"
-                                v-model="form.warehouse_id"
-                                class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-700 shadow-sm transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                                v-model="
+                                    form.warehouse_id
+                                "
+                                class="w-full rounded-lg
+                                       border
+                                       border-slate-300
+                                       bg-white px-3 py-2.5
+                                       text-sm
+                                       text-slate-700
+                                       shadow-sm transition
+                                       focus:border-blue-500
+                                       focus:outline-none
+                                       focus:ring-2
+                                       focus:ring-blue-500/20
+                                       dark:border-slate-600
+                                       dark:bg-slate-800
+                                       dark:text-slate-100"
                             >
                                 <option
                                     value=""
@@ -617,147 +958,276 @@ const submit = () => {
                                 <option
                                     v-for="warehouse in props.warehouses"
                                     :key="warehouse.id"
-                                    :value="String(warehouse.id)"
+                                    :value="
+                                        String(
+                                            warehouse.id,
+                                        )
+                                    "
                                 >
-                                    {{ warehouse.name }} ({{ warehouse.code }})
+                                    {{ warehouse.name }}
+                                    ({{
+                                        warehouse.code
+                                    }})
                                 </option>
                             </select>
 
                             <div
                                 v-else
-                                class="rounded-lg border border-blue-100 bg-blue-50 px-4 py-3 text-sm text-blue-700"
+                                class="rounded-lg border
+                                       border-blue-100
+                                       bg-blue-50 px-4 py-3
+                                       text-sm text-blue-700
+                                       dark:border-blue-500/30
+                                       dark:bg-blue-500/10
+                                       dark:text-blue-400"
                             >
-                                Se registrará stock automáticamente en
-                                <span class="font-semibold">
-                                    {{ props.warehouses[0]?.name || 'el almacén asignado' }}
+                                Se registrará stock automáticamente
+                                en
+
+                                <span
+                                    class="font-semibold"
+                                >
+                                    {{
+                                        props.warehouses[0]
+                                            ?.name ||
+                                        'el almacén asignado'
+                                    }}
                                 </span>.
                             </div>
 
                             <InputError
-                                :message="form.errors.warehouse_id"
+                                :message="
+                                    form.errors
+                                        .warehouse_id
+                                "
                                 class="mt-1"
                             />
                         </div>
 
-
-                    <!-- Estado -->
-                    <label
-                        for="is_active"
-                        class="flex cursor-pointer items-center gap-3 rounded-lg border border-slate-200 bg-slate-50 px-4 py-4 transition hover:bg-slate-100"
-                    >
-                        <input
-                            id="is_active"
-                            v-model="form.is_active"
-                            type="checkbox"
-                            class="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
-                        />
-
-                        <div>
-                            <span class="block text-sm font-medium text-slate-700">
-                                Producto activo
-                            </span>
-
-                            <span class="text-xs text-slate-500">
-                                El producto estará disponible para las operaciones del sistema.
-                            </span>
-                        </div>
-                    </label>
-
-
-                    <!-- Imagen -->
-                    <div>
-                        <Label
-                            for="image"
-                            class="mb-2 block text-sm font-medium text-slate-700"
+                        <!-- ESTADO -->
+                        <label
+                            for="is_active"
+                            class="flex cursor-pointer
+                                   items-center gap-3
+                                   rounded-lg
+                                   border
+                                   border-slate-200
+                                   bg-slate-50 px-4 py-4
+                                   transition
+                                   hover:bg-slate-100
+                                   dark:border-slate-700
+                                   dark:bg-slate-800
+                                   dark:hover:bg-slate-700"
                         >
-                            Imagen del producto
-                        </Label>
-
-                        <div
-                            v-if="currentImageSrc"
-                            class="mb-4 flex items-center gap-4 rounded-lg border border-slate-200 bg-slate-50 p-4"
-                        >
-                            <img
-                                :src="currentImageSrc"
-                                alt="Imagen actual"
-                                class="h-24 w-24 rounded-lg border border-slate-200 object-cover shadow-sm"
+                            <input
+                                id="is_active"
+                                v-model="
+                                    form.is_active
+                                "
+                                type="checkbox"
+                                class="h-4 w-4 rounded
+                                       border-slate-300
+                                       text-blue-600
+                                       focus:ring-blue-500
+                                       dark:border-slate-600
+                                       dark:bg-slate-900"
                             />
 
                             <div>
-                                <p class="text-sm font-medium text-slate-700">
-                                    Imagen actual
-                                </p>
+                                <span
+                                    class="block text-sm
+                                           font-medium
+                                           text-slate-700
+                                           dark:text-slate-200"
+                                >
+                                    Producto activo
+                                </span>
 
-                                <p class="mt-1 text-xs text-slate-500">
-                                    Selecciona una nueva imagen si deseas reemplazarla.
-                                </p>
+                                <span
+                                    class="text-xs
+                                           text-slate-500
+                                           dark:text-slate-400"
+                                >
+                                    El producto estará disponible
+                                    para las operaciones del sistema.
+                                </span>
                             </div>
+                        </label>
+
+                        <!-- IMAGEN -->
+                        <div>
+                            <Label
+                                for="image"
+                                class="mb-2 block text-sm
+                                       font-medium
+                                       text-slate-700
+                                       dark:text-slate-300"
+                            >
+                                Imagen del producto
+                            </Label>
+
+                            <div
+                                v-if="currentImageSrc"
+                                class="mb-4 flex items-center
+                                       gap-4 rounded-lg
+                                       border
+                                       border-slate-200
+                                       bg-slate-50 p-4
+                                       dark:border-slate-700
+                                       dark:bg-slate-800"
+                            >
+                                <img
+                                    :src="
+                                        currentImageSrc
+                                    "
+                                    alt="Imagen actual"
+                                    class="h-24 w-24
+                                           rounded-lg
+                                           border
+                                           border-slate-200
+                                           object-cover
+                                           shadow-sm
+                                           dark:border-slate-600"
+                                />
+
+                                <div>
+                                    <p
+                                        class="text-sm
+                                               font-medium
+                                               text-slate-700
+                                               dark:text-slate-200"
+                                    >
+                                        Imagen actual
+                                    </p>
+
+                                    <p
+                                        class="mt-1 text-xs
+                                               text-slate-500
+                                               dark:text-slate-400"
+                                    >
+                                        Selecciona una nueva imagen
+                                        si deseas reemplazarla.
+                                    </p>
+                                </div>
+                            </div>
+
+                            <Input
+                                id="image"
+                                type="file"
+                                accept="image/*"
+                                @change="handleImage"
+                                class="w-full
+                                       dark:border-slate-600
+                                       dark:bg-slate-800
+                                       dark:text-slate-100"
+                            />
+
+                            <InputError
+                                :message="
+                                    form.errors.image
+                                "
+                                class="mt-1"
+                            />
                         </div>
 
-                        <Input
-                            id="image"
-                            type="file"
-                            accept="image/*"
-                            @change="handleImage"
-                            class="w-full"
-                        />
+                        <!-- DESCRIPCIÓN -->
+                        <div>
+                            <Label
+                                for="description"
+                                class="mb-2 block text-sm
+                                       font-medium
+                                       text-slate-700
+                                       dark:text-slate-300"
+                            >
+                                Descripción
+                            </Label>
 
-                        <InputError
-                            :message="form.errors.image"
-                            class="mt-1"
-                        />
+                            <textarea
+                                id="description"
+                                v-model="
+                                    form.description
+                                "
+                                rows="4"
+                                placeholder="Escribe una descripción del producto..."
+                                class="w-full resize-y
+                                       rounded-lg
+                                       border
+                                       border-slate-300
+                                       bg-white px-4 py-3
+                                       text-sm text-slate-700
+                                       shadow-sm transition
+                                       placeholder:text-slate-400
+                                       focus:border-blue-500
+                                       focus:outline-none
+                                       focus:ring-2
+                                       focus:ring-blue-500/20
+                                       dark:border-slate-600
+                                       dark:bg-slate-800
+                                       dark:text-slate-100
+                                       dark:placeholder:text-slate-500"
+                            ></textarea>
+
+                            <InputError
+                                :message="
+                                    form.errors.description
+                                "
+                                class="mt-1"
+                            />
+                        </div>
                     </div>
-
-
-                    <!-- Descripción -->
-                    <div>
-                        <Label
-                            for="description"
-                            class="mb-2 block text-sm font-medium text-slate-700"
-                        >
-                            Descripción
-                        </Label>
-
-                        <textarea
-                            id="description"
-                            v-model="form.description"
-                            rows="4"
-                            placeholder="Escribe una descripción del producto..."
-                            class="w-full resize-y rounded-lg border border-slate-300 px-4 py-3 text-sm text-slate-700 shadow-sm transition placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-                        ></textarea>
-
-                        <InputError
-                            :message="form.errors.description"
-                            class="mt-1"
-                        />
-                    </div>
-
                 </div>
-            </div>
 
-
-            <!-- Acciones -->
-            <div class="flex flex-col-reverse gap-3 rounded-xl border border-slate-200 bg-white p-5 shadow-sm sm:flex-row sm:items-center sm:justify-between">
-
-                <Link
-                    href="/stores"
-                    class="inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-5 py-2.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+                <!-- ACCIONES -->
+                <div
+                    class="flex flex-col-reverse gap-3
+                           rounded-xl
+                           border border-slate-200
+                           bg-white p-5 shadow-sm
+                           dark:border-slate-700
+                           dark:bg-slate-900
+                           sm:flex-row
+                           sm:items-center
+                           sm:justify-between"
                 >
-                    Cancelar
-                </Link>
+                    <Link
+                        href="/stores"
+                        class="inline-flex items-center
+                               justify-center rounded-lg
+                               border border-slate-300
+                               bg-white px-5 py-2.5
+                               text-sm font-medium
+                               text-slate-700 transition
+                               hover:bg-slate-50
+                               dark:border-slate-600
+                               dark:bg-slate-800
+                               dark:text-slate-300
+                               dark:hover:bg-slate-700"
+                    >
+                        Cancelar
+                    </Link>
 
-                <Button
-                    type="submit"
-                    :disabled="form.processing"
-                    class="inline-flex items-center justify-center rounded-lg bg-blue-600 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                    {{ form.processing ? 'Actualizando...' : 'Actualizar Producto' }}
-                </Button>
-
-            </div>
-
-        </form>
-    </div>
-</AppLayout>
-    
+                    <Button
+                        type="submit"
+                        :disabled="form.processing"
+                        class="inline-flex items-center
+                               justify-center rounded-lg
+                               bg-blue-600 px-6 py-2.5
+                               text-sm font-semibold
+                               text-white shadow-sm
+                               transition
+                               hover:bg-blue-700
+                               disabled:cursor-not-allowed
+                               disabled:opacity-50
+                               dark:hover:bg-blue-500"
+                    >
+                        {{
+                            form.processing
+                                ? 'Actualizando...'
+                                : 'Actualizar Producto'
+                        }}
+                    </Button>
+                </div>
+            </form>
+        </div>
+    </AppLayout>
 </template>

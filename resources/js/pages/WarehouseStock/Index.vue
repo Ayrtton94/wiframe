@@ -15,8 +15,14 @@ const props = defineProps<{
             metros_available: number;
             kilos_reserved: number;
             metros_reserved: number;
-            warehouse: { name: string; code: string };
-            store: { code_product: string; name_product: string };
+            warehouse: {
+                name: string;
+                code: string;
+            };
+            store: {
+                code_product: string;
+                name_product: string;
+            };
         }>;
         current_page: number;
         last_page: number;
@@ -24,15 +30,31 @@ const props = defineProps<{
         from: number;
         to: number;
     };
-    warehouses: Array<{ id: number; name: string; code: string }>;
-    products: Array<{ id: number; code_product: string; name_product: string; kilos: number | string; metros: number | string }>;
+
+    warehouses: Array<{
+        id: number;
+        name: string;
+        code: string;
+    }>;
+
+    products: Array<{
+        id: number;
+        code_product: string;
+        name_product: string;
+        kilos: number | string;
+        metros: number | string;
+    }>;
+
     filters: {
         search?: string;
     };
 }>();
 
 const breadcrumbs: BreadcrumbItem[] = [
-    { title: 'Stock por almacén', href: '/warehouse-stocks' },
+    {
+        title: 'Stock por almacén',
+        href: '/warehouse-stocks',
+    },
 ];
 
 const form = useForm({
@@ -47,13 +69,20 @@ const selectedProduct = computed(() => {
         return null;
     }
 
-    return props.products.find((product: { id: number; code_product: string; name_product: string; kilos: number | string; metros: number | string }) => product.id === Number(form.store_id)) ?? null;
+    return (
+        props.products.find(
+            (product) =>
+                product.id === Number(form.store_id),
+        ) ?? null
+    );
 });
 
 const handleSelectProduct = (event: Event) => {
     productSearch.value = '';
 
-    const select = event.target as HTMLSelectElement | null;
+    const select =
+        event.target as HTMLSelectElement | null;
+
     const productId = select?.value ?? '';
 
     if (!productId) {
@@ -65,12 +94,26 @@ const handleSelectProduct = (event: Event) => {
 };
 
 const canSaveStock = computed(() => {
-    const hasWarehouse = Boolean(form.warehouse_id);
-    const hasProduct = Boolean(form.store_id);
-    const hasKilos = Number(form.kilos_available || 0) > 0;
-    const hasMetros = Number(form.metros_available || 0) > 0;
+    const hasWarehouse = Boolean(
+        form.warehouse_id,
+    );
 
-    return hasWarehouse && hasProduct && (hasKilos || hasMetros) && !hasStockError.value;
+    const hasProduct = Boolean(
+        form.store_id,
+    );
+
+    const hasKilos =
+        Number(form.kilos_available || 0) > 0;
+
+    const hasMetros =
+        Number(form.metros_available || 0) > 0;
+
+    return (
+        hasWarehouse &&
+        hasProduct &&
+        (hasKilos || hasMetros) &&
+        !hasStockError.value
+    );
 });
 
 const stockErrors = computed(() => {
@@ -80,42 +123,67 @@ const stockErrors = computed(() => {
         return errors;
     }
 
-    const kilosAvailable = Number(form.kilos_available || 0);
-    const metrosAvailable = Number(form.metros_available || 0);
-    const kilosStock = Number(selectedProduct.value.kilos || 0);
-    const metrosStock = Number(selectedProduct.value.metros || 0);
+    const kilosAvailable = Number(
+        form.kilos_available || 0,
+    );
+
+    const metrosAvailable = Number(
+        form.metros_available || 0,
+    );
+
+    const kilosStock = Number(
+        selectedProduct.value.kilos || 0,
+    );
+
+    const metrosStock = Number(
+        selectedProduct.value.metros || 0,
+    );
 
     if (kilosAvailable > kilosStock) {
-        errors.push(`Rollos no puede ser mayor a ${kilosStock}`);
+        errors.push(
+            `Rollos no puede ser mayor a ${kilosStock}`,
+        );
     }
 
     if (metrosAvailable > metrosStock) {
-        errors.push(`Metros no puede ser mayor a ${metrosStock}`);
+        errors.push(
+            `Metros no puede ser mayor a ${metrosStock}`,
+        );
     }
 
     return errors;
 });
 
-const hasStockError = computed(() => stockErrors.value.length > 0);
+const hasStockError = computed(
+    () => stockErrors.value.length > 0,
+);
 
 const stockZero = computed(() => {
-    return Number(form.kilos_available || 0) === 0 && Number(form.metros_available || 0) === 0;
+    return (
+        Number(form.kilos_available || 0) === 0 &&
+        Number(form.metros_available || 0) === 0
+    );
 });
 
 const productSearch = ref('');
+
 const filters = reactive({
     search: props.filters?.search ?? '',
 });
 
 const filteredProducts = computed(() => {
-    const term = productSearch.value.trim().toLowerCase();
+    const term =
+        productSearch.value.trim().toLowerCase();
 
     if (!term) {
         return props.products;
     }
 
-    return props.products.filter((product: { id: number; code_product: string; name_product: string }) => {
-        const haystack = `${product.code_product} ${product.name_product}`.toLowerCase();
+    return props.products.filter((product) => {
+        const haystack =
+            `${product.code_product} ${product.name_product}`
+                .toLowerCase();
+
         return haystack.includes(term);
     });
 });
@@ -127,7 +195,9 @@ const clearProductSearch = () => {
 
 const saveStock = () => {
     if (hasStockError.value) {
-        window.alert(stockErrors.value.join('\n'));
+        window.alert(
+            stockErrors.value.join('\n'),
+        );
         return;
     }
 
@@ -138,29 +208,44 @@ const saveStock = () => {
 };
 
 const setNegativeMessage = (event: Event) => {
-    const target = event.target as HTMLInputElement;
+    const target =
+        event.target as HTMLInputElement;
+
     if (target.validity.rangeUnderflow) {
-        target.setCustomValidity('El valor no puede ser negativo');
-    }
-    else if (target.validity.rangeOverflow) {
-        target.setCustomValidity('El valor no puede ser mayor al stock disponible');
+        target.setCustomValidity(
+            'El valor no puede ser negativo',
+        );
+    } else if (target.validity.rangeOverflow) {
+        target.setCustomValidity(
+            'El valor no puede ser mayor al stock disponible',
+        );
     }
 };
 
 const clearInvalidMessage = (event: Event) => {
-    const target = event.target as HTMLInputElement;
+    const target =
+        event.target as HTMLInputElement;
+
     target.setCustomValidity('');
 };
 
-const clampNumberField = (field: 'kilos_available' | 'metros_available', event: Event) => {
+const clampNumberField = (
+    field:
+        | 'kilos_available'
+        | 'metros_available',
+    event: Event,
+) => {
     clearInvalidMessage(event);
+
     if (Number(form[field]) < 0) {
         form[field] = 0 as any;
     }
 };
 
 const submitFilters = () => {
-    const params = filters.search ? { search: filters.search } : {};
+    const params = filters.search
+        ? { search: filters.search }
+        : {};
 
     router.get('/warehouse-stocks', params, {
         preserveState: true,
@@ -175,38 +260,54 @@ const clearFilters = () => {
     submitFilters();
 };
 
-const stockStatus = (stock: { kilos_available: number; metros_available: number }) => {
-    const kilos = Number(stock.kilos_available || 0);
-    const metros = Number(stock.metros_available || 0);
+const stockStatus = (stock: {
+    kilos_available: number;
+    metros_available: number;
+}) => {
+    const kilos = Number(
+        stock.kilos_available || 0,
+    );
+
+    const metros = Number(
+        stock.metros_available || 0,
+    );
 
     if (kilos <= 0 && metros <= 0) {
         return {
             label: 'Sin stock',
-            className: 'bg-red-100 text-red-700',
+            className:
+                'bg-red-100 text-red-700 dark:bg-red-500/15 dark:text-red-400',
         };
     }
 
     if (kilos < 1 || metros < 1) {
         return {
             label: 'Stock bajo',
-            className: 'bg-amber-100 text-amber-700',
+            className:
+                'bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-400',
         };
     }
 
     return {
         label: 'Con stock',
-        className: 'bg-emerald-100 text-emerald-700',
+        className:
+            'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-400',
     };
 };
 
 const page = usePage<any>();
 
 const roles = page.props.auth?.roles ?? [];
+
 const isAdmin = roles.includes('admin');
 
-
 const removeStock = (stockId: number) => {
-    router.delete(`/warehouse-stocks/${stockId}`, { preserveScroll: true });
+    router.delete(
+        `/warehouse-stocks/${stockId}`,
+        {
+            preserveScroll: true,
+        },
+    );
 };
 </script>
 
@@ -214,170 +315,772 @@ const removeStock = (stockId: number) => {
     <Head title="Stock por almacén" />
 
     <AppLayout :breadcrumbs="breadcrumbs">
-        <div class="flex h-full flex-1 flex-col gap-4 rounded-xl p-4">
+        <div
+            class="flex h-full flex-1 flex-col gap-4 p-4"
+        >
+            <!-- ASIGNAR STOCK -->
+            <div
+                v-if="isAdmin"
+                hidden
+                class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm
+                       dark:border-slate-700 dark:bg-slate-900"
+            >
+                <h2
+                    class="mb-3 text-lg font-semibold text-slate-900
+                           dark:text-slate-100"
+                >
+                    Asignar stock inicial /
+                    actualización
+                </h2>
 
-            <div v-if="isAdmin" class="rounded border bg-white p-4" hidden>
-                <h2 class="mb-3 text-lg font-semibold">Asignar stock inicial / actualización</h2>
+                <form
+                    class="space-y-4"
+                    @submit.prevent="saveStock"
+                >
+                    <div
+                        class="grid gap-3 md:grid-cols-2"
+                    >
+                        <div>
+                            <label
+                                class="mb-1 block text-sm font-medium
+                                       text-slate-700 dark:text-slate-300"
+                            >
+                                Almacén
+                            </label>
 
-                <form class="space-y-4" @submit.prevent="saveStock">
-                <div class="grid gap-3 md:grid-cols-2">
-                    <select v-model="form.warehouse_id" class="rounded border px-3 py-2" required>
-                        <option disabled value="">Selecciona almacén</option>
-                        <option v-for="warehouse in props.warehouses" :key="warehouse.id" :value="warehouse.id">
-                            {{ warehouse.code }} - {{ warehouse.name }}
-                        </option>
-                    </select>
+                            <select
+                                v-model="
+                                    form.warehouse_id
+                                "
+                                class="w-full rounded-lg border
+                                       border-slate-300 bg-white
+                                       px-3 py-2 text-slate-900
+                                       dark:border-slate-600
+                                       dark:bg-slate-800
+                                       dark:text-slate-100"
+                                required
+                            >
+                                <option
+                                    disabled
+                                    value=""
+                                >
+                                    Selecciona almacén
+                                </option>
 
-                    <div class="space-y-2">
-                        <div class="flex items-center gap-2">
-                            <input
-                                v-model="productSearch"
-                                type="text"
-                                class="w-full rounded border px-3 py-2"
-                                placeholder="Buscar por código o nombre del producto"
-                            />
-                            <button v-if="productSearch" class="rounded border px-2 py-2 text-sm text-slate-600" type="button" @click="clearProductSearch">
-                                Limpiar
-                            </button>
+                                <option
+                                    v-for="warehouse in props.warehouses"
+                                    :key="warehouse.id"
+                                    :value="warehouse.id"
+                                >
+                                    {{ warehouse.code }}
+                                    -
+                                    {{ warehouse.name }}
+                                </option>
+                            </select>
                         </div>
-                        <select :value="form.store_id" class="w-full rounded border px-3 py-2" required @change="handleSelectProduct($event)">
-                            <option disabled value="">Selecciona producto</option>
-                            <option v-if="filteredProducts.length === 0" disabled value="">
-                                No hay productos que coincidan con la búsqueda
-                            </option>
-                            <option v-for="product in filteredProducts" :key="product.id" :value="product.id">
-                                {{ product.code_product }} - {{ product.name_product }}
-                            </option>
-                        </select>
+
+                        <div class="space-y-2">
+                            <label
+                                class="mb-1 block text-sm font-medium
+                                       text-slate-700 dark:text-slate-300"
+                            >
+                                Producto
+                            </label>
+
+                            <div
+                                class="flex items-center gap-2"
+                            >
+                                <input
+                                    v-model="
+                                        productSearch
+                                    "
+                                    type="text"
+                                    class="w-full rounded-lg border
+                                           border-slate-300 bg-white
+                                           px-3 py-2 text-slate-900
+                                           placeholder:text-slate-400
+                                           dark:border-slate-600
+                                           dark:bg-slate-800
+                                           dark:text-slate-100
+                                           dark:placeholder:text-slate-500"
+                                    placeholder="Buscar por código o nombre"
+                                />
+
+                                <button
+                                    v-if="productSearch"
+                                    type="button"
+                                    class="rounded-lg border
+                                           border-slate-300 px-3 py-2
+                                           text-sm text-slate-600
+                                           hover:bg-slate-50
+                                           dark:border-slate-600
+                                           dark:text-slate-300
+                                           dark:hover:bg-slate-800"
+                                    @click="
+                                        clearProductSearch
+                                    "
+                                >
+                                    Limpiar
+                                </button>
+                            </div>
+
+                            <select
+                                :value="
+                                    form.store_id
+                                "
+                                required
+                                class="w-full rounded-lg border
+                                       border-slate-300 bg-white
+                                       px-3 py-2 text-slate-900
+                                       dark:border-slate-600
+                                       dark:bg-slate-800
+                                       dark:text-slate-100"
+                                @change="
+                                    handleSelectProduct(
+                                        $event,
+                                    )
+                                "
+                            >
+                                <option
+                                    disabled
+                                    value=""
+                                >
+                                    Selecciona producto
+                                </option>
+
+                                <option
+                                    v-if="
+                                        filteredProducts.length ===
+                                        0
+                                    "
+                                    disabled
+                                    value=""
+                                >
+                                    No hay productos que
+                                    coincidan con la búsqueda
+                                </option>
+
+                                <option
+                                    v-for="product in filteredProducts"
+                                    :key="product.id"
+                                    :value="
+                                        product.id
+                                    "
+                                >
+                                    {{
+                                        product.code_product
+                                    }}
+                                    -
+                                    {{
+                                        product.name_product
+                                    }}
+                                </option>
+                            </select>
+                        </div>
                     </div>
-                </div>
 
-                <div class="grid gap-3 md:grid-cols-2">
-                    <div>
-                        <label class="mb-1 block text-sm font-medium">Rollos disponibles</label>
-                        <input
-                            v-model.number="form.kilos_available"
-                            min="0"
-                            :max="selectedProduct ? Number(selectedProduct.kilos || 0) : undefined"
-                            step="0.001"
-                            type="number"
-                            class="w-full rounded border px-3 py-2"
-                            @input="clampNumberField('kilos_available', $event)"
-                            @invalid="setNegativeMessage"
-                        />
+                    <div
+                        class="grid gap-3 md:grid-cols-2"
+                    >
+                        <div>
+                            <label
+                                class="mb-1 block text-sm font-medium
+                                       text-slate-700 dark:text-slate-300"
+                            >
+                                Rollos disponibles
+                            </label>
+
+                            <input
+                                v-model.number="
+                                    form.kilos_available
+                                "
+                                min="0"
+                                :max="
+                                    selectedProduct
+                                        ? Number(
+                                              selectedProduct.kilos ||
+                                                  0,
+                                          )
+                                        : undefined
+                                "
+                                step="0.001"
+                                type="number"
+                                class="w-full rounded-lg border
+                                       border-slate-300 bg-white
+                                       px-3 py-2 text-slate-900
+                                       dark:border-slate-600
+                                       dark:bg-slate-800
+                                       dark:text-slate-100"
+                                @input="
+                                    clampNumberField(
+                                        'kilos_available',
+                                        $event,
+                                    )
+                                "
+                                @invalid="
+                                    setNegativeMessage
+                                "
+                            />
+                        </div>
+
+                        <div>
+                            <label
+                                class="mb-1 block text-sm font-medium
+                                       text-slate-700 dark:text-slate-300"
+                            >
+                                Metros disponibles
+                            </label>
+
+                            <input
+                                v-model.number="
+                                    form.metros_available
+                                "
+                                min="0"
+                                :max="
+                                    selectedProduct
+                                        ? Number(
+                                              selectedProduct.metros ||
+                                                  0,
+                                          )
+                                        : undefined
+                                "
+                                step="0.001"
+                                type="number"
+                                class="w-full rounded-lg border
+                                       border-slate-300 bg-white
+                                       px-3 py-2 text-slate-900
+                                       dark:border-slate-600
+                                       dark:bg-slate-800
+                                       dark:text-slate-100"
+                                @input="
+                                    clampNumberField(
+                                        'metros_available',
+                                        $event,
+                                    )
+                                "
+                                @invalid="
+                                    setNegativeMessage
+                                "
+                            />
+                        </div>
                     </div>
 
-                    <div>
-                        <label class="mb-1 block text-sm font-medium">Metros disponibles</label>
-                        <input
-                            v-model.number="form.metros_available"
-                            min="0"
-                            :max="selectedProduct ? Number(selectedProduct.metros || 0) : undefined"
-                            step="0.001"
-                            type="number"
-                            class="w-full rounded border px-3 py-2"
-                            @input="clampNumberField('metros_available', $event)"
-                            @invalid="setNegativeMessage"
-                        />
+                    <div
+                        v-if="selectedProduct"
+                        class="rounded-lg border border-slate-200
+                               bg-slate-50 p-3 text-sm
+                               text-slate-700
+                               dark:border-slate-700
+                               dark:bg-slate-800
+                               dark:text-slate-300"
+                    >
+                        <p
+                            class="font-medium text-slate-900
+                                   dark:text-slate-100"
+                        >
+                            Producto seleccionado:
+                        </p>
+
+                        <p>
+                            {{
+                                selectedProduct.code_product
+                            }}
+                            -
+                            {{
+                                selectedProduct.name_product
+                            }}
+                        </p>
+
+                        <p class="mt-1">
+                            Stock base del producto:
+                            {{
+                                Number(
+                                    selectedProduct.kilos ||
+                                        0,
+                                )
+                            }}
+                            rollos /
+                            {{
+                                Number(
+                                    selectedProduct.metros ||
+                                        0,
+                                )
+                            }}
+                            metros
+                        </p>
                     </div>
-                </div>
 
-                <div v-if="selectedProduct" class="rounded border border-slate-200 bg-slate-50 p-3 text-sm text-slate-700">
-                    <p class="font-medium">Producto seleccionado:</p>
-                    <p>{{ selectedProduct.code_product }} - {{ selectedProduct.name_product }}</p>
-                    <p class="mt-1">Stock base del producto: {{ Number(selectedProduct.kilos || 0) }} rollos / {{ Number(selectedProduct.metros || 0) }} metros</p>
-                </div>
+                    <div
+                        class="text-sm text-slate-600
+                               dark:text-slate-400"
+                    >
+                        <p>
+                            Debes seleccionar un producto
+                            y asignar al menos un valor
+                            mayor a 0 en kilos o metros
+                            para guardar.
+                        </p>
+                    </div>
 
-                <div class="text-sm text-slate-600">
-                    <p>Debes seleccionar un producto y asignar al menos un valor mayor a 0 en kilos o metros para guardar.</p>
-                </div>
+                    <div
+                        v-if="
+                            stockZero &&
+                            form.warehouse_id &&
+                            form.store_id
+                        "
+                        class="rounded-lg border
+                               border-red-200 bg-red-50
+                               px-3 py-2 text-sm text-red-700
+                               dark:border-red-500/30
+                               dark:bg-red-500/10
+                               dark:text-red-400"
+                    >
+                        No se puede enviar si el stock
+                        de rollos y metros está en 0.
+                    </div>
 
-                <div v-if="stockZero && form.warehouse_id && form.store_id" class="rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-                    No se puede enviar si el stock de rollos y metros está en 0.
-                </div>
+                    <div
+                        v-if="hasStockError"
+                        class="rounded-lg border
+                               border-red-200 bg-red-50
+                               px-3 py-2 text-sm text-red-700
+                               dark:border-red-500/30
+                               dark:bg-red-500/10
+                               dark:text-red-400"
+                    >
+                        <p class="font-semibold">
+                            No se puede guardar porque
+                            la cantidad excede el stock
+                            disponible:
+                        </p>
 
-                <div v-if="hasStockError" class="rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-                    <p class="font-semibold">No se puede guardar porque la cantidad excede el stock disponible:</p>
-                    <ul class="mt-1 list-disc pl-5">
-                        <li v-for="error in stockErrors" :key="error">{{ error }}</li>
-                    </ul>
-                </div>
+                        <ul
+                            class="mt-1 list-disc pl-5"
+                        >
+                            <li
+                                v-for="error in stockErrors"
+                                :key="error"
+                            >
+                                {{ error }}
+                            </li>
+                        </ul>
+                    </div>
 
-                <div>
                     <button
-                        class="rounded bg-blue-600 px-4 py-2 text-white disabled:cursor-not-allowed disabled:opacity-50"
-                        :disabled="form.processing || !canSaveStock"
                         type="submit"
+                        :disabled="
+                            form.processing ||
+                            !canSaveStock
+                        "
+                        class="rounded-lg bg-blue-600 px-4 py-2
+                               font-medium text-white
+                               transition hover:bg-blue-700
+                               focus:outline-none focus:ring-2
+                               focus:ring-blue-500
+                               disabled:cursor-not-allowed
+                               disabled:opacity-50"
                     >
                         Guardar stock
                     </button>
-                </div>
-
-            </form>
-            </div>
-
-            <div class="rounded border bg-white p-4">
-                <form class="mb-4 flex flex-col gap-2 md:flex-row md:items-end" @submit.prevent="submitFilters">
-                    <div class="flex-1">
-                        <label class="mb-1 block text-sm font-medium text-slate-700">Buscar stock</label>
-                        <input
-                            v-model="filters.search"
-                            class="w-full rounded border px-3 py-2"
-                            placeholder="Código, nombre o almacén"
-                            type="text"
-                        />
-                    </div>
-                    <div class="flex gap-2">
-                        <button class="rounded bg-blue-600 px-4 py-2 text-sm font-medium text-white" type="submit">
-                            Buscar
-                        </button>
-                        <button class="rounded border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700" type="button" @click="clearFilters">
-                            Limpiar
-                        </button>
-                    </div>
                 </form>
+            </div>
 
-                <div v-if="props.stocks.data.length === 0" class="rounded border border-dashed border-slate-300 bg-slate-50 p-6 text-sm text-slate-600">
-                    No hay registros de stock para los filtros seleccionados.
+            <!-- LISTADO -->
+            <div
+                class="overflow-hidden rounded-xl border
+                       border-slate-200 bg-white shadow-sm
+                       dark:border-slate-700 dark:bg-slate-900"
+            >
+                <div
+                    class="border-b border-slate-200 px-5 py-4
+                           dark:border-slate-700"
+                >
+                    <h2
+                        class="text-lg font-semibold text-slate-900
+                               dark:text-slate-100"
+                    >
+                        Stock por almacén
+                    </h2>
+
+                    <p
+                        class="mt-1 text-sm text-slate-500
+                               dark:text-slate-400"
+                    >
+                        Consulta el stock disponible de
+                        cada producto por almacén.
+                    </p>
                 </div>
 
-                <div v-else class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-gray-200">
-                    <thead class="bg-gray-50">
-                        <tr>
-                            <th class="px-4 py-3 text-left text-xs uppercase">Almacén</th>
-                            <th class="px-4 py-3 text-left text-xs uppercase">Producto</th>
-                            <th class="px-4 py-3 text-left text-xs uppercase">Stock disponible</th>
-                            <th class="px-4 py-3 text-left text-xs uppercase">Acción</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-gray-200">
-                        <tr v-for="stock in props.stocks.data" :key="stock.id">
-                            <td class="px-4 py-3 text-sm">{{ stock.warehouse.code }} - {{ stock.warehouse.name }}</td>
-                            <td class="px-4 py-3 text-sm">{{ stock.store.code_product }} - {{ stock.store.name_product }}</td>
-                            <td class="px-4 py-3 text-sm">
-                                <div class="flex flex-col gap-1">
-                                    <span class="font-medium">{{ stock.kilos_available }} / {{ stock.metros_available }} m</span>
-                                    <span :class="stockStatus(stock).className" class="inline-flex w-fit rounded-full px-2 py-1 text-xs font-semibold">
-                                        {{ stockStatus(stock).label }}
-                                    </span>
-                                </div>
-                            </td>
-                            <td class="px-4 py-3 text-sm">
-                                <button class="text-red-600" @click="removeStock(stock.id)">Eliminar</button>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
+                <!-- FILTROS -->
+                <div class="p-5">
+                    <form
+                        class="mb-4 flex flex-col gap-2
+                               md:flex-row md:items-end"
+                        @submit.prevent="submitFilters"
+                    >
+                        <div class="flex-1">
+                            <label
+                                class="mb-1 block text-sm font-medium
+                                       text-slate-700
+                                       dark:text-slate-300"
+                            >
+                                Buscar stock
+                            </label>
+
+                            <input
+                                v-model="
+                                    filters.search
+                                "
+                                type="text"
+                                class="w-full rounded-lg border
+                                       border-slate-300 bg-white
+                                       px-3 py-2 text-slate-900
+                                       placeholder:text-slate-400
+                                       focus:border-blue-500
+                                       focus:ring-2
+                                       focus:ring-blue-500/20
+                                       dark:border-slate-600
+                                       dark:bg-slate-800
+                                       dark:text-slate-100
+                                       dark:placeholder:text-slate-500"
+                                placeholder="Código, nombre o almacén"
+                            />
+                        </div>
+
+                        <div class="flex gap-2">
+                            <button
+                                type="submit"
+                                class="rounded-lg bg-blue-600
+                                       px-4 py-2 text-sm
+                                       font-medium text-white
+                                       hover:bg-blue-700"
+                            >
+                                Buscar
+                            </button>
+
+                            <button
+                                type="button"
+                                class="rounded-lg border
+                                       border-slate-300 px-4 py-2
+                                       text-sm font-medium
+                                       text-slate-700
+                                       hover:bg-slate-50
+                                       dark:border-slate-600
+                                       dark:text-slate-300
+                                       dark:hover:bg-slate-800"
+                                @click="clearFilters"
+                            >
+                                Limpiar
+                            </button>
+                        </div>
+                    </form>
+
+                    <!-- SIN RESULTADOS -->
+                    <div
+                        v-if="
+                            props.stocks.data.length ===
+                            0
+                        "
+                        class="rounded-lg border
+                               border-dashed border-slate-300
+                               bg-slate-50 p-6 text-center
+                               text-sm text-slate-600
+                               dark:border-slate-700
+                               dark:bg-slate-800
+                               dark:text-slate-400"
+                    >
+                        No hay registros de stock para
+                        los filtros seleccionados.
+                    </div>
+
+                    <!-- TABLA -->
+                    <div
+                        v-else
+                        class="overflow-x-auto"
+                    >
+                        <table
+                            class="min-w-full divide-y
+                                   divide-slate-200
+                                   dark:divide-slate-700"
+                        >
+                            <thead
+                                class="bg-slate-50
+                                       dark:bg-slate-800"
+                            >
+                                <tr>
+                                    <th
+                                        class="px-4 py-3 text-left
+                                               text-xs font-semibold
+                                               uppercase tracking-wider
+                                               text-slate-600
+                                               dark:text-slate-300"
+                                    >
+                                        Almacén
+                                    </th>
+
+                                    <th
+                                        class="px-4 py-3 text-left
+                                               text-xs font-semibold
+                                               uppercase tracking-wider
+                                               text-slate-600
+                                               dark:text-slate-300"
+                                    >
+                                        Producto
+                                    </th>
+
+                                    <th
+                                        class="px-4 py-3 text-left
+                                               text-xs font-semibold
+                                               uppercase tracking-wider
+                                               text-slate-600
+                                               dark:text-slate-300"
+                                    >
+                                        Rollos
+                                    </th>
+
+                                    <th
+                                        class="px-4 py-3 text-left
+                                               text-xs font-semibold
+                                               uppercase tracking-wider
+                                               text-slate-600
+                                               dark:text-slate-300"
+                                    >
+                                        Metros
+                                    </th>
+
+                                    <th
+                                        class="px-4 py-3 text-left
+                                               text-xs font-semibold
+                                               uppercase tracking-wider
+                                               text-slate-600
+                                               dark:text-slate-300"
+                                    >
+                                        Acción
+                                    </th>
+                                </tr>
+                            </thead>
+
+                            <tbody
+                                class="divide-y
+                                       divide-slate-200
+                                       dark:divide-slate-700"
+                            >
+                                <tr
+                                    v-for="stock in props.stocks.data"
+                                    :key="stock.id"
+                                    class="transition hover:bg-slate-50
+                                           dark:hover:bg-slate-800/70"
+                                >
+                                    <td
+                                        class="px-4 py-3 text-sm
+                                               text-slate-700
+                                               dark:text-slate-300"
+                                    >
+                                        {{
+                                            stock.warehouse
+                                                .code
+                                        }}
+                                        -
+                                        {{
+                                            stock.warehouse
+                                                .name
+                                        }}
+                                    </td>
+
+                                    <td
+                                        class="px-4 py-3 text-sm
+                                               text-slate-700
+                                               dark:text-slate-300"
+                                    >
+                                        {{
+                                            stock.store
+                                                .code_product
+                                        }}
+                                        -
+                                        {{
+                                            stock.store
+                                                .name_product
+                                        }}
+                                    </td>
+
+                                    <td
+                                        class="px-4 py-3 text-sm"
+                                    >
+                                        <div
+                                            class="flex flex-col gap-1"
+                                        >
+                                            <span
+                                                class="font-medium
+                                                       text-slate-900
+                                                       dark:text-slate-100"
+                                            >
+                                                {{
+                                                    stock.kilos_available
+                                                }}                                               
+                                            </span>
+
+                                            <span
+                                                :class="
+                                                    stockStatus(
+                                                        stock,
+                                                    ).className
+                                                "
+                                                class="inline-flex w-fit
+                                                       rounded-full px-2 py-1
+                                                       text-xs font-semibold"
+                                            >
+                                                {{
+                                                    stockStatus(
+                                                        stock,
+                                                    ).label
+                                                }}
+                                            </span>
+                                        </div>
+                                    </td>
+                                    <td
+                                        class="px-4 py-3 text-sm"
+                                    >
+                                        <div
+                                            class="flex flex-col gap-1"
+                                        >
+                                            <span
+                                                class="font-medium
+                                                       text-slate-900
+                                                       dark:text-slate-100"
+                                            >                                               
+                                                {{
+                                                    stock.metros_available
+                                                }}
+                                            </span>
+
+                                            <span
+                                                :class="
+                                                    stockStatus(
+                                                        stock,
+                                                    ).className
+                                                "
+                                                class="inline-flex w-fit
+                                                       rounded-full px-2 py-1
+                                                       text-xs font-semibold"
+                                            >
+                                                {{
+                                                    stockStatus(
+                                                        stock,
+                                                    ).label
+                                                }}
+                                            </span>
+                                        </div>
+                                    </td>
+
+                                    <td
+                                        class="px-4 py-3 text-sm"
+                                    >
+                                        <button
+                                            type="button"
+                                            class="font-medium
+                                                   text-red-600
+                                                   hover:text-red-800
+                                                   dark:text-red-400
+                                                   dark:hover:text-red-300"
+                                            @click="
+                                                removeStock(
+                                                    stock.id,
+                                                )
+                                            "
+                                        >
+                                            Eliminar
+                                        </button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
 
-            <div v-if="props.stocks.total > 0" class="flex items-center justify-between text-sm text-slate-600">
-                <span>Mostrando {{ props.stocks.from }} a {{ props.stocks.to }} de {{ props.stocks.total }} registros</span>
+            <!-- PAGINACIÓN -->
+            <div
+                v-if="props.stocks.total > 0"
+                class="flex flex-col gap-3 text-sm
+                       text-slate-600
+                       dark:text-slate-400
+                       sm:flex-row sm:items-center
+                       sm:justify-between"
+            >
+                <span>
+                    Mostrando
+                    {{ props.stocks.from }}
+                    a
+                    {{ props.stocks.to }}
+                    de
+                    {{ props.stocks.total }}
+                    registros
+                </span>
+
                 <div class="flex gap-2">
-                    <Link v-if="props.stocks.current_page > 1" :href="`/warehouse-stocks?page=${props.stocks.current_page - 1}${filters.search ? `&search=${encodeURIComponent(filters.search)}` : ''}`" class="rounded border px-3 py-1.5 hover:bg-slate-50">Anterior</Link>
-                    <span class="rounded bg-blue-600 px-3 py-1.5 text-white">{{ props.stocks.current_page }}</span>
-                    <Link v-if="props.stocks.current_page < props.stocks.last_page" :href="`/warehouse-stocks?page=${props.stocks.current_page + 1}${filters.search ? `&search=${encodeURIComponent(filters.search)}` : ''}`" class="rounded border px-3 py-1.5 hover:bg-slate-50">Siguiente</Link>
+                    <Link
+                        v-if="
+                            props.stocks.current_page >
+                            1
+                        "
+                        :href="
+                            `/warehouse-stocks?page=${
+                                props.stocks.current_page - 1
+                            }${
+                                filters.search
+                                    ? `&search=${encodeURIComponent(
+                                          filters.search,
+                                      )}`
+                                    : ''
+                            }`
+                        "
+                        class="rounded-lg border
+                               border-slate-300 px-3 py-1.5
+                               text-slate-700
+                               transition hover:bg-slate-50
+                               dark:border-slate-600
+                               dark:text-slate-300
+                               dark:hover:bg-slate-800"
+                    >
+                        Anterior
+                    </Link>
+
+                    <span
+                        class="rounded-lg bg-blue-600
+                               px-3 py-1.5 font-medium
+                               text-white"
+                    >
+                        {{
+                            props.stocks.current_page
+                        }}
+                    </span>
+
+                    <Link
+                        v-if="
+                            props.stocks.current_page <
+                            props.stocks.last_page
+                        "
+                        :href="
+                            `/warehouse-stocks?page=${
+                                props.stocks.current_page + 1
+                            }${
+                                filters.search
+                                    ? `&search=${encodeURIComponent(
+                                          filters.search,
+                                      )}`
+                                    : ''
+                            }`
+                        "
+                        class="rounded-lg border
+                               border-slate-300 px-3 py-1.5
+                               text-slate-700
+                               transition hover:bg-slate-50
+                               dark:border-slate-600
+                               dark:text-slate-300
+                               dark:hover:bg-slate-800"
+                    >
+                        Siguiente
+                    </Link>
                 </div>
             </div>
         </div>

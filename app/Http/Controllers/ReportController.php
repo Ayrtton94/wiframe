@@ -715,199 +715,606 @@ public function salidas(Request $request)
      * de ingreso, salida y transferencia.
      */
     public function movimientoProductos(Request $request)
-    {
-        $data = $request->validate([
-            'from' => ['nullable', 'date'],
-            'to' => ['nullable', 'date'],
-            'warehouse_id' => ['nullable', 'integer', 'exists:warehouses,id'],
-            'product_id' => ['nullable', 'integer', 'exists:stores,id'],
-            'unit' => ['nullable', Rule::in(['ROLLOS', 'METROS'])],
-        ]);
+{
+    $data = $request->validate([
+        'from' => ['nullable', 'date'],
+        'to' => ['nullable', 'date'],
+        'warehouse_id' => ['nullable', 'integer', 'exists:warehouses,id'],
+        'product_id' => ['nullable', 'integer', 'exists:stores,id'],
+        'unit' => ['nullable', Rule::in(['ROLLOS', 'METROS'])],
+    ]);
 
-        $assignedWarehouseIds = $this->assignedWarehouseIds($request);
-        $perPage = $this->reportPerPage($request);
-        $warehouses = $this->reportWarehouses($assignedWarehouseIds);
-        $productsCatalog = $this->reportProducts();
+    $assignedWarehouseIds = $this->assignedWarehouseIds($request);
+    $perPage = $this->reportPerPage($request);
+    $warehouses = $this->reportWarehouses($assignedWarehouseIds);
+    $productsCatalog = $this->reportProducts();
 
+    $from = !empty($data['from'])
+        ? Carbon::parse($data['from'])->startOfDay()
+        : null;
 
-        $from = !empty($data['from'])
-            ? Carbon::parse($data['from'])->startOfDay()
-            : null;
+    $to = !empty($data['to'])
+        ? Carbon::parse($data['to'])->endOfDay()
+        : null;
 
-        $to = !empty($data['to'])
-            ? Carbon::parse($data['to'])->endOfDay()
-            : null;
+    $unitFilter = $data['unit'] ?? null;
 
-        $unitFilter = $data['unit'] ?? null;
+    /*
+    |--------------------------------------------------------------------------
+    | STOCK ACTUAL
+    |--------------------------------------------------------------------------
+    */
 
-        $stockRows = DB::table('warehouse_stocks as ws')
-            ->join('stores as p', 'p.id', '=', 'ws.store_id')
-            ->join('warehouses as w', 'w.id', '=', 'ws.warehouse_id')
-            ->where('p.is_active', true)
-            ->where('w.is_active', true)
-            ->when($assignedWarehouseIds !== null, fn ($query) => $query->whereIn('ws.warehouse_id', $assignedWarehouseIds))
-            ->when($data['warehouse_id'] ?? null, fn ($query, $id) => $query->where('ws.warehouse_id', $id))
-            ->when($data['product_id'] ?? null, fn ($query, $id) => $query->where('ws.store_id', $id))
-            ->select([
-                'p.id as product_id',
-                'p.code_product as codigo_producto',
-                'p.name_product as producto',
-                'w.id as warehouse_id',
-                'w.name as almacen',
-                'ws.kilos_available',
-                'ws.metros_available',
-            ])
-            ->get()
-            ->flatMap(function ($row) use ($unitFilter) {
-                $rows = collect();
+    $stockRows = DB::table('warehouse_stocks as ws')
+        ->join('stores as p', 'p.id', '=', 'ws.store_id')
+        ->join('warehouses as w', 'w.id', '=', 'ws.warehouse_id')
+        ->where('p.is_active', true)
+        ->where('w.is_active', true)
+        ->when(
+            $assignedWarehouseIds !== null,
+            fn ($query) =>
+                $query->whereIn(
+                    'ws.warehouse_id',
+                    $assignedWarehouseIds
+                )
+        )
+        ->when(
+            $data['warehouse_id'] ?? null,
+            fn ($query, $id) =>
+                $query->where(
+                    'ws.warehouse_id',
+                    $id
+                )
+        )
+        ->when(
+            $data['product_id'] ?? null,
+            fn ($query, $id) =>
+                $query->where(
+                    'ws.store_id',
+                    $id
+                )
+        )
+        ->select([
+            'p.id as product_id',
+            'p.code_product as codigo_producto',
+            'p.name_product as producto',
+            'w.id as warehouse_id',
+            'w.name as almacen',
+            'ws.kilos_available',
+            'ws.metros_available',
+            'ws.created_at as stock_created_at',
+        ])
+        ->get()
+        ->flatMap(function ($row) use ($unitFilter) {
+            $rows = collect();
 
-                if ($unitFilter === null || $unitFilter === 'ROLLOS') {
-                    $rows->push((object) [
-                        'product_id' => $row->product_id,
-                        'codigo_producto' => $row->codigo_producto,
-                        'producto' => $row->producto,
-                        'warehouse_id' => $row->warehouse_id,
-                        'almacen' => $row->almacen,
-                        'unidad' => 'ROLLOS',
-                    ]);
-                }
-
-                if ($unitFilter === null || $unitFilter === 'METROS') {
-                    $rows->push((object) [
-                        'product_id' => $row->product_id,
-                        'codigo_producto' => $row->codigo_producto,
-                        'producto' => $row->producto,
-                        'warehouse_id' => $row->warehouse_id,
-                        'almacen' => $row->almacen,
-                        'unidad' => 'METROS',
-                    ]);
-                }
-
-                return $rows;
-            });
-
-        $movementRows = DB::table('inventory_movements as im')
-            ->join('stores as p', 'p.id', '=', 'im.store_id')
-            ->join('warehouses as w', 'w.id', '=', 'im.warehouse_id')
-            ->where('p.is_active', true)
-            ->where('w.is_active', true)
-            ->when($assignedWarehouseIds !== null, fn ($query) => $query->whereIn('im.warehouse_id', $assignedWarehouseIds))
-            ->when($data['warehouse_id'] ?? null, fn ($query, $id) => $query->where('im.warehouse_id', $id))
-            ->when($data['product_id'] ?? null, fn ($query, $id) => $query->where('im.store_id', $id))
-            ->when($data['unit'] ?? null, fn ($query, $unit) => $query->where('im.unit', $unit))
-            ->when($from, fn ($query) => $query->where('im.created_at', '>=', $from))
-            ->when($to, fn ($query) => $query->where('im.created_at', '<=', $to))
-            ->select([
-                'p.id as product_id',
-                'p.code_product as codigo_producto',
-                'p.name_product as producto',
-                'w.id as warehouse_id',
-                'w.name as almacen',
-                 DB::raw("CASE WHEN im.unit IN ('ROLLOS', 'rollos', 'kilos') THEN 'ROLLOS' ELSE 'METROS' END as unidad"),
-            ])
-            ->groupBy('p.id', 'p.code_product', 'p.name_product', 'w.id', 'w.name', 'im.unit')
-            ->get();
-
-            $movementKeys = $stockRows
-            ->merge($movementRows)
-            ->unique(fn ($row) => $row->product_id.'-'.$row->warehouse_id.'-'.$row->unidad)
-            ->sortBy([['producto', 'asc'], ['almacen', 'asc'], ['unidad', 'asc']])
-            ->values();
-
-        $items = $movementKeys->map(function ($row) use ($from, $to) {
-                 $unitAliases = $row->unidad === 'ROLLOS'
-                ? ['ROLLOS', 'rollos', 'kilos']
-                : ['METROS', 'metros'];
-
-                $movementsBase = DB::table('inventory_movements as im')
-                ->where('im.store_id', $row->product_id)
-                ->where('im.warehouse_id', $row->warehouse_id)
-                ->whereIn('im.unit', $unitAliases);
-
-            $saldoInicial = 0.0;
-            if ($from) {
-                 $saldoInicial = (float) (clone $movementsBase)
-                    ->where('im.created_at', '<', $from)
-                    ->selectRaw("COALESCE(SUM(CASE WHEN im.type IN ('INGRESO', 'TRANSFERENCIA_ENTRADA') THEN im.quantity WHEN im.type IN ('SALIDA', 'TRANSFERENCIA_SALIDA') THEN -im.quantity ELSE 0 END), 0) as saldo")                   
-                    ->value('saldo');
+            if (
+                $unitFilter === null ||
+                $unitFilter === 'ROLLOS'
+            ) {
+                $rows->push((object) [
+                    'product_id' => $row->product_id,
+                    'codigo_producto' => $row->codigo_producto,
+                    'producto' => $row->producto,
+                    'warehouse_id' => $row->warehouse_id,
+                    'almacen' => $row->almacen,
+                    'unidad' => 'ROLLOS',
+                ]);
             }
 
-            $periodMovements = clone $movementsBase;
-            $periodMovements->when($from, fn ($query) => $query->where('im.created_at', '>=', $from))
-                ->when($to, fn ($query) => $query->where('im.created_at', '<=', $to));
+            if (
+                $unitFilter === null ||
+                $unitFilter === 'METROS'
+            ) {
+                $rows->push((object) [
+                    'product_id' => $row->product_id,
+                    'codigo_producto' => $row->codigo_producto,
+                    'producto' => $row->producto,
+                    'warehouse_id' => $row->warehouse_id,
+                    'almacen' => $row->almacen,
+                    'unidad' => 'METROS',
+                ]);
+            }
 
-            $sales = DB::table('sale_items as si')
-                ->join('sales as s', 's.id', '=', 'si.sale_id')
-                ->where('si.store_id', $row->product_id)
-                ->where('s.warehouse_id', $row->warehouse_id)
-                ->whereIn('si.unit', $unitAliases)
-                ->when($from, fn ($query) => $query->where('s.created_at', '>=', $from))
-                ->when($to, fn ($query) => $query->where('s.created_at', '<=', $to));
-
-            $transferColumn = $row->unidad === 'ROLLOS' ? 'kilos' : 'metros';
-
-            $transferenciasRecibidas = (float) DB::table('transfer_items as ti')
-                ->join('transfers as t', 't.id', '=', 'ti.transfer_id')
-                ->where('ti.store_id', $row->product_id)
-                ->where('t.to_warehouse_id', $row->warehouse_id)
-                ->when($from, fn ($query) => $query->where('t.created_at', '>=', $from))
-                ->when($to, fn ($query) => $query->where('t.created_at', '<=', $to))
-                ->sum("ti.{$transferColumn}_received");
-
-            $transferenciasEnviadas = (float) DB::table('transfer_items as ti')
-                ->join('transfers as t', 't.id', '=', 'ti.transfer_id')
-                ->where('ti.store_id', $row->product_id)
-                ->where('t.from_warehouse_id', $row->warehouse_id)
-                ->when($from, fn ($query) => $query->where('t.created_at', '>=', $from))
-                ->when($to, fn ($query) => $query->where('t.created_at', '<=', $to))
-                ->sum("ti.{$transferColumn}_shipped");
-            
-            $stock = DB::table('warehouse_stocks')
-                ->where('warehouse_id', $row->warehouse_id)
-                ->where('store_id', $row->product_id)
-                ->first();
-
-            return [
-                'product_id' => $row->product_id,
-                'codigo_producto' => $row->codigo_producto,
-                'producto' => $row->producto,
-                'warehouse_id' => $row->warehouse_id,
-                'almacen' => $row->almacen,
-                'unidad' => $row->unidad,
-                'saldo_inicial' => $saldoInicial,
-                'ingresos' => (float) (clone $periodMovements)->where('im.type', 'INGRESO')->sum('im.quantity'),
-                'salidas' => (float) $sales->sum('si.quantity'),
-                'transferencias_recibidas' => $transferenciasRecibidas,
-                'transferencias_enviadas' => $transferenciasEnviadas,
-                'saldo_actual' => $stock
-                    ? (float) ($row->unidad === 'ROLLOS' ? $stock->kilos_available : $stock->metros_available)
-                    : 0.0,
-            ];
+            return $rows;
         });
 
-        $page = LengthAwarePaginator::resolveCurrentPage();
-        $rows = new LengthAwarePaginator(
-            $items->forPage($page, $perPage)->values(),
-            $items->count(),
-            $perPage,
-            $page,
-            ['path' => $request->url(), 'query' => $request->query()]
-        );
+    /*
+    |--------------------------------------------------------------------------
+    | PRODUCTOS QUE SOLO APARECEN EN MOVIMIENTOS
+    |--------------------------------------------------------------------------
+    */
 
-        return Inertia::render('Reports/MovimientoProductos', [
+    $movementRows = DB::table('inventory_movements as im')
+        ->join('stores as p', 'p.id', '=', 'im.store_id')
+        ->join('warehouses as w', 'w.id', '=', 'im.warehouse_id')
+        ->where('p.is_active', true)
+        ->where('w.is_active', true)
+        ->when(
+            $assignedWarehouseIds !== null,
+            fn ($query) =>
+                $query->whereIn(
+                    'im.warehouse_id',
+                    $assignedWarehouseIds
+                )
+        )
+        ->when(
+            $data['warehouse_id'] ?? null,
+            fn ($query, $id) =>
+                $query->where(
+                    'im.warehouse_id',
+                    $id
+                )
+        )
+        ->when(
+            $data['product_id'] ?? null,
+            fn ($query, $id) =>
+                $query->where(
+                    'im.store_id',
+                    $id
+                )
+        )
+        ->when(
+            $data['unit'] ?? null,
+            fn ($query, $unit) =>
+                $query->whereIn(
+                    'im.unit',
+                    $unit === 'ROLLOS'
+                        ? ['ROLLOS', 'rollos', 'kilos']
+                        : ['METROS', 'metros']
+                )
+        )
+        ->when(
+            $from,
+            fn ($query) =>
+                $query->where(
+                    'im.created_at',
+                    '>=',
+                    $from
+                )
+        )
+        ->when(
+            $to,
+            fn ($query) =>
+                $query->where(
+                    'im.created_at',
+                    '<=',
+                    $to
+                )
+        )
+        ->select([
+            'p.id as product_id',
+            'p.code_product as codigo_producto',
+            'p.name_product as producto',
+            'w.id as warehouse_id',
+            'w.name as almacen',
+            DB::raw("
+                CASE
+                    WHEN im.unit IN ('ROLLOS', 'rollos', 'kilos')
+                        THEN 'ROLLOS'
+                    ELSE 'METROS'
+                END as unidad
+            "),
+        ])
+        ->groupBy(
+            'p.id',
+            'p.code_product',
+            'p.name_product',
+            'w.id',
+            'w.name',
+            'im.unit'
+        )
+        ->get();
+
+    /*
+    |--------------------------------------------------------------------------
+    | LLAVES ÚNICAS
+    |--------------------------------------------------------------------------
+    */
+
+    $movementKeys = $stockRows
+        ->merge($movementRows)
+        ->unique(
+            fn ($row) =>
+                $row->product_id .
+                '-' .
+                $row->warehouse_id .
+                '-' .
+                $row->unidad
+        )
+        ->sortBy([
+            ['producto', 'asc'],
+            ['almacen', 'asc'],
+            ['unidad', 'asc'],
+        ])
+        ->values();
+
+    /*
+    |--------------------------------------------------------------------------
+    | CONSTRUIR REPORTE
+    |--------------------------------------------------------------------------
+    */
+
+    $items = $movementKeys->map(function ($row) use ($from, $to) {
+
+        $unitAliases = $row->unidad === 'ROLLOS'
+            ? ['ROLLOS', 'rollos', 'kilos']
+            : ['METROS', 'metros'];
+
+        /*
+        |--------------------------------------------------------------------------
+        | MOVIMIENTOS BASE
+        |--------------------------------------------------------------------------
+        */
+
+        $movementsBase = DB::table('inventory_movements as im')
+            ->where('im.store_id', $row->product_id)
+            ->where('im.warehouse_id', $row->warehouse_id)
+            ->whereIn('im.unit', $unitAliases);
+
+        /*
+        |--------------------------------------------------------------------------
+        | STOCK ACTUAL
+        |--------------------------------------------------------------------------
+        */
+
+        $stock = DB::table('warehouse_stocks')
+            ->where(
+                'warehouse_id',
+                $row->warehouse_id
+            )
+            ->where(
+                'store_id',
+                $row->product_id
+            )
+            ->first();
+
+        /*
+        |--------------------------------------------------------------------------
+        | SALDO INICIAL HISTÓRICO
+        |--------------------------------------------------------------------------
+        |
+        | El saldo inicial se reconstruye desde el momento en que
+        | se creó el registro warehouse_stock.
+        |
+        | Fórmula:
+        |
+        | saldo inicial =
+        | saldo actual
+        | - movimientos netos posteriores a la creación
+        |
+        | Esto incluye:
+        | INGRESO                  -> +
+        | TRANSFERENCIA_ENTRADA    -> +
+        | SALIDA                   -> -
+        | TRANSFERENCIA_SALIDA     -> -
+        |
+        */
+
+        $saldoInicial = 0.0;
+
+        if ($stock && $stock->created_at) {
+
+            $stockCreatedAt = Carbon::parse(
+                $stock->created_at
+            );
+
+            $saldoActualHistorico = (float) (
+                $row->unidad === 'ROLLOS'
+                    ? $stock->kilos_available
+                    : $stock->metros_available
+            );
+
+            $movimientosNetos = (float) (clone $movementsBase)
+                ->where(
+                    'im.created_at',
+                    '>=',
+                    $stockCreatedAt
+                )
+                ->selectRaw("
+                    COALESCE(
+                        SUM(
+                            CASE
+
+                                WHEN im.type IN (
+                                    'INGRESO',
+                                    'TRANSFERENCIA_ENTRADA'
+                                )
+                                THEN im.quantity
+
+                                WHEN im.type IN (
+                                    'SALIDA',
+                                    'TRANSFERENCIA_SALIDA'
+                                )
+                                THEN -im.quantity
+
+                                ELSE 0
+
+                            END
+                        ),
+                        0
+                    ) as neto
+                ")
+                ->value('neto');
+
+            $saldoInicial =
+                $saldoActualHistorico
+                - $movimientosNetos;
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | MOVIMIENTOS DEL PERÍODO FILTRADO
+        |--------------------------------------------------------------------------
+        */
+
+        $periodMovements = clone $movementsBase;
+
+        $periodMovements
+            ->when(
+                $from,
+                fn ($query) =>
+                    $query->where(
+                        'im.created_at',
+                        '>=',
+                        $from
+                    )
+            )
+            ->when(
+                $to,
+                fn ($query) =>
+                    $query->where(
+                        'im.created_at',
+                        '<=',
+                        $to
+                    )
+            );
+
+        /*
+        |--------------------------------------------------------------------------
+        | INGRESOS
+        |--------------------------------------------------------------------------
+        */
+
+        $ingresos = (float) (clone $periodMovements)
+            ->where(
+                'im.type',
+                'INGRESO'
+            )
+            ->sum('im.quantity');
+
+        /*
+        |--------------------------------------------------------------------------
+        | SALIDAS
+        |--------------------------------------------------------------------------
+        |
+        | Se toman de inventory_movements.
+        |
+        */
+
+        $salidas = (float) (clone $periodMovements)
+            ->where(
+                'im.type',
+                'SALIDA'
+            )
+            ->sum('im.quantity');
+
+        /*
+        |--------------------------------------------------------------------------
+        | TRANSFERENCIAS RECIBIDAS
+        |--------------------------------------------------------------------------
+        */
+
+        $transferColumn =
+            $row->unidad === 'ROLLOS'
+                ? 'kilos'
+                : 'metros';
+
+        $transferenciasRecibidas =
+            (float) DB::table('transfer_items as ti')
+                ->join(
+                    'transfers as t',
+                    't.id',
+                    '=',
+                    'ti.transfer_id'
+                )
+                ->where(
+                    'ti.store_id',
+                    $row->product_id
+                )
+                ->where(
+                    't.to_warehouse_id',
+                    $row->warehouse_id
+                )
+                ->when(
+                    $from,
+                    fn ($query) =>
+                        $query->where(
+                            't.created_at',
+                            '>=',
+                            $from
+                        )
+                )
+                ->when(
+                    $to,
+                    fn ($query) =>
+                        $query->where(
+                            't.created_at',
+                            '<=',
+                            $to
+                        )
+                )
+                ->sum(
+                    "ti.{$transferColumn}_received"
+                );
+
+        /*
+        |--------------------------------------------------------------------------
+        | TRANSFERENCIAS ENVIADAS
+        |--------------------------------------------------------------------------
+        */
+
+        $transferenciasEnviadas =
+            (float) DB::table('transfer_items as ti')
+                ->join(
+                    'transfers as t',
+                    't.id',
+                    '=',
+                    'ti.transfer_id'
+                )
+                ->where(
+                    'ti.store_id',
+                    $row->product_id
+                )
+                ->where(
+                    't.from_warehouse_id',
+                    $row->warehouse_id
+                )
+                ->when(
+                    $from,
+                    fn ($query) =>
+                        $query->where(
+                            't.created_at',
+                            '>=',
+                            $from
+                        )
+                )
+                ->when(
+                    $to,
+                    fn ($query) =>
+                        $query->where(
+                            't.created_at',
+                            '<=',
+                            $to
+                        )
+                )
+                ->sum(
+                    "ti.{$transferColumn}_shipped"
+                );
+
+        /*
+        |--------------------------------------------------------------------------
+        | SALDO ACTUAL
+        |--------------------------------------------------------------------------
+        */
+
+        $saldoActual = $stock
+            ? (
+                $row->unidad === 'ROLLOS'
+                    ? (float) $stock->kilos_available
+                    : (float) $stock->metros_available
+            )
+            : 0.0;
+
+        /*
+        |--------------------------------------------------------------------------
+        | RESULTADO
+        |--------------------------------------------------------------------------
+        */
+
+        return [
+            'product_id' =>
+                $row->product_id,
+
+            'codigo_producto' =>
+                $row->codigo_producto,
+
+            'producto' =>
+                $row->producto,
+
+            'warehouse_id' =>
+                $row->warehouse_id,
+
+            'almacen' =>
+                $row->almacen,
+
+            'unidad' =>
+                $row->unidad,
+
+            'saldo_inicial' =>
+                $saldoInicial,
+
+            'ingresos' =>
+                $ingresos,
+
+            'salidas' =>
+                $salidas,
+
+            'transferencias_recibidas' =>
+                $transferenciasRecibidas,
+
+            'transferencias_enviadas' =>
+                $transferenciasEnviadas,
+
+            'saldo_actual' =>
+                $saldoActual,
+        ];
+    });
+
+    /*
+    |--------------------------------------------------------------------------
+    | PAGINACIÓN
+    |--------------------------------------------------------------------------
+    */
+
+    $page = LengthAwarePaginator::resolveCurrentPage();
+
+    $rows = new LengthAwarePaginator(
+        $items
+            ->forPage($page, $perPage)
+            ->values(),
+
+        $items->count(),
+
+        $perPage,
+
+        $page,
+
+        [
+            'path' => $request->url(),
+            'query' => $request->query(),
+        ]
+    );
+
+    /*
+    |--------------------------------------------------------------------------
+    | VISTA
+    |--------------------------------------------------------------------------
+    */
+
+    return Inertia::render(
+        'Reports/MovimientoProductos',
+        [
             'rows' => $rows,
+
             'filters' => [
-                'from' => $data['from'] ?? '',
-                'to' => $data['to'] ?? '',
-                'warehouse_id' => $data['warehouse_id'] ?? null,
-                'product_id' => $data['product_id'] ?? null,
-                'unit' => $data['unit'] ?? '',
-                'per_page' => $perPage,
+                'from' =>
+                    $data['from'] ?? '',
+
+                'to' =>
+                    $data['to'] ?? '',
+
+                'warehouse_id' =>
+                    $data['warehouse_id'] ?? null,
+
+                'product_id' =>
+                    $data['product_id'] ?? null,
+
+                'unit' =>
+                    $data['unit'] ?? '',
+
+                'per_page' =>
+                    $perPage,
             ],
-            'warehouses' => $warehouses,
-            'products' => $productsCatalog,
-        ]);
-    }
+
+            'warehouses' =>
+                $warehouses,
+
+            'products' =>
+                $productsCatalog,
+        ]
+    );
+}
 
     /**
      * Reporte 3: Transferencias.

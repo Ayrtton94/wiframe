@@ -71,214 +71,427 @@ const updateUserAccess = (userId: number) => {
 };
 
 </script>
-
 <template>
     <Head title="Gestión de roles" />
-    ```vue
-<AppLayout :breadcrumbs="breadcrumbs">
-    <div class="flex h-full flex-1 flex-col gap-6 overflow-x-auto rounded-xl p-4">
 
-        <!-- Encabezado -->
-        <div>
-            <h1 class="text-2xl font-bold text-slate-800">
-                Asignar roles y almacenes
-            </h1>
+    <AppLayout :breadcrumbs="breadcrumbs">
+        <div
+            class="flex h-full flex-1 flex-col gap-6
+                   overflow-x-auto rounded-xl
+                   bg-slate-50 p-4
+                   dark:bg-slate-950"
+        >
+            <!-- ENCABEZADO -->
+            <div>
+                <h1
+                    class="text-2xl font-bold
+                           text-slate-800
+                           dark:text-slate-100"
+                >
+                    Asignar roles y almacenes
+                </h1>
 
-            <p class="mt-1 text-sm text-slate-500">
-                Define el rol de cada usuario y los almacenes que puede operar.
-            </p>
-        </div>
-
-        <!-- Card principal -->
-        <div class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-
-            <!-- Cabecera de la tabla -->
-            <div class="border-b border-slate-200 bg-slate-50 px-6 py-4">
-                <h2 class="text-sm font-semibold text-slate-700">
-                    Usuarios del sistema
-                </h2>
-
-                <p class="mt-1 text-xs text-slate-500">
-                    Modifica los permisos de acceso y guarda los cambios.
+                <p
+                    class="mt-1 text-sm
+                           text-slate-500
+                           dark:text-slate-400"
+                >
+                    Define el rol de cada usuario y los almacenes
+                    que puede operar.
                 </p>
             </div>
 
-            <!-- Tabla -->
-            <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-slate-200">
+            <!-- CARD PRINCIPAL -->
+            <div
+                class="overflow-hidden rounded-xl
+                       border border-slate-200
+                       bg-white shadow-sm
+                       dark:border-slate-700
+                       dark:bg-slate-900"
+            >
+                <!-- CABECERA -->
+                <div
+                    class="border-b
+                           border-slate-200
+                           bg-slate-50 px-6 py-4
+                           dark:border-slate-700
+                           dark:bg-slate-800"
+                >
+                    <h2
+                        class="text-sm font-semibold
+                               text-slate-700
+                               dark:text-slate-200"
+                    >
+                        Usuarios del sistema
+                    </h2>
 
-                    <thead class="bg-slate-100">
-                        <tr>
-                            <th
-                                class="whitespace-nowrap px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-slate-600"
-                            >
-                                Usuario
-                            </th>
+                    <p
+                        class="mt-1 text-xs
+                               text-slate-500
+                               dark:text-slate-400"
+                    >
+                        Modifica los permisos de acceso y guarda
+                        los cambios.
+                    </p>
+                </div>
 
-                            <th
-                                class="whitespace-nowrap px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-slate-600"
-                            >
-                                Correo
-                            </th>
-
-                            <th
-                                class="whitespace-nowrap px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-slate-600"
-                            >
-                                Rol
-                            </th>
-
-                            <th
-                                class="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-slate-600"
-                            >
-                                Almacenes asignados
-                            </th>
-
-                            <th
-                                class="whitespace-nowrap px-6 py-4 text-center text-xs font-semibold uppercase tracking-wider text-slate-600"
-                            >
-                                Acción
-                            </th>
-                        </tr>
-                    </thead>
-
-                    <tbody class="divide-y divide-slate-200 bg-white">
-
-                        <tr
-                            v-for="user in editableUsers"
-                            :key="user.id"
-                            class="transition hover:bg-slate-50"
+                <!-- TABLA -->
+                <div class="overflow-x-auto">
+                    <table
+                        class="min-w-full divide-y
+                               divide-slate-200
+                               dark:divide-slate-700"
+                    >
+                        <!-- ENCABEZADO -->
+                        <thead
+                            class="bg-slate-100
+                                   dark:bg-slate-800"
                         >
-
-                            <!-- Usuario -->
-                            <td class="whitespace-nowrap px-6 py-5">
-                                <div class="flex items-center gap-3">
-
-                                    <div
-                                        class="flex h-9 w-9 items-center justify-center rounded-full bg-blue-100 text-sm font-semibold text-blue-700"
-                                    >
-                                        {{ user.name.charAt(0).toUpperCase() }}
-                                    </div>
-
-                                    <div>
-                                        <p class="text-sm font-semibold text-slate-800">
-                                            {{ user.name }}
-                                        </p>
-
-                                        <p class="text-xs text-slate-500">
-                                            ID: {{ user.id }}
-                                        </p>
-                                    </div>
-
-                                </div>
-                            </td>
-
-                            <!-- Correo -->
-                            <td class="whitespace-nowrap px-6 py-5">
-                                <span class="text-sm text-slate-600">
-                                    {{ user.email }}
-                                </span>
-                            </td>
-
-                            <!-- Rol -->
-                            <td class="whitespace-nowrap px-6 py-5">
-                                <select
-                                    v-model="user.selectedRole"
-                                    @change="onRoleChange(user)"
-                                    class="w-full min-w-44 rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-700 shadow-sm transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                            <tr>
+                                <th
+                                    class="whitespace-nowrap
+                                           px-6 py-4 text-left
+                                           text-xs font-semibold
+                                           uppercase
+                                           tracking-wider
+                                           text-slate-600
+                                           dark:text-slate-300"
                                 >
-                                    <option
-                                        value=""
-                                        disabled
-                                    >
-                                        Seleccionar rol
-                                    </option>
+                                    Usuario
+                                </th>
 
-                                    <option
-                                        v-for="role in props.roles"
-                                        :key="role"
-                                        :value="role"
-                                    >
-                                        {{ role }}
-                                    </option>
-                                </select>
-                            </td>
-
-                            <!-- Almacenes -->
-                            <td class="px-6 py-5">
-                                <select
-                                    v-model="user.selectedWarehouses"
-                                    multiple
-                                    class="min-h-28 w-full min-w-72 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 shadow-sm transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                                <th
+                                    class="whitespace-nowrap
+                                           px-6 py-4 text-left
+                                           text-xs font-semibold
+                                           uppercase
+                                           tracking-wider
+                                           text-slate-600
+                                           dark:text-slate-300"
                                 >
-                                    <option
-                                        v-for="warehouse in props.warehouses"
-                                        :key="warehouse.id"
-                                        :value="String(warehouse.id)"
-                                        class="py-1"
-                                    >
-                                        {{ warehouse.code }} - {{ warehouse.name }}
-                                    </option>
-                                </select>
+                                    Correo
+                                </th>
 
-                                <p class="mt-2 text-xs text-slate-400">
-                                    Mantén presionado Ctrl para seleccionar varios.
-                                </p>
-                            </td>
-
-                            <!-- Guardar -->
-                            <td class="whitespace-nowrap px-6 py-5 text-center">
-                                <button
-                                    type="button"
-                                    @click="updateUserAccess(user.id)"
-                                    class="inline-flex items-center justify-center rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                                <th
+                                    class="whitespace-nowrap
+                                           px-6 py-4 text-left
+                                           text-xs font-semibold
+                                           uppercase
+                                           tracking-wider
+                                           text-slate-600
+                                           dark:text-slate-300"
                                 >
-                                    Guardar
-                                </button>
-                            </td>
+                                    Rol
+                                </th>
 
-                        </tr>
+                                <th
+                                    class="px-6 py-4 text-left
+                                           text-xs font-semibold
+                                           uppercase
+                                           tracking-wider
+                                           text-slate-600
+                                           dark:text-slate-300"
+                                >
+                                    Almacenes asignados
+                                </th>
 
-                        <!-- Sin usuarios -->
-                        <tr v-if="editableUsers.length === 0">
-                            <td
-                                colspan="5"
-                                class="px-6 py-14 text-center"
+                                <th
+                                    class="whitespace-nowrap
+                                           px-6 py-4 text-center
+                                           text-xs font-semibold
+                                           uppercase
+                                           tracking-wider
+                                           text-slate-600
+                                           dark:text-slate-300"
+                                >
+                                    Acción
+                                </th>
+                            </tr>
+                        </thead>
+
+                        <!-- DATOS -->
+                        <tbody
+                            class="divide-y
+                                   divide-slate-200
+                                   bg-white
+                                   dark:divide-slate-700
+                                   dark:bg-slate-900"
+                        >
+                            <tr
+                                v-for="user in editableUsers"
+                                :key="user.id"
+                                class="transition
+                                       hover:bg-slate-50
+                                       dark:hover:bg-slate-800/70"
                             >
-                                <div class="flex flex-col items-center justify-center">
+                                <!-- USUARIO -->
+                                <td
+                                    class="whitespace-nowrap
+                                           px-6 py-5"
+                                >
+                                    <div
+                                        class="flex items-center gap-3"
+                                    >
+                                        <div
+                                            class="flex h-9 w-9
+                                                   items-center
+                                                   justify-center
+                                                   rounded-full
+                                                   bg-blue-100
+                                                   text-sm font-semibold
+                                                   text-blue-700
+                                                   dark:bg-blue-500/15
+                                                   dark:text-blue-400"
+                                        >
+                                            {{
+                                                user.name
+                                                    .charAt(0)
+                                                    .toUpperCase()
+                                            }}
+                                        </div>
 
-                                    <div class="mb-3 rounded-full bg-slate-100 p-4">
-                                        <span class="text-2xl">👥</span>
+                                        <div>
+                                            <p
+                                                class="text-sm
+                                                       font-semibold
+                                                       text-slate-800
+                                                       dark:text-slate-100"
+                                            >
+                                                {{ user.name }}
+                                            </p>
+
+                                            <p
+                                                class="text-xs
+                                                       text-slate-500
+                                                       dark:text-slate-400"
+                                            >
+                                                ID: {{ user.id }}
+                                            </p>
+                                        </div>
                                     </div>
+                                </td>
 
-                                    <p class="text-sm font-medium text-slate-700">
-                                        No hay usuarios disponibles
+                                <!-- CORREO -->
+                                <td
+                                    class="whitespace-nowrap
+                                           px-6 py-5"
+                                >
+                                    <span
+                                        class="text-sm
+                                               text-slate-600
+                                               dark:text-slate-300"
+                                    >
+                                        {{ user.email }}
+                                    </span>
+                                </td>
+
+                                <!-- ROL -->
+                                <td
+                                    class="whitespace-nowrap
+                                           px-6 py-5"
+                                >
+                                    <select
+                                        v-model="
+                                            user.selectedRole
+                                        "
+                                        @change="
+                                            onRoleChange(user)
+                                        "
+                                        class="w-full min-w-44
+                                               rounded-lg
+                                               border
+                                               border-slate-300
+                                               bg-white px-3 py-2.5
+                                               text-sm
+                                               text-slate-700
+                                               shadow-sm transition
+                                               focus:border-blue-500
+                                               focus:outline-none
+                                               focus:ring-2
+                                               focus:ring-blue-500/20
+                                               dark:border-slate-600
+                                               dark:bg-slate-800
+                                               dark:text-slate-100"
+                                    >
+                                        <option
+                                            value=""
+                                            disabled
+                                        >
+                                            Seleccionar rol
+                                        </option>
+
+                                        <option
+                                            v-for="role in props.roles"
+                                            :key="role"
+                                            :value="role"
+                                        >
+                                            {{ role }}
+                                        </option>
+                                    </select>
+                                </td>
+
+                                <!-- ALMACENES -->
+                                <td
+                                    class="px-6 py-5"
+                                >
+                                    <select
+                                        v-model="
+                                            user.selectedWarehouses
+                                        "
+                                        multiple
+                                        class="min-h-28 w-full min-w-72
+                                               rounded-lg
+                                               border
+                                               border-slate-300
+                                               bg-white px-3 py-2
+                                               text-sm
+                                               text-slate-700
+                                               shadow-sm transition
+                                               focus:border-blue-500
+                                               focus:outline-none
+                                               focus:ring-2
+                                               focus:ring-blue-500/20
+                                               dark:border-slate-600
+                                               dark:bg-slate-800
+                                               dark:text-slate-100"
+                                    >
+                                        <option
+                                            v-for="warehouse in props.warehouses"
+                                            :key="warehouse.id"
+                                            :value="
+                                                String(
+                                                    warehouse.id,
+                                                )
+                                            "
+                                            class="py-1"
+                                        >
+                                            {{ warehouse.code }} -
+                                            {{ warehouse.name }}
+                                        </option>
+                                    </select>
+
+                                    <p
+                                        class="mt-2 text-xs
+                                               text-slate-400
+                                               dark:text-slate-500"
+                                    >
+                                        Mantén presionado Ctrl para
+                                        seleccionar varios.
                                     </p>
+                                </td>
 
-                                    <p class="mt-1 text-sm text-slate-500">
-                                        Los usuarios registrados aparecerán aquí.
-                                    </p>
+                                <!-- GUARDAR -->
+                                <td
+                                    class="whitespace-nowrap
+                                           px-6 py-5 text-center"
+                                >
+                                    <button
+                                        type="button"
+                                        @click="
+                                            updateUserAccess(
+                                                user.id,
+                                            )
+                                        "
+                                        class="inline-flex
+                                               items-center
+                                               justify-center
+                                               rounded-lg
+                                               bg-blue-600
+                                               px-5 py-2.5
+                                               text-sm font-medium
+                                               text-white shadow-sm
+                                               transition
+                                               hover:bg-blue-700
+                                               focus:outline-none
+                                               focus:ring-2
+                                               focus:ring-blue-500
+                                               focus:ring-offset-2
+                                               dark:focus:ring-offset-slate-900
+                                               dark:hover:bg-blue-500"
+                                    >
+                                        Guardar
+                                    </button>
+                                </td>
+                            </tr>
 
-                                </div>
-                            </td>
-                        </tr>
+                            <!-- SIN USUARIOS -->
+                            <tr
+                                v-if="
+                                    editableUsers.length ===
+                                    0
+                                "
+                            >
+                                <td
+                                    colspan="5"
+                                    class="px-6 py-14 text-center"
+                                >
+                                    <div
+                                        class="flex flex-col
+                                               items-center
+                                               justify-center"
+                                    >
+                                        <div
+                                            class="mb-3
+                                                   rounded-full
+                                                   bg-slate-100 p-4
+                                                   dark:bg-slate-800"
+                                        >
+                                            <span
+                                                class="text-2xl"
+                                            >
+                                                👥
+                                            </span>
+                                        </div>
 
-                    </tbody>
-                </table>
+                                        <p
+                                            class="text-sm
+                                                   font-medium
+                                                   text-slate-700
+                                                   dark:text-slate-200"
+                                        >
+                                            No hay usuarios disponibles
+                                        </p>
+
+                                        <p
+                                            class="mt-1 text-sm
+                                                   text-slate-500
+                                                   dark:text-slate-400"
+                                        >
+                                            Los usuarios registrados
+                                            aparecerán aquí.
+                                        </p>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- FOOTER -->
+                <div
+                    class="border-t
+                           border-slate-200
+                           bg-slate-50 px-6 py-4
+                           dark:border-slate-700
+                           dark:bg-slate-800/60"
+                >
+                    <p
+                        class="text-sm
+                               text-slate-500
+                               dark:text-slate-400"
+                    >
+                        Total de usuarios:
+
+                        <span
+                            class="font-semibold
+                                   text-slate-700
+                                   dark:text-slate-200"
+                        >
+                            {{ editableUsers.length }}
+                        </span>
+                    </p>
+                </div>
             </div>
-
-            <!-- Footer -->
-            <div class="border-t border-slate-200 bg-slate-50 px-6 py-4">
-                <p class="text-sm text-slate-500">
-                    Total de usuarios:
-                    <span class="font-semibold text-slate-700">
-                        {{ editableUsers.length }}
-                    </span>
-                </p>
-            </div>
-
         </div>
-    </div>
-</AppLayout>
-```
-
+    </AppLayout>
 </template>

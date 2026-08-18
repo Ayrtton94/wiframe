@@ -1004,8 +1004,7 @@ const alertIconClasses = (type: AlertItem['type']) => {
                         <!-- KILOS -->
 
                         <div
-                            class="rounded-xl border border-slate-200 p-5 dark:border-slate-800"
-                        >
+                            class="rounded-xl border border-slate-200 p-5 dark:border-slate-800">
                             <div
                                 class="flex items-center gap-3"
                             >
