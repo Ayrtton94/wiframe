@@ -3,7 +3,7 @@ import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link, useForm } from '@inertiajs/vue3';
 import { usePage } from '@inertiajs/vue3';
-import { computed, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 
 type PriceType =
     | 'price'
@@ -42,7 +42,9 @@ const props = defineProps<{
             notes: string | null;
 
             customer: {
+                id: number;
                 name: string;
+                dni: string;
             };
 
             warehouse: {
@@ -78,6 +80,13 @@ const props = defineProps<{
         name: string;
         dni: string;
     }>;
+
+    // ✅ AQUÍ
+    defaultCustomer: {
+        id: number;
+        name: string;
+        dni: string;
+    } | null;
 
     warehouses: Array<{
         id: number;
@@ -119,7 +128,9 @@ const defaultWarehouseId = props.defaultWarehouseId
         : '';
 
 const form = useForm({
-    customer_id: '',
+    customer_id: props.defaultCustomer
+        ? String(props.defaultCustomer.id)
+        : '',
     warehouse_id: defaultWarehouseId,
     notes: '',
     items: [
@@ -132,6 +143,69 @@ const form = useForm({
         },
     ] as SaleItemForm[],
 });
+
+const customerSearch = ref(
+    props.defaultCustomer
+        ? props.defaultCustomer.dni
+        : '',
+);
+
+
+const selectedCustomer = computed(() => {
+    return (
+        props.customers.find(
+            (customer) =>
+                String(customer.id) ===
+                String(form.customer_id),
+        ) ?? null
+    );
+});
+
+const filteredCustomers = computed(() => {
+    const term = customerSearch.value
+        .trim()
+        .toLowerCase();
+
+    if (!term) {
+        return [];
+    }
+
+    return props.customers
+        .filter((customer) => {
+            const haystack =
+                `${customer.dni} ${customer.name}`
+                    .toLowerCase();
+
+            return haystack.includes(term);
+        })
+        .slice(0, 8);
+});
+
+const selectCustomer = (customer: {
+    id: number;
+    name: string;
+    dni: string;
+}) => {
+    form.customer_id = String(customer.id);
+    customerSearch.value = customer.dni;
+};
+
+const resetToDefaultCustomer = () => {
+    if (!props.defaultCustomer) {
+        form.customer_id = '';
+        customerSearch.value = '';
+        return;
+    }
+
+    form.customer_id = String(
+        props.defaultCustomer.id,
+    );
+
+    customerSearch.value =
+        props.defaultCustomer.dni;
+};
+
+
 
 const addItem = () => {
     form.items.push({
@@ -700,13 +774,21 @@ const submit = () => {
         ),
     })).post('/sales', {
         preserveScroll: true,
-        onSuccess: () =>
-            form.reset(
-                'customer_id',
-                'warehouse_id',
-                'notes',
-                'items',
-            ),
+        onSuccess: () => {
+        form.reset(
+            'customer_id',
+            'warehouse_id',
+            'notes',
+            'items',
+        );
+
+        form.customer_id = props.defaultCustomer
+            ? String(props.defaultCustomer.id)
+            : '';
+
+        customerSearch.value =
+            props.defaultCustomer?.dni ?? '';
+    },
     });
 };
 </script>
@@ -755,56 +837,148 @@ const submit = () => {
                         class="grid gap-3 md:grid-cols-2"
                     >
                         <!-- CLIENTE -->
-                        <div>
-                            <label
-                                class="mb-1 block text-sm
-                                       font-medium
-                                       text-slate-700
-                                       dark:text-slate-300"
-                            >
-                                Cliente
-                            </label>
 
-                            <select
-                                v-model="
-                                    form.customer_id
+                        <div class="relative">
+                        <label
+                            class="mb-1 block text-sm
+                                font-medium
+                                text-slate-700
+                                dark:text-slate-300"
+                        >
+                            Cliente
+                        </label>
+
+                        <!-- BUSCADOR -->
+                        <input
+                            v-model="customerSearch"
+                            type="text"
+                            inputmode="numeric"
+                            autocomplete="off"
+                            placeholder="Buscar por DNI..."
+                            class="w-full rounded-lg
+                                border border-slate-300
+                                bg-white px-3 py-2
+                                text-sm text-slate-900
+                                placeholder:text-slate-400
+                                focus:border-blue-500
+                                focus:outline-none
+                                focus:ring-2
+                                focus:ring-blue-500/20
+                                dark:border-slate-600
+                                dark:bg-slate-800
+                                dark:text-slate-100
+                                dark:placeholder:text-slate-500"
+                            @focus="
+                                customerSearch ===
+                                props.defaultCustomer?.dni
+                                    ? (customerSearch = '')
+                                    : null
+                            "
+                        />
+
+                        <!-- RESULTADOS -->
+                        <div
+                            v-if="customerSearch.trim()"
+                            class="absolute left-0 right-0
+                                z-50 mt-1 max-h-56
+                                overflow-y-auto rounded-lg
+                                border border-slate-200
+                                bg-white p-1 shadow-lg
+                                dark:border-slate-700
+                                dark:bg-slate-800"
+                        >
+                            <button
+                                v-for="customer in filteredCustomers"
+                                :key="customer.id"
+                                type="button"
+                                class="flex w-full items-center
+                                    justify-between rounded-lg
+                                    px-3 py-2 text-left
+                                    text-sm transition
+                                    hover:bg-slate-100
+                                    dark:hover:bg-slate-700"
+                                @click="
+                                    selectCustomer(customer)
                                 "
-                                required
-                                class="w-full rounded-lg
-                                       border
-                                       border-slate-300
-                                       bg-white px-3 py-2
-                                       text-slate-900
-                                       focus:border-blue-500
-                                       focus:outline-none
-                                       focus:ring-2
-                                       focus:ring-blue-500/20
-                                       dark:border-slate-600
-                                       dark:bg-slate-800
-                                       dark:text-slate-100"
                             >
-                                <option
-                                    disabled
-                                    value=""
-                                >
-                                    Selecciona cliente
-                                </option>
+                                <span>
+                                    <span
+                                        class="font-medium
+                                            text-slate-900
+                                            dark:text-slate-100"
+                                    >
+                                        {{ customer.dni }}
+                                    </span>
 
-                                <option
-                                    v-for="customer in props.customers"
-                                    :key="customer.id"
-                                    :value="
-                                        String(
-                                            customer.id,
-                                        )
-                                    "
+                                    <span
+                                        class="ml-2 text-slate-600
+                                            dark:text-slate-300"
+                                    >
+                                        {{ customer.name }}
+                                    </span>
+                                </span>
+
+                                <span
+                                    class="text-xs
+                                        text-blue-600
+                                        dark:text-blue-400"
                                 >
-                                    {{ customer.dni }}
-                                    -
-                                    {{ customer.name }}
-                                </option>
-                            </select>
+                                    Seleccionar
+                                </span>
+                            </button>
+
+                            <p
+                                v-if="filteredCustomers.length === 0"
+                                class="px-3 py-3 text-sm
+                                    text-slate-500
+                                    dark:text-slate-400"
+                            >
+                                No se encontró ningún cliente con ese DNI.
+                            </p>
                         </div>
+
+                        <!-- CLIENTE ACTUAL -->
+                        <div
+                            v-if="selectedCustomer"
+                            class="mt-2 flex items-center
+                                justify-between rounded-lg
+                                border border-slate-200
+                                bg-slate-50 px-3 py-2
+                                dark:border-slate-700
+                                dark:bg-slate-800"
+                        >
+                            <div>
+                                <p
+                                    class="text-sm font-medium
+                                        text-slate-900
+                                        dark:text-slate-100"
+                                >
+                                    {{ selectedCustomer.name }}
+                                </p>
+
+                                <p
+                                    class="text-xs
+                                        text-slate-500
+                                        dark:text-slate-400"
+                                >
+                                    DNI: {{ selectedCustomer.dni }}
+                                </p>
+                            </div>
+
+                            <button
+                                type="button"
+                                class="text-xs font-medium
+                                    text-blue-600
+                                    hover:text-blue-800
+                                    dark:text-blue-400
+                                    dark:hover:text-blue-300"
+                                @click="resetToDefaultCustomer"
+                            >
+                                Consumidor final
+                            </button>
+                        </div>
+                    </div>
+
 
                         <!-- ALMACÉN -->
                         <div>

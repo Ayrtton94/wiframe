@@ -18,75 +18,122 @@ class SaleController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index(Request $request)
-    {
-        $user = $request->user();
-        $assignedWarehouseIds = $user->hasRole('admin')
-            ? null
-            : $user->warehouses()->pluck('warehouses.id');
+public function index(Request $request)
+{
+    $user = $request->user();
 
-        $salesQuery = Sale::query()
-            ->with([
-                'customer:id,name', 
-                'warehouse:id,name,code', 
-                'seller:id,name',
-                'items.store:id,code_product,name_product',
-                ])
-            ->latest();
+    $assignedWarehouseIds = $user->hasRole('admin')
+        ? null
+        : $user->warehouses()->pluck('warehouses.id');
 
-        if ($assignedWarehouseIds !== null) {
-            $salesQuery->whereIn('warehouse_id', $assignedWarehouseIds);
-        }
+    $salesQuery = Sale::query()
+        ->with([
+            'customer:id,name',
+            'warehouse:id,name,code',
+            'seller:id,name',
+            'items.store:id,code_product,name_product',
+        ])
+        ->latest();
 
-        $sales = $salesQuery->paginate(15)->withQueryString();
+    if ($assignedWarehouseIds !== null) {
+        $salesQuery->whereIn(
+            'warehouse_id',
+            $assignedWarehouseIds
+        );
+    }
 
-        $warehousesQuery = Warehouse::query()
-            ->where('is_active', true)
-            ->orderBy('name');
+    $sales = $salesQuery
+        ->paginate(15)
+        ->withQueryString();
 
-        if ($assignedWarehouseIds !== null) {
-            $warehousesQuery->whereIn('id', $assignedWarehouseIds);
-        }
+    $warehousesQuery = Warehouse::query()
+        ->where('is_active', true)
+        ->orderBy('name');
 
-        $warehouses = $warehousesQuery->get(['id', 'name', 'code']);
-        $defaultWarehouseId = $warehouses->count() === 1 ? $warehouses->first()->id : null;
+    if ($assignedWarehouseIds !== null) {
+        $warehousesQuery->whereIn(
+            'id',
+            $assignedWarehouseIds
+        );
+    }
 
-        $warehouseStocks = WarehouseStock::query()
-            ->with('warehouse:id,name,code')
-            ->whereHas('warehouse', fn ($query) => $query->where('is_active', true));
+    $warehouses = $warehousesQuery->get([
+        'id',
+        'name',
+        'code',
+    ]);
 
-        if ($assignedWarehouseIds !== null) {
-            $warehouseStocks->whereIn('warehouse_id', $assignedWarehouseIds);
-        }
+    $defaultWarehouseId = $warehouses->count() === 1
+        ? $warehouses->first()->id
+        : null;
 
-        return Inertia::render('Sales/Index', [
-            'sales' => $sales,
-            'customers' => Customer::query()->orderBy('name')->get(['id', 'name', 'dni']),
-            'warehouses' => $warehouses,
-            'defaultWarehouseId' => $defaultWarehouseId,
-            'warehouseStocks' => $warehouseStocks->get([
+    $warehouseStocks = WarehouseStock::query()
+        ->with('warehouse:id,name,code')
+        ->whereHas(
+            'warehouse',
+            fn ($query) =>
+                $query->where('is_active', true)
+        );
+
+    if ($assignedWarehouseIds !== null) {
+        $warehouseStocks->whereIn(
+            'warehouse_id',
+            $assignedWarehouseIds
+        );
+    }
+
+    // ✅ Cliente por defecto
+    $defaultCustomer = Customer::query()
+        ->where('dni', '00000000')
+        ->first([
+            'id',
+            'name',
+            'dni',
+        ]);
+
+    return Inertia::render('Sales/Index', [
+        'sales' => $sales,
+
+        'customers' => Customer::query()
+            ->orderBy('name')
+            ->get([
+                'id',
+                'name',
+                'dni',
+            ]),
+
+        'defaultCustomer' => $defaultCustomer,
+
+        'warehouses' => $warehouses,
+
+        'defaultWarehouseId' =>
+            $defaultWarehouseId,
+
+        'warehouseStocks' =>
+            $warehouseStocks->get([
                 'warehouse_id',
                 'store_id',
                 'kilos_available',
                 'metros_available',
             ]),
-            'products' => Store::query()
-                ->where('is_active', true)
-                ->orderBy('name_product')
-                ->get([
-                    'id',
-                    'code_product',
-                    'name_product',
-                    'price',
-                    'public_price',
-                    'wholesale_price',
-                    'price_roll',
-                    'special_price',
-                    'kilos',
-                    'metros',
-                ]),
-        ]);
-    }
+
+        'products' => Store::query()
+            ->where('is_active', true)
+            ->orderBy('name_product')
+            ->get([
+                'id',
+                'code_product',
+                'name_product',
+                'price',
+                'public_price',
+                'wholesale_price',
+                'price_roll',
+                'special_price',
+                'kilos',
+                'metros',
+            ]),
+    ]);
+}
 
     /**
      * Show the form for creating a new resource.

@@ -112,7 +112,11 @@ Route::middleware('auth')->group(function () {
     Route::get('reports/inventario', [ReportController::class, 'inventario'])
         ->middleware('role:admin,almacen,tienda,vendedor')
         ->name('reports.inventario');
-
+    
+    Route::get('/reports/salidas/export',[ReportController::class, 'exportSalidas'])->name('reports.salidas.export');
+    Route::get('/reports/movimiento-productos/export',[ReportController::class, 'exportMovimientoProductos'])->name('reports.movimiento-productos.export');
+    Route::get('/reports/transferencias/export',[ReportController::class, 'exportTransferencias'])->name('reports.transferencias.export');
+    Route::get('/reports/inventario/export',[ReportController::class, 'exportInventario'])->name('reports.inventario.export');
 
     Route::middleware('role:admin,vendedor,tienda')->group(function () {
         Route::resource('sales', SaleController::class);

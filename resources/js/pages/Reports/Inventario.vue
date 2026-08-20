@@ -127,6 +127,21 @@ const clearFilters = () => {
     );
 };
 
+const exportExcel = () => {
+    const params = new URLSearchParams({
+        warehouse_id: filters.warehouse_id
+            ? String(filters.warehouse_id)
+            : '',
+        product_id: filters.product_id
+            ? String(filters.product_id)
+            : '',
+        search: filters.search || '',
+    });
+
+    window.location.href =
+        `/reports/inventario/export?${params.toString()}`;
+};
+
 const changePage = (page: number) => {
     if (
         page < 1 ||
@@ -330,15 +345,16 @@ const changePage = (page: number) => {
 
                     <!-- BOTONES -->
                     <div
-                        class="flex gap-2
-                               lg:col-span-4"
+                        class="flex flex-col gap-2
+                            md:col-span-1
+                            sm:flex-row"
                     >
                         <Button
                             type="submit"
                             class="flex-1 bg-blue-600
-                                   text-white
-                                   hover:bg-blue-700
-                                   dark:hover:bg-blue-500"
+                                text-white
+                                hover:bg-blue-700
+                                dark:hover:bg-blue-500"
                         >
                             Aplicar filtros
                         </Button>
@@ -347,17 +363,34 @@ const changePage = (page: number) => {
                             type="button"
                             variant="outline"
                             class="flex-1
-                                   border-slate-300
-                                   bg-white
-                                   text-slate-700
-                                   hover:bg-slate-50
-                                   dark:border-slate-600
-                                   dark:bg-slate-800
-                                   dark:text-slate-300
-                                   dark:hover:bg-slate-700"
+                                border-slate-300
+                                bg-white
+                                text-slate-700
+                                hover:bg-slate-50
+                                dark:border-slate-600
+                                dark:bg-slate-800
+                                dark:text-slate-300
+                                dark:hover:bg-slate-700"
                             @click="clearFilters"
                         >
-                            Limpiar filtros
+                            Limpiar
+                        </Button>
+
+                        <Button
+                            type="button"
+                            variant="outline"
+                            class="flex-1
+                                border-emerald-300
+                                bg-white
+                                text-emerald-700
+                                hover:bg-emerald-50
+                                dark:border-emerald-500/40
+                                dark:bg-slate-800
+                                dark:text-emerald-400
+                                dark:hover:bg-emerald-500/10"
+                            @click="exportExcel"
+                        >
+                            Exportar Excel
                         </Button>
                     </div>
                 </form>

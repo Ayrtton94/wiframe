@@ -150,6 +150,24 @@ const clearFilters = () => {
     );
 };
 
+const exportExcel = () => {
+    const params = new URLSearchParams({
+        from: filters.from || '',
+        to: filters.to || '',
+        warehouse_id: filters.warehouse_id
+            ? String(filters.warehouse_id)
+            : '',
+        product_id: filters.product_id
+            ? String(filters.product_id)
+            : '',
+        unit: filters.unit || '',
+    });
+
+    window.location.href =
+        `/reports/movimiento-productos/export?${params.toString()}`;
+};
+
+
 const changePage = (page: number) => {
     if (
         page < 1 ||
@@ -494,6 +512,20 @@ const changePage = (page: number) => {
                             Limpiar filtros
                         </Button>
                     </div>
+                    <Button
+                        type="button"
+                        variant="outline"
+                        class="border-emerald-300
+                            bg-white text-emerald-700
+                            hover:bg-emerald-50
+                            dark:border-emerald-500/40
+                            dark:bg-slate-800
+                            dark:text-emerald-400
+                            dark:hover:bg-emerald-500/10"
+                        @click="exportExcel"
+                    >
+                        Exportar Excel
+                    </Button>
                 </form>
 
                 <!-- RESUMEN -->
