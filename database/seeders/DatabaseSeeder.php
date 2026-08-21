@@ -2,8 +2,8 @@
 
 namespace Database\Seeders;
 
+use App\Models\Customer;
 use App\Models\User;
-// use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
 class DatabaseSeeder extends Seeder
@@ -24,6 +24,15 @@ class DatabaseSeeder extends Seeder
             'email_verified_at' => now(),
         ]);
         $admin->assignRole('admin');
+
+        Customer::create([
+            'dni' => '00000000',
+            'name' => 'CONSUMIDOR FINAL',
+            'email' => null,
+            'phone' => null,
+            'address' => null,
+            'position' => null,
+        ]);
 
 
         //$this->call(StoreSeeder::class);

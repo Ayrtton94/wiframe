@@ -150,6 +150,46 @@ const customerSearch = ref(
         : '',
 );
 
+const isQuickSale = ref(false);
+
+const startQuickSale = () => {
+    if (!props.defaultCustomer) {
+        window.alert(
+            'No existe el cliente CONSUMIDOR FINAL. Créalo antes de realizar una salida rápida.',
+        );
+
+        return;
+    }
+
+    isQuickSale.value = true;
+
+    form.customer_id = String(
+        props.defaultCustomer.id,
+    );
+
+    customerSearch.value = '';
+
+    if (
+        !form.warehouse_id &&
+        props.warehouses.length === 1
+    ) {
+        form.warehouse_id = String(
+            props.warehouses[0].id,
+        );
+    }
+};
+
+const cancelQuickSale = () => {
+    isQuickSale.value = false;
+
+    form.customer_id = props.defaultCustomer
+        ? String(props.defaultCustomer.id)
+        : '';
+
+    customerSearch.value =
+        props.defaultCustomer?.dni ?? '';
+};
+
 
 const selectedCustomer = computed(() => {
     return (
@@ -171,13 +211,11 @@ const filteredCustomers = computed(() => {
     }
 
     return props.customers
-        .filter((customer) => {
-            const haystack =
-                `${customer.dni} ${customer.name}`
-                    .toLowerCase();
-
-            return haystack.includes(term);
-        })
+        .filter((customer) =>
+            customer.dni
+                .toLowerCase()
+                .includes(term),
+        )
         .slice(0, 8);
 });
 
@@ -796,9 +834,7 @@ const submit = () => {
 <template>
     <Head title="Salidas" />
 
-    <AppLayout
-        :breadcrumbs="breadcrumbs"
-    >
+    <AppLayout :breadcrumbs="breadcrumbs">
         <div
             class="flex h-full flex-1 flex-col gap-6
                    bg-slate-50 p-4
@@ -836,149 +872,201 @@ const submit = () => {
                     <div
                         class="grid gap-3 md:grid-cols-2"
                     >
-                        <!-- CLIENTE -->
-
-                        <div class="relative">
-                        <label
-                            class="mb-1 block text-sm
-                                font-medium
-                                text-slate-700
-                                dark:text-slate-300"
-                        >
-                            Cliente
-                        </label>
-
-                        <!-- BUSCADOR -->
-                        <input
-                            v-model="customerSearch"
-                            type="text"
-                            inputmode="numeric"
-                            autocomplete="off"
-                            placeholder="Buscar por DNI..."
-                            class="w-full rounded-lg
-                                border border-slate-300
-                                bg-white px-3 py-2
-                                text-sm text-slate-900
-                                placeholder:text-slate-400
-                                focus:border-blue-500
-                                focus:outline-none
-                                focus:ring-2
-                                focus:ring-blue-500/20
-                                dark:border-slate-600
-                                dark:bg-slate-800
-                                dark:text-slate-100
-                                dark:placeholder:text-slate-500"
-                            @focus="
-                                customerSearch ===
-                                props.defaultCustomer?.dni
-                                    ? (customerSearch = '')
-                                    : null
-                            "
-                        />
-
-                        <!-- RESULTADOS -->
+                        <!-- CLIENTE NORMAL -->
                         <div
-                            v-if="customerSearch.trim()"
-                            class="absolute left-0 right-0
-                                z-50 mt-1 max-h-56
-                                overflow-y-auto rounded-lg
-                                border border-slate-200
-                                bg-white p-1 shadow-lg
-                                dark:border-slate-700
-                                dark:bg-slate-800"
+                            v-if="!isQuickSale"
+                            class="relative"
                         >
-                            <button
-                                v-for="customer in filteredCustomers"
-                                :key="customer.id"
-                                type="button"
-                                class="flex w-full items-center
-                                    justify-between rounded-lg
-                                    px-3 py-2 text-left
-                                    text-sm transition
-                                    hover:bg-slate-100
-                                    dark:hover:bg-slate-700"
-                                @click="
-                                    selectCustomer(customer)
+                            <label
+                                class="mb-1 block text-sm
+                                       font-medium
+                                       text-slate-700
+                                       dark:text-slate-300"
+                            >
+                                Cliente
+                            </label>
+
+                            <!-- BUSCADOR -->
+                            <input
+                                v-model="customerSearch"
+                                type="text"
+                                inputmode="numeric"
+                                autocomplete="off"
+                                placeholder="Buscar por DNI..."
+                                class="w-full rounded-lg
+                                       border border-slate-300
+                                       bg-white px-3 py-2
+                                       text-sm text-slate-900
+                                       placeholder:text-slate-400
+                                       focus:border-blue-500
+                                       focus:outline-none
+                                       focus:ring-2
+                                       focus:ring-blue-500/20
+                                       dark:border-slate-600
+                                       dark:bg-slate-800
+                                       dark:text-slate-100
+                                       dark:placeholder:text-slate-500"
+                                @focus="
+                                    customerSearch ===
+                                    props.defaultCustomer?.dni
+                                        ? (customerSearch = '')
+                                        : null
                                 "
+                            />
+
+                            <!-- RESULTADOS -->
+                            <div
+                                v-if="customerSearch.trim()"
+                                class="absolute left-0 right-0
+                                       z-50 mt-1 max-h-56
+                                       overflow-y-auto
+                                       rounded-lg
+                                       border border-slate-200
+                                       bg-white p-1 shadow-lg
+                                       dark:border-slate-700
+                                       dark:bg-slate-800"
                             >
-                                <span>
-                                    <span
-                                        class="font-medium
-                                            text-slate-900
-                                            dark:text-slate-100"
-                                    >
-                                        {{ customer.dni }}
+                                <button
+                                    v-for="customer in filteredCustomers"
+                                    :key="customer.id"
+                                    type="button"
+                                    class="flex w-full
+                                           items-center
+                                           justify-between
+                                           rounded-lg
+                                           px-3 py-2
+                                           text-left text-sm
+                                           transition
+                                           hover:bg-slate-100
+                                           dark:hover:bg-slate-700"
+                                    @click="
+                                        selectCustomer(customer)
+                                    "
+                                >
+                                    <span>
+                                        <span
+                                            class="font-medium
+                                                   text-slate-900
+                                                   dark:text-slate-100"
+                                        >
+                                            {{ customer.dni }}
+                                        </span>
+
+                                        <span
+                                            class="ml-2
+                                                   text-slate-600
+                                                   dark:text-slate-300"
+                                        >
+                                            {{ customer.name }}
+                                        </span>
                                     </span>
 
                                     <span
-                                        class="ml-2 text-slate-600
-                                            dark:text-slate-300"
+                                        class="text-xs
+                                               text-blue-600
+                                               dark:text-blue-400"
                                     >
-                                        {{ customer.name }}
+                                        Seleccionar
                                     </span>
-                                </span>
-
-                                <span
-                                    class="text-xs
-                                        text-blue-600
-                                        dark:text-blue-400"
-                                >
-                                    Seleccionar
-                                </span>
-                            </button>
-
-                            <p
-                                v-if="filteredCustomers.length === 0"
-                                class="px-3 py-3 text-sm
-                                    text-slate-500
-                                    dark:text-slate-400"
-                            >
-                                No se encontró ningún cliente con ese DNI.
-                            </p>
-                        </div>
-
-                        <!-- CLIENTE ACTUAL -->
-                        <div
-                            v-if="selectedCustomer"
-                            class="mt-2 flex items-center
-                                justify-between rounded-lg
-                                border border-slate-200
-                                bg-slate-50 px-3 py-2
-                                dark:border-slate-700
-                                dark:bg-slate-800"
-                        >
-                            <div>
-                                <p
-                                    class="text-sm font-medium
-                                        text-slate-900
-                                        dark:text-slate-100"
-                                >
-                                    {{ selectedCustomer.name }}
-                                </p>
+                                </button>
 
                                 <p
-                                    class="text-xs
-                                        text-slate-500
-                                        dark:text-slate-400"
+                                    v-if="
+                                        filteredCustomers.length === 0
+                                    "
+                                    class="px-3 py-3
+                                           text-sm
+                                           text-slate-500
+                                           dark:text-slate-400"
                                 >
-                                    DNI: {{ selectedCustomer.dni }}
+                                    No se encontró ningún cliente
+                                    con ese DNI.
                                 </p>
                             </div>
 
-                            <button
-                                type="button"
-                                class="text-xs font-medium
-                                    text-blue-600
-                                    hover:text-blue-800
-                                    dark:text-blue-400
-                                    dark:hover:text-blue-300"
-                                @click="resetToDefaultCustomer"
+                            <!-- CLIENTE ACTUAL -->
+                            <div
+                                v-if="selectedCustomer"
+                                class="mt-2 flex items-center
+                                       justify-between
+                                       rounded-lg
+                                       border border-slate-200
+                                       bg-slate-50 px-3 py-2
+                                       dark:border-slate-700
+                                       dark:bg-slate-800"
                             >
-                                Consumidor final
-                            </button>
-                        </div>
-                    </div>
+                                <div>
+                                    <p
+                                        class="text-sm font-medium
+                                               text-slate-900
+                                               dark:text-slate-100"
+                                    >
+                                        {{ selectedCustomer.name }}
+                                    </p>
 
+                                    <p
+                                        class="text-xs
+                                               text-slate-500
+                                               dark:text-slate-400"
+                                    >
+                                        DNI:
+                                        {{ selectedCustomer.dni }}
+                                    </p>
+                                </div>
+
+                                <button
+                                    type="button"
+                                    class="text-xs font-medium
+                                           text-blue-600
+                                           hover:text-blue-800
+                                           dark:text-blue-400
+                                           dark:hover:text-blue-300"
+                                    @click="resetToDefaultCustomer"
+                                >
+                                    Consumidor final
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- CLIENTE SALIDA RÁPIDA -->
+                        <div
+                            v-if="isQuickSale"
+                            class="rounded-lg border
+                                   border-emerald-200
+                                   bg-emerald-50 p-4
+                                   dark:border-emerald-500/30
+                                   dark:bg-emerald-500/10"
+                        >
+                            <p
+                                class="text-xs font-medium uppercase
+                                       text-emerald-700
+                                       dark:text-emerald-400"
+                            >
+                                Cliente
+                            </p>
+
+                            <p
+                                class="mt-1 text-sm font-semibold
+                                       text-slate-900
+                                       dark:text-slate-100"
+                            >
+                                {{
+                                    props.defaultCustomer?.name
+                                    ?? 'Consumidor final'
+                                }}
+                            </p>
+
+                            <p
+                                class="text-xs text-slate-500
+                                       dark:text-slate-400"
+                            >
+                                DNI:
+                                {{
+                                    props.defaultCustomer?.dni
+                                    ?? '00000000'
+                                }}
+                            </p>
+                        </div>
 
                         <!-- ALMACÉN -->
                         <div>
@@ -992,13 +1080,10 @@ const submit = () => {
                             </label>
 
                             <select
-                                v-model="
-                                    form.warehouse_id
-                                "
+                                v-model="form.warehouse_id"
                                 required
                                 class="w-full rounded-lg
-                                       border
-                                       border-slate-300
+                                       border border-slate-300
                                        bg-white px-3 py-2
                                        text-slate-900
                                        focus:border-blue-500
@@ -1019,11 +1104,7 @@ const submit = () => {
                                 <option
                                     v-for="warehouse in props.warehouses"
                                     :key="warehouse.id"
-                                    :value="
-                                        String(
-                                            warehouse.id,
-                                        )
-                                    "
+                                    :value="String(warehouse.id)"
                                 >
                                     {{ warehouse.code }}
                                     -
@@ -1036,11 +1117,10 @@ const submit = () => {
                     <!-- PRODUCTOS -->
                     <div class="space-y-3">
                         <div
-                            v-for="(
-                                item, index
-                            ) in form.items"
+                            v-for="(item, index) in form.items"
                             :key="index"
-                            class="grid gap-3 rounded-xl
+                            class="grid gap-3
+                                   rounded-xl
                                    border
                                    border-slate-200
                                    bg-slate-50 p-4
@@ -1049,9 +1129,7 @@ const submit = () => {
                                    md:grid-cols-[2fr_1fr_1fr_1fr_auto]"
                         >
                             <!-- BUSCAR PRODUCTO -->
-                            <div
-                                class="space-y-2"
-                            >
+                            <div class="space-y-2">
                                 <label
                                     class="mb-1 block text-sm
                                            font-medium
@@ -1062,9 +1140,7 @@ const submit = () => {
                                 </label>
 
                                 <input
-                                    v-model="
-                                        item.search_text
-                                    "
+                                    v-model="item.search_text"
                                     type="text"
                                     class="w-full rounded-lg
                                            border
@@ -1109,7 +1185,8 @@ const submit = () => {
                                         class="mb-1 flex w-full
                                                items-center
                                                justify-between
-                                               rounded-lg px-2 py-2
+                                               rounded-lg
+                                               px-2 py-2
                                                text-left text-sm
                                                text-slate-700
                                                transition
@@ -1124,13 +1201,9 @@ const submit = () => {
                                         "
                                     >
                                         <span>
-                                            {{
-                                                product.code_product
-                                            }}
+                                            {{ product.code_product }}
                                             -
-                                            {{
-                                                product.name_product
-                                            }}
+                                            {{ product.name_product }}
                                         </span>
 
                                         <span
@@ -1159,9 +1232,7 @@ const submit = () => {
 
                                 <p
                                     v-if="
-                                        getSelectedProduct(
-                                            item,
-                                        )
+                                        getSelectedProduct(item)
                                     "
                                     class="text-sm
                                            text-slate-600
@@ -1169,16 +1240,12 @@ const submit = () => {
                                 >
                                     Producto seleccionado:
                                     {{
-                                        getSelectedProduct(
-                                            item,
-                                        )
+                                        getSelectedProduct(item)
                                             ?.code_product
                                     }}
                                     -
                                     {{
-                                        getSelectedProduct(
-                                            item,
-                                        )
+                                        getSelectedProduct(item)
                                             ?.name_product
                                     }}
                                 </p>
@@ -1206,15 +1273,11 @@ const submit = () => {
                                            dark:bg-slate-900
                                            dark:text-slate-100"
                                 >
-                                    <option
-                                        value="metros"
-                                    >
+                                    <option value="metros">
                                         Metros
                                     </option>
 
-                                    <option
-                                        value="kilos"
-                                    >
+                                    <option value="kilos">
                                         Rollos
                                     </option>
                                 </select>
@@ -1232,15 +1295,12 @@ const submit = () => {
                                 </label>
 
                                 <input
-                                    v-model.number="
-                                        item.quantity
-                                    "
+                                    v-model.number="item.quantity"
                                     type="number"
                                     min="0.001"
                                     :max="
-                                        getAvailableForItem(
-                                            item,
-                                        ) || undefined
+                                        getAvailableForItem(item)
+                                        || undefined
                                     "
                                     step="0.001"
                                     placeholder="Cantidad"
@@ -1295,9 +1355,7 @@ const submit = () => {
                                     class="w-full"
                                 >
                                     <select
-                                        v-model="
-                                            item.price_type
-                                        "
+                                        v-model="item.price_type"
                                         class="w-full rounded-lg
                                                border
                                                border-slate-300
@@ -1315,16 +1373,10 @@ const submit = () => {
                                                     ),
                                                 ),
                                             )"
-                                            :key="
-                                                option.value
-                                            "
-                                            :value="
-                                                option.value
-                                            "
+                                            :key="option.value"
+                                            :value="option.value"
                                         >
-                                            {{
-                                                option.label
-                                            }}
+                                            {{ option.label }}
                                         </option>
                                     </select>
                                 </div>
@@ -1346,9 +1398,7 @@ const submit = () => {
                             </div>
 
                             <!-- QUITAR -->
-                            <div
-                                class="flex items-end"
-                            >
+                            <div class="flex items-end">
                                 <button
                                     type="button"
                                     class="rounded-lg
@@ -1360,9 +1410,7 @@ const submit = () => {
                                            dark:bg-red-500/10
                                            dark:text-red-400
                                            dark:hover:bg-red-500/20"
-                                    @click="
-                                        removeItem(index)
-                                    "
+                                    @click="removeItem(index)"
                                 >
                                     Quitar
                                 </button>
@@ -1396,32 +1444,56 @@ const submit = () => {
                     </div>
 
                     <!-- BOTONES -->
-                    <div
-                        class="flex flex-wrap gap-2"
-                    >
+                    <div class="flex flex-wrap gap-2">
                         <button
                             type="button"
+                            @click="addItem"
                             class="rounded-lg
                                    bg-slate-700 px-4 py-2
                                    font-medium text-white
-                                   transition
                                    hover:bg-slate-800
-                                   dark:bg-slate-600
-                                   dark:hover:bg-slate-500"
-                            @click="addItem"
+                                   dark:bg-slate-600"
                         >
                             Agregar producto
                         </button>
 
                         <button
+                            v-if="!isQuickSale"
+                            type="button"
+                            @click="startQuickSale"
+                            class="rounded-lg
+                                   bg-emerald-600 px-4 py-2
+                                   text-sm font-medium text-white
+                                   hover:bg-emerald-700
+                                   dark:hover:bg-emerald-500"
+                        >
+                            Salida rápida
+                        </button>
+
+                        <button
+                            v-if="isQuickSale"
+                            type="button"
+                            @click="cancelQuickSale"
+                            class="rounded-lg
+                                   border border-slate-300
+                                   bg-white px-4 py-2
+                                   text-sm font-medium
+                                   text-slate-700
+                                   hover:bg-slate-50
+                                   dark:border-slate-600
+                                   dark:bg-slate-800
+                                   dark:text-slate-300
+                                   dark:hover:bg-slate-700"
+                        >
+                            Salida normal
+                        </button>
+
+                        <button
                             type="submit"
-                            :disabled="
-                                form.processing
-                            "
+                            :disabled="form.processing"
                             class="rounded-lg
                                    bg-blue-600 px-4 py-2
                                    font-medium text-white
-                                   transition
                                    hover:bg-blue-700
                                    disabled:cursor-not-allowed
                                    disabled:opacity-50
@@ -1443,8 +1515,7 @@ const submit = () => {
                                    text-slate-700
                                    dark:text-slate-300"
                         >
-                            Ingresar motivo: REPOSICIÓN Y/O
-                            SALIDA
+                            Ingresar motivo: REPOSICIÓN Y/O SALIDA
                         </label>
 
                         <textarea
@@ -1472,9 +1543,7 @@ const submit = () => {
                     <!-- ERRORES -->
                     <div
                         v-if="
-                            Object.keys(
-                                form.errors,
-                            ).length
+                            Object.keys(form.errors).length
                         "
                         class="space-y-1 rounded-lg
                                border border-red-200
@@ -1483,29 +1552,21 @@ const submit = () => {
                                dark:bg-red-500/10"
                     >
                         <p
-                            v-if="
-                                form.errors.customer_id
-                            "
+                            v-if="form.errors.customer_id"
                             class="text-sm
                                    text-red-600
                                    dark:text-red-400"
                         >
-                            {{
-                                form.errors.customer_id
-                            }}
+                            {{ form.errors.customer_id }}
                         </p>
 
                         <p
-                            v-if="
-                                form.errors.warehouse_id
-                            "
+                            v-if="form.errors.warehouse_id"
                             class="text-sm
                                    text-red-600
                                    dark:text-red-400"
                         >
-                            {{
-                                form.errors.warehouse_id
-                            }}
+                            {{ form.errors.warehouse_id }}
                         </p>
 
                         <p
@@ -1514,9 +1575,7 @@ const submit = () => {
                                    text-red-600
                                    dark:text-red-400"
                         >
-                            {{
-                                form.errors.items
-                            }}
+                            {{ form.errors.items }}
                         </p>
                     </div>
                 </form>
@@ -1544,9 +1603,7 @@ const submit = () => {
                     </h2>
                 </div>
 
-                <div
-                    class="overflow-x-auto"
-                >
+                <div class="overflow-x-auto">
                     <table
                         class="min-w-full
                                divide-y
@@ -1692,131 +1749,109 @@ const submit = () => {
                             >
                                 <tr
                                     v-for="item in sale.items"
-                                    :key="
-                                        `${sale.id}-${item.id}`
-                                    "
+                                    :key="`${sale.id}-${item.id}`"
                                     class="transition
                                            hover:bg-slate-50
                                            dark:hover:bg-slate-800/70"
                                 >
+                                    <!-- Código -->
                                     <td
                                         class="px-4 py-3 text-sm
                                                font-medium
                                                text-slate-900
                                                dark:text-slate-100"
                                     >
-                                        {{
-                                            sale.code
-                                        }}
+                                        {{ sale.code }}
                                     </td>
 
+                                    <!-- Cliente -->
                                     <td
                                         class="px-4 py-3 text-sm
                                                text-slate-700
                                                dark:text-slate-300"
                                     >
-                                        {{
-                                            sale.customer
-                                                .name
-                                        }}
+                                        {{ sale.customer.name }}
                                     </td>
 
+                                    <!-- Ubicación -->
                                     <td
                                         class="px-4 py-3 text-sm
                                                text-slate-700
                                                dark:text-slate-300"
                                     >
-                                        {{
-                                            sale.warehouse
-                                                .code
-                                        }}
+                                        {{ sale.warehouse.code }}
                                         -
-                                        {{
-                                            sale.warehouse
-                                                .name
-                                        }}
+                                        {{ sale.warehouse.name }}
                                     </td>
 
+                                    <!-- Responsable -->
                                     <td
                                         class="px-4 py-3 text-sm
                                                text-slate-700
                                                dark:text-slate-300"
                                     >
-                                        {{
-                                            sale.seller
-                                                .name
-                                        }}
+                                        {{ sale.seller.name }}
                                     </td>
 
+                                    <!-- Motivo -->
                                     <td
                                         class="px-4 py-3 text-sm
                                                text-slate-700
                                                dark:text-slate-300"
                                     >
-                                        {{
-                                            sale.notes ||
-                                            '-'
-                                        }}
+                                        {{ sale.notes || '-' }}
                                     </td>
 
+                                    <!-- Código producto -->
                                     <td
                                         class="px-4 py-3 text-sm
                                                text-slate-700
                                                dark:text-slate-300"
                                     >
-                                        {{
-                                            item.store
-                                                .code_product
-                                        }}
+                                        {{ item.store.code_product }}
                                     </td>
 
+                                    <!-- Producto -->
                                     <td
                                         class="px-4 py-3 text-sm
                                                text-slate-700
                                                dark:text-slate-300"
                                     >
-                                        {{
-                                            item.store
-                                                .name_product
-                                        }}
+                                        {{ item.store.name_product }}
                                     </td>
 
+                                    <!-- Cantidad -->
                                     <td
                                         class="px-4 py-3 text-sm
                                                text-slate-700
                                                dark:text-slate-300"
                                     >
+                                        {{ item.quantity }}
+
                                         {{
-                                            item.quantity
-                                        }}
-                                        {{
-                                            item.unit ===
-                                            'kilos'
+                                            item.unit === 'kilos'
                                                 ? 'rollos'
                                                 : item.unit
                                         }}
                                     </td>
 
+                                    <!-- Estado -->
                                     <td
                                         class="px-4 py-3 text-sm"
                                     >
                                         <span
                                             :class="{
                                                 'bg-yellow-100 text-yellow-700 dark:bg-yellow-500/15 dark:text-yellow-400':
-                                                    sale.status ===
-                                                    'pending',
+                                                    sale.status === 'pending',
 
                                                 'bg-green-100 text-green-700 dark:bg-green-500/15 dark:text-green-400':
-                                                    sale.status ===
-                                                    'completed',
+                                                    sale.status === 'completed',
 
                                                 'bg-blue-100 text-blue-700 dark:bg-blue-500/15 dark:text-blue-400':
-                                                    sale.status ===
-                                                    'approved',
+                                                    sale.status === 'approved',
 
                                                 'bg-red-100 text-red-700 dark:bg-red-500/15 dark:text-red-400':
-                                                    sale.status ===
-                                                    'cancelled',
+                                                    sale.status === 'cancelled',
                                             }"
                                             class="inline-flex
                                                    rounded-full
@@ -1824,12 +1859,11 @@ const submit = () => {
                                                    text-xs
                                                    font-semibold"
                                         >
-                                            {{
-                                                sale.status
-                                            }}
+                                            {{ sale.status }}
                                         </span>
                                     </td>
 
+                                    <!-- Total -->
                                     <td
                                         class="px-4 py-3 text-sm
                                                font-medium
@@ -1840,20 +1874,17 @@ const submit = () => {
                                         {{
                                             Number(
                                                 item.line_total,
-                                            ).toFixed(
-                                                2,
-                                            )
+                                            ).toFixed(2)
                                         }}
                                     </td>
 
+                                    <!-- Acción -->
                                     <td
                                         class="whitespace-nowrap
                                                px-4 py-3 text-sm"
                                     >
                                         <Link
-                                            :href="
-                                                `/sales/${sale.id}`
-                                            "
+                                            :href="`/sales/${sale.id}`"
                                             class="font-medium
                                                    text-blue-600
                                                    hover:text-blue-800
@@ -1864,9 +1895,7 @@ const submit = () => {
                                         </Link>
 
                                         <Link
-                                            :href="
-                                                `/sales/${sale.id}/edit`
-                                            "
+                                            :href="`/sales/${sale.id}/edit`"
                                             class="ml-2 font-medium
                                                    text-green-600
                                                    hover:text-green-800
@@ -1881,8 +1910,7 @@ const submit = () => {
 
                             <tr
                                 v-if="
-                                    props.sales.data
-                                        .length === 0
+                                    props.sales.data.length === 0
                                 "
                             >
                                 <td
@@ -1892,8 +1920,7 @@ const submit = () => {
                                            text-slate-500
                                            dark:text-slate-400"
                                 >
-                                    No hay salidas
-                                    registradas.
+                                    No hay salidas registradas.
                                 </td>
                             </tr>
                         </tbody>
