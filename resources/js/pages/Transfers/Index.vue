@@ -316,6 +316,20 @@ const formatNumber = (
         .replace(/\.0+$/, '');
 };
 
+const translateStatus = (status: string) => {
+    const statuses: Record<string, string> = {
+        pending: 'Pendiente',
+        approved: 'Aprobado',
+        shipped: 'Despachado',
+        received: 'Recibido',
+        completed: 'Completado',
+        cancelled: 'Cancelado',
+        rejected: 'Rechazado',
+    };
+
+    return statuses[status] ?? status;
+};
+
 const submit = () => {
     if (hasStockError.value) {
         window.alert(
@@ -1099,33 +1113,29 @@ const submit = () => {
                                 <td
                                     class="px-6 py-4"
                                 >
-                                    <span
-                                        class="rounded-full
-                                               px-3 py-1
-                                               text-xs
-                                               font-semibold"
-                                        :class="{
-                                            'bg-yellow-100 text-yellow-700 dark:bg-yellow-500/15 dark:text-yellow-400':
-                                                transfer.status ===
-                                                'pending',
+                                <span
+                                    class="rounded-full px-3 py-1 text-xs font-semibold"
+                                    :class="{
+                                        'bg-yellow-100 text-yellow-700 dark:bg-yellow-500/15 dark:text-yellow-400':
+                                            transfer.status === 'pending',
 
-                                            'bg-green-100 text-green-700 dark:bg-green-500/15 dark:text-green-400':
-                                                transfer.status ===
-                                                'completed',
+                                        'bg-blue-100 text-blue-700 dark:bg-blue-500/15 dark:text-blue-400':
+                                            transfer.status === 'approved',
 
-                                            'bg-blue-100 text-blue-700 dark:bg-blue-500/15 dark:text-blue-400':
-                                                transfer.status ===
-                                                'approved',
+                                        'bg-orange-100 text-orange-700 dark:bg-orange-500/15 dark:text-orange-400':
+                                            transfer.status === 'shipped',
 
-                                            'bg-red-100 text-red-700 dark:bg-red-500/15 dark:text-red-400':
-                                                transfer.status ===
-                                                'cancelled',
-                                        }"
-                                    >
-                                        {{
-                                            transfer.status
-                                        }}
-                                    </span>
+                                        'bg-green-100 text-green-700 dark:bg-green-500/15 dark:text-green-400':
+                                            transfer.status === 'received' ||
+                                            transfer.status === 'completed',
+
+                                        'bg-red-100 text-red-700 dark:bg-red-500/15 dark:text-red-400':
+                                            transfer.status === 'cancelled' ||
+                                            transfer.status === 'rejected',
+                                    }"
+                                >
+                                    {{ translateStatus(transfer.status) }}
+                                </span>
                                 </td>
 
                                 <td

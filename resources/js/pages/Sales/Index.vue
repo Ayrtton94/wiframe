@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem } from '@/types';
-import { Head, Link, useForm } from '@inertiajs/vue3';
+import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import { usePage } from '@inertiajs/vue3';
 import { computed, ref, watch } from 'vue';
 
@@ -16,6 +16,7 @@ type ProductOption = {
     id: number;
     code_product: string;
     name_product: string;
+    color: string | null;
     price: number;
     public_price: number;
     wholesale_price: number;
@@ -68,11 +69,24 @@ const props = defineProps<{
                     id: number;
                     code_product: string;
                     name_product: string;
+                    color: string;
                 };
             }>;
 
             created_at: string;
         }>;
+            current_page: number;
+            last_page: number;
+            per_page: number;
+            total: number;
+            from: number | null;
+            to: number | null;
+
+            links: Array<{
+                url: string | null;
+                label: string;
+                active: boolean;
+            }>;
     };
 
     customers: Array<{
@@ -150,6 +164,8 @@ const customerSearch = ref(
         : '',
 );
 
+const isSearchingCustomer = ref(false);
+
 const isQuickSale = ref(false);
 
 const startQuickSale = () => {
@@ -225,7 +241,28 @@ const selectCustomer = (customer: {
     dni: string;
 }) => {
     form.customer_id = String(customer.id);
+
     customerSearch.value = customer.dni;
+
+    // Ocultar resultados después de seleccionar
+    isSearchingCustomer.value = false;
+};
+
+const onCustomerSearch = () => {
+    const term = customerSearch.value.trim();
+
+    // Si el usuario empieza a escribir,
+    // activar resultados de búsqueda
+    isSearchingCustomer.value = term.length > 0;
+
+    // Si cambia manualmente el DNI/nombre,
+    // quitamos la selección anterior
+    if (
+        selectedCustomer.value &&
+        customerSearch.value !== selectedCustomer.value.dni
+    ) {
+        form.customer_id = '';
+    }
 };
 
 const resetToDefaultCustomer = () => {
@@ -409,39 +446,41 @@ const getProductPriceOptions = (
 const getSelectedProductPrice = (
     item: SaleItemForm,
 ) => {
-    const product =
-        productMap.value.get(
-            Number(item.store_id),
-        );
+    const product = productMap.value.get(
+        Number(item.store_id),
+    );
 
     if (!product) {
         return 0;
     }
 
     switch (item.price_type) {
+        case 'price':
+            return Number(product.price ?? 0);
+
+        case 'public':
+            return Number(
+                product.public_price ?? 0,
+            );
+
         case 'wholesale':
             return Number(
-                product.wholesale_price || 0,
+                product.wholesale_price ?? 0,
             );
 
         case 'price_roll':
             return Number(
-                product.price_roll || 0,
+                product.price_roll ?? 0,
             );
 
         case 'special':
             return Number(
-                product.special_price || 0,
-            );
-
-        case 'price':
-            return Number(
-                product.price || 0,
+                product.special_price ?? 0,
             );
 
         default:
             return Number(
-                product.public_price || 0,
+                product.public_price ?? 0,
             );
     }
 };
@@ -550,7 +589,7 @@ const getFilteredProducts = (
     return sourceProducts.filter(
         (product: ProductOption) => {
             const haystack =
-                `${product.code_product} ${product.name_product}`.toLowerCase();
+                `${product.code_product} ${product.name_product} ${product.color}`.toLowerCase();
 
             return haystack.includes(term);
         },
@@ -577,22 +616,36 @@ const selectProduct = (
     item: SaleItemForm,
     productId: number,
 ) => {
-    const product =
-        props.products.find(
-            (entry: ProductOption) =>
-                entry.id === productId,
-        );
+    const product = props.products.find(
+        (entry: ProductOption) =>
+            entry.id === productId,
+    );
 
     if (!product) {
         return;
     }
 
-    item.store_id = String(
-        product.id,
-    );
+    const priceOptions =
+        getProductPriceOptions(product);
+
+    // Preferir siempre el precio público.
+    // Si no existe, usar el primer precio disponible.
+    const defaultPriceType =
+        priceOptions.find(
+            (option) => option.value === 'public',
+        )?.value
+        ?? priceOptions[0]?.value
+        ?? 'public';
+
+    // Actualizar TODA la información de la fila
+    item.store_id = String(product.id);
 
     item.search_text =
         `${product.code_product} - ${product.name_product}`;
+
+    item.price_type = defaultPriceType;
+
+    item.quantity = 1;
 };
 
 const getAvailableForItem = (
@@ -829,6 +882,52 @@ const submit = () => {
     },
     });
 };
+
+const expanded = ref<number | null>(null);
+
+const toggleDetail = (id: number) => {
+    expanded.value =
+        expanded.value === id
+            ? null
+            : id;
+};
+
+const goToPage = (url: string | null) => {
+    if (!url) return;
+
+    router.visit(url, {
+        preserveScroll: true,
+        preserveState: true,
+    });
+};
+
+const formatDateTime = (date: string) => {
+    if (!date) return '-';
+
+    const d = new Date(date);
+
+    return d.toLocaleString('es-PE', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true,
+    });
+};
+
+const formatNumber = (value: number | string) => {
+    const number = Number(value ?? 0);
+
+    return Number.isInteger(number)
+        ? String(number)
+        : number.toFixed(2).replace(/\.?0+$/, '');
+};
+
+const formatMoney = (value: number | string) => {
+    return `S/ ${Number(value ?? 0).toFixed(2)}`;
+};
+
 </script>
 
 <template>
@@ -840,6 +939,30 @@ const submit = () => {
                    bg-slate-50 p-4
                    dark:bg-slate-950"
         >
+        <div>
+            <h1
+                class="text-2xl font-bold text-slate-800
+                    dark:text-slate-100"
+            >
+                Crear Producto
+            </h1>
+
+            <p
+                class="mt-1 text-sm text-slate-500
+                    dark:text-slate-400"
+            >
+                Registra un nuevo producto y configura
+                su stock, precios y disponibilidad.
+            </p>
+
+            <p
+                class="mt-2 text-sm font-medium text-slate-600
+                    dark:text-slate-300"
+            >
+                Fecha: {{ new Date().toLocaleDateString('es-PE') }}
+            </p>
+        </div>
+
             <h1
                 class="text-2xl font-semibold
                        text-slate-900
@@ -889,100 +1012,87 @@ const submit = () => {
                             <!-- BUSCADOR -->
                             <input
                                 v-model="customerSearch"
+                                @input="onCustomerSearch"
                                 type="text"
                                 inputmode="numeric"
                                 autocomplete="off"
                                 placeholder="Buscar por DNI..."
                                 class="w-full rounded-lg
-                                       border border-slate-300
-                                       bg-white px-3 py-2
-                                       text-sm text-slate-900
-                                       placeholder:text-slate-400
-                                       focus:border-blue-500
-                                       focus:outline-none
-                                       focus:ring-2
-                                       focus:ring-blue-500/20
-                                       dark:border-slate-600
-                                       dark:bg-slate-800
-                                       dark:text-slate-100
-                                       dark:placeholder:text-slate-500"
+                                    border border-slate-300
+                                    bg-white px-3 py-2
+                                    text-sm text-slate-900
+                                    placeholder:text-slate-400
+                                    focus:border-blue-500
+                                    focus:outline-none
+                                    focus:ring-2
+                                    focus:ring-blue-500/20
+                                    dark:border-slate-600
+                                    dark:bg-slate-800
+                                    dark:text-slate-100
+                                    dark:placeholder:text-slate-500"
                                 @focus="
-                                    customerSearch ===
-                                    props.defaultCustomer?.dni
+                                    customerSearch === props.defaultCustomer?.dni
                                         ? (customerSearch = '')
                                         : null
                                 "
                             />
 
                             <!-- RESULTADOS -->
-                            <div
-                                v-if="customerSearch.trim()"
-                                class="absolute left-0 right-0
-                                       z-50 mt-1 max-h-56
-                                       overflow-y-auto
-                                       rounded-lg
-                                       border border-slate-200
-                                       bg-white p-1 shadow-lg
-                                       dark:border-slate-700
-                                       dark:bg-slate-800"
-                            >
-                                <button
-                                    v-for="customer in filteredCustomers"
-                                    :key="customer.id"
-                                    type="button"
-                                    class="flex w-full
-                                           items-center
-                                           justify-between
-                                           rounded-lg
-                                           px-3 py-2
-                                           text-left text-sm
-                                           transition
-                                           hover:bg-slate-100
-                                           dark:hover:bg-slate-700"
-                                    @click="
-                                        selectCustomer(customer)
-                                    "
-                                >
-                                    <span>
-                                        <span
-                                            class="font-medium
-                                                   text-slate-900
-                                                   dark:text-slate-100"
-                                        >
-                                            {{ customer.dni }}
-                                        </span>
+<div
+    v-if="
+        isSearchingCustomer &&
+        filteredCustomers.length > 0
+    "
+    class="absolute left-0 right-0
+           z-50 mt-1 max-h-56
+           overflow-y-auto
+           rounded-lg border border-slate-200
+           bg-white p-1 shadow-lg
+           dark:border-slate-700
+           dark:bg-slate-800"
+>
+    <button
+        v-for="customer in filteredCustomers"
+        :key="customer.id"
+        type="button"
+        class="flex w-full
+               items-center
+               justify-between
+               rounded-lg
+               px-3 py-2
+               text-left text-sm
+               transition
+               hover:bg-slate-100
+               dark:hover:bg-slate-700"
+        @click="selectCustomer(customer)"
+    >
+        <span>
+            <span
+                class="font-medium
+                       text-slate-900
+                       dark:text-slate-100"
+            >
+                {{ customer.dni }}
+            </span>
 
-                                        <span
-                                            class="ml-2
-                                                   text-slate-600
-                                                   dark:text-slate-300"
-                                        >
-                                            {{ customer.name }}
-                                        </span>
-                                    </span>
+            <span
+                class="ml-2
+                       text-slate-600
+                       dark:text-slate-300"
+            >
+                {{ customer.name }}
+            </span>
+        </span>
 
-                                    <span
-                                        class="text-xs
-                                               text-blue-600
-                                               dark:text-blue-400"
-                                    >
-                                        Seleccionar
-                                    </span>
-                                </button>
-
-                                <p
-                                    v-if="
-                                        filteredCustomers.length === 0
-                                    "
-                                    class="px-3 py-3
-                                           text-sm
-                                           text-slate-500
-                                           dark:text-slate-400"
-                                >
-                                    No se encontró ningún cliente
-                                    con ese DNI.
-                                </p>
-                            </div>
+        <span
+            class="text-xs
+                   text-blue-600
+                   dark:text-blue-400"
+        >
+            Seleccionar
+        </span>
+    </button>
+</div>
 
                             <!-- CLIENTE ACTUAL -->
                             <div
@@ -1200,11 +1310,24 @@ const submit = () => {
                                             )
                                         "
                                     >
-                                        <span>
-                                            {{ product.code_product }}
-                                            -
-                                            {{ product.name_product }}
-                                        </span>
+                                        <div class="flex flex-col">
+                                            <span
+                                                class="font-medium text-slate-800
+                                                    dark:text-slate-100"
+                                            >
+                                                {{ product.code_product }}
+                                                -
+                                                {{ product.name_product }}
+                                            </span>
+
+                                            <span
+                                                v-if="product.color"
+                                                class="text-xs text-slate-500
+                                                    dark:text-slate-400"
+                                            >
+                                                Color: {{ product.color }}
+                                            </span>
+                                        </div>
 
                                         <span
                                             class="text-xs
@@ -1231,23 +1354,24 @@ const submit = () => {
                                 </div>
 
                                 <p
-                                    v-if="
-                                        getSelectedProduct(item)
-                                    "
-                                    class="text-sm
-                                           text-slate-600
-                                           dark:text-slate-300"
+                                    v-if="getSelectedProduct(item)"
+                                    class="text-sm text-slate-600 dark:text-slate-300"
                                 >
                                     Producto seleccionado:
-                                    {{
-                                        getSelectedProduct(item)
-                                            ?.code_product
-                                    }}
-                                    -
-                                    {{
-                                        getSelectedProduct(item)
-                                            ?.name_product
-                                    }}
+
+                                    <span class="font-medium">
+                                        {{ getSelectedProduct(item)?.code_product }}
+                                        -
+                                        {{ getSelectedProduct(item)?.name_product }}
+                                    </span>
+
+                                    <span
+                                        v-if="getSelectedProduct(item)?.color"
+                                        class="ml-2 font-medium text-blue-600
+                                            dark:text-blue-400"
+                                    >
+                                        · {{ getSelectedProduct(item)?.color }}
+                                    </span>
                                 </p>
                             </div>
 
@@ -1582,350 +1706,810 @@ const submit = () => {
             </section>
 
             <!-- SALIDAS REGISTRADAS -->
-            <section
-                class="overflow-hidden rounded-xl
-                       border border-slate-200
-                       bg-white shadow-sm
-                       dark:border-slate-700
-                       dark:bg-slate-900"
-            >
-                <div
-                    class="border-b
-                           border-slate-200 px-5 py-4
-                           dark:border-slate-700"
+            <section class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
+            <div
+    class="overflow-x-auto rounded-xl border
+           border-slate-200
+           dark:border-slate-700"
+>
+    <table
+        class="min-w-full divide-y
+               divide-slate-200
+               dark:divide-slate-700"
+    >
+
+        <!-- =====================================================
+             ENCABEZADO
+        ====================================================== -->
+
+        <thead
+            class="bg-slate-50
+                   dark:bg-slate-800"
+        >
+            <tr>
+
+                <!-- FECHA -->
+
+                <th
+                    class="whitespace-nowrap px-4 py-3
+                           text-left text-xs
+                           font-semibold uppercase
+                           tracking-wider
+                           text-slate-600
+                           dark:text-slate-300"
                 >
-                    <h2
-                        class="text-lg font-semibold
-                               text-slate-900
+                    Fecha / Hora
+                </th>
+
+                <!-- CÓDIGO -->
+
+                <th
+                    class="whitespace-nowrap px-4 py-3
+                           text-left text-xs
+                           font-semibold uppercase
+                           tracking-wider
+                           text-slate-600
+                           dark:text-slate-300"
+                >
+                    Código salida
+                </th>
+
+                <!-- ALMACÉN -->
+
+                <th
+                    class="whitespace-nowrap px-4 py-3
+                           text-left text-xs
+                           font-semibold uppercase
+                           tracking-wider
+                           text-slate-600
+                           dark:text-slate-300"
+                >
+                    Almacén
+                </th>
+
+                <!-- CLIENTE -->
+
+                <th
+                    class="whitespace-nowrap px-4 py-3
+                           text-left text-xs
+                           font-semibold uppercase
+                           tracking-wider
+                           text-slate-600
+                           dark:text-slate-300"
+                >
+                    Cliente
+                </th>
+
+                <!-- RESPONSABLE -->
+
+                <th
+                    class="whitespace-nowrap px-4 py-3
+                           text-left text-xs
+                           font-semibold uppercase
+                           tracking-wider
+                           text-slate-600
+                           dark:text-slate-300"
+                >
+                    Responsable
+                </th>
+
+                <!-- ITEMS -->
+
+                <th
+                    class="whitespace-nowrap px-4 py-3
+                           text-center text-xs
+                           font-semibold uppercase
+                           tracking-wider
+                           text-slate-600
+                           dark:text-slate-300"
+                >
+                    Ítems
+                </th>
+
+                <!-- TOTAL -->
+
+                <th
+                    class="whitespace-nowrap px-4 py-3
+                           text-right text-xs
+                           font-semibold uppercase
+                           tracking-wider
+                           text-slate-600
+                           dark:text-slate-300"
+                >
+                    Total
+                </th>
+
+                <!-- MOTIVO -->
+
+                <th
+                    class="whitespace-nowrap px-4 py-3
+                           text-left text-xs
+                           font-semibold uppercase
+                           tracking-wider
+                           text-slate-600
+                           dark:text-slate-300"
+                >
+                    Motivo
+                </th>
+
+                <!-- ACCIONES -->
+
+                <th
+                    class="whitespace-nowrap px-4 py-3
+                           text-center text-xs
+                           font-semibold uppercase
+                           tracking-wider
+                           text-slate-600
+                           dark:text-slate-300"
+                >
+                    Acciones
+                </th>
+
+            </tr>
+        </thead>
+
+
+        <!-- =====================================================
+             CUERPO
+        ====================================================== -->
+
+        <tbody
+            class="divide-y
+                   divide-slate-200
+                   dark:divide-slate-700"
+        >
+
+            <template
+                v-for="sale in props.sales.data"
+                :key="sale.id"
+            >
+
+                <!-- =================================================
+                     FILA DE LA SALIDA
+                ================================================== -->
+
+                <tr
+                    class="transition
+                           hover:bg-slate-50
+                           dark:hover:bg-slate-800/50"
+                >
+
+                    <!-- FECHA / HORA -->
+
+                    <td
+                        class="whitespace-nowrap
+                               px-4 py-4 text-sm
+                               text-slate-600
+                               dark:text-slate-300"
+                    >
+                        {{ formatDateTime(sale.created_at) }}
+                    </td>
+
+
+                    <!-- CÓDIGO -->
+
+                    <td
+                        class="whitespace-nowrap
+                               px-4 py-4"
+                    >
+                        <span
+                            class="font-mono text-sm
+                                   font-semibold
+                                   text-blue-600
+                                   dark:text-blue-400"
+                        >
+                            {{ sale.code }}
+                        </span>
+                    </td>
+
+
+                    <!-- ALMACÉN -->
+
+                    <td
+                        class="px-4 py-4 text-sm
+                               text-slate-700
+                               dark:text-slate-300"
+                    >
+                        {{ sale.warehouse?.name ?? '-' }}
+                    </td>
+
+
+                    <!-- CLIENTE -->
+
+                    <td
+                        class="px-4 py-4 text-sm
+                               text-slate-700
+                               dark:text-slate-300"
+                    >
+                        {{
+                            sale.customer?.name
+                                ?? 'CONSUMIDOR FINAL'
+                        }}
+                    </td>
+
+
+                    <!-- RESPONSABLE -->
+
+                    <td
+                        class="px-4 py-4 text-sm
+                               text-slate-700
+                               dark:text-slate-300"
+                    >
+                        {{ sale.seller?.name ?? '-' }}
+                    </td>
+
+
+                    <!-- ÍTEMS -->
+
+                    <td
+                        class="px-4 py-4 text-center"
+                    >
+                        <span
+                            class="inline-flex items-center
+                                   rounded-full
+                                   bg-blue-100
+                                   px-2.5 py-1
+                                   text-xs font-semibold
+                                   text-blue-700
+                                   dark:bg-blue-900/30
+                                   dark:text-blue-300"
+                        >
+                            {{ sale.items?.length ?? 0 }}
+
+                            {{
+                                (sale.items?.length ?? 0) === 1
+                                    ? 'producto'
+                                    : 'productos'
+                            }}
+                        </span>
+                    </td>
+
+
+                    <!-- TOTAL -->
+
+                    <td
+                        class="whitespace-nowrap
+                               px-4 py-4
+                               text-right text-sm
+                               font-semibold
+                               text-slate-800
                                dark:text-slate-100"
                     >
-                        Salidas registradas
-                    </h2>
-                </div>
+                        {{ formatMoney(sale.total) }}
+                    </td>
 
-                <div class="overflow-x-auto">
-                    <table
-                        class="min-w-full
-                               divide-y
-                               divide-slate-200
-                               dark:divide-slate-700"
+
+                    <!-- MOTIVO -->
+
+                    <td
+                        class="px-4 py-4"
                     >
-                        <thead
-                            class="bg-slate-50
+                        <span
+                            class="inline-flex
+                                   rounded-full
+                                   bg-amber-100
+                                   px-2.5 py-1
+                                   text-xs font-semibold
+                                   text-amber-700
+                                   dark:bg-amber-900/30
+                                   dark:text-amber-300"
+                        >
+                            {{ sale.notes ?? 'SALIDA' }}
+                        </span>
+                    </td>
+
+
+                    <!-- =================================================
+                         ACCIONES
+                    ================================================== -->
+
+                    <td
+                        class="px-4 py-4"
+                    >
+
+                        <div
+                            class="flex flex-wrap
+                                   items-center
+                                   justify-center
+                                   gap-2"
+                        >
+
+                            <!-- EDITAR -->
+
+                            <Link
+                                :href="
+                                    `/sales/${sale.id}/edit`
+                                "
+                                class="rounded-lg border
+                                       border-amber-200
+                                       bg-amber-50
+                                       px-3 py-1.5
+                                       text-xs
+                                       font-semibold
+                                       text-amber-700
+                                       transition
+                                       hover:bg-amber-100
+                                       dark:border-amber-800
+                                       dark:bg-amber-900/20
+                                       dark:text-amber-300
+                                       dark:hover:bg-amber-900/40"
+                            >
+                                Editar
+                            </Link>
+
+
+                            <!-- VER DETALLE -->
+
+                            <button
+                                type="button"
+                                @click="
+                                    toggleDetail(sale.id)
+                                "
+                                class="rounded-lg border
+                                       border-blue-200
+                                       bg-blue-50
+                                       px-3 py-1.5
+                                       text-xs
+                                       font-semibold
+                                       text-blue-700
+                                       transition
+                                       hover:bg-blue-100
+                                       dark:border-blue-800
+                                       dark:bg-blue-900/20
+                                       dark:text-blue-300
+                                       dark:hover:bg-blue-900/40"
+                            >
+                                {{
+                                    expanded === sale.id
+                                        ? 'Ocultar'
+                                        : 'Ver detalle'
+                                }}
+                            </button>
+                        </div>
+
+                    </td>
+
+                </tr>
+
+
+                <!-- =================================================
+                     DETALLE
+                ================================================== -->
+
+                <tr
+                    v-if="expanded === sale.id"
+                    class="bg-slate-50
+                           dark:bg-slate-900/50"
+                >
+
+                    <td
+                        colspan="9"
+                        class="px-4 py-5"
+                    >
+
+                        <div
+                            class="overflow-hidden
+                                   rounded-xl border
+                                   border-slate-200
+                                   bg-white shadow-sm
+                                   dark:border-slate-700
                                    dark:bg-slate-800"
                         >
-                            <tr>
-                                <th
-                                    class="px-4 py-3 text-left
-                                           text-xs font-semibold
-                                           uppercase
-                                           tracking-wider
-                                           text-slate-600
-                                           dark:text-slate-300"
-                                >
-                                    Código de salida
-                                </th>
 
-                                <th
-                                    class="px-4 py-3 text-left
-                                           text-xs font-semibold
-                                           uppercase
-                                           tracking-wider
-                                           text-slate-600
-                                           dark:text-slate-300"
-                                >
-                                    Cliente
-                                </th>
+                            <!-- CABECERA DEL DETALLE -->
 
-                                <th
-                                    class="px-4 py-3 text-left
-                                           text-xs font-semibold
-                                           uppercase
-                                           tracking-wider
-                                           text-slate-600
-                                           dark:text-slate-300"
-                                >
-                                    Ubicación
-                                </th>
-
-                                <th
-                                    class="px-4 py-3 text-left
-                                           text-xs font-semibold
-                                           uppercase
-                                           tracking-wider
-                                           text-slate-600
-                                           dark:text-slate-300"
-                                >
-                                    Responsable
-                                </th>
-
-                                <th
-                                    class="px-4 py-3 text-left
-                                           text-xs font-semibold
-                                           uppercase
-                                           tracking-wider
-                                           text-slate-600
-                                           dark:text-slate-300"
-                                >
-                                    Motivo
-                                </th>
-
-                                <th
-                                    class="px-4 py-3 text-left
-                                           text-xs font-semibold
-                                           uppercase
-                                           tracking-wider
-                                           text-slate-600
-                                           dark:text-slate-300"
-                                >
-                                    Código
-                                </th>
-
-                                <th
-                                    class="px-4 py-3 text-left
-                                           text-xs font-semibold
-                                           uppercase
-                                           tracking-wider
-                                           text-slate-600
-                                           dark:text-slate-300"
-                                >
-                                    Nombre del producto
-                                </th>
-
-                                <th
-                                    class="px-4 py-3 text-left
-                                           text-xs font-semibold
-                                           uppercase
-                                           tracking-wider
-                                           text-slate-600
-                                           dark:text-slate-300"
-                                >
-                                    Rollos o Metros
-                                </th>
-
-                                <th
-                                    class="px-4 py-3 text-left
-                                           text-xs font-semibold
-                                           uppercase
-                                           tracking-wider
-                                           text-slate-600
-                                           dark:text-slate-300"
-                                >
-                                    Estado
-                                </th>
-
-                                <th
-                                    class="px-4 py-3 text-left
-                                           text-xs font-semibold
-                                           uppercase
-                                           tracking-wider
-                                           text-slate-600
-                                           dark:text-slate-300"
-                                >
-                                    Total
-                                </th>
-
-                                <th
-                                    class="px-4 py-3 text-left
-                                           text-xs font-semibold
-                                           uppercase
-                                           tracking-wider
-                                           text-slate-600
-                                           dark:text-slate-300"
-                                >
-                                    Acción
-                                </th>
-                            </tr>
-                        </thead>
-
-                        <tbody
-                            class="divide-y
-                                   divide-slate-100
-                                   dark:divide-slate-700"
-                        >
-                            <template
-                                v-for="sale in props.sales.data"
-                                :key="sale.id"
+                            <div
+                                class="flex flex-wrap
+                                       items-center
+                                       justify-between
+                                       gap-3
+                                       border-b
+                                       border-slate-200
+                                       px-5 py-4
+                                       dark:border-slate-700"
                             >
-                                <tr
-                                    v-for="item in sale.items"
-                                    :key="`${sale.id}-${item.id}`"
-                                    class="transition
-                                           hover:bg-slate-50
-                                           dark:hover:bg-slate-800/70"
-                                >
-                                    <!-- Código -->
-                                    <td
-                                        class="px-4 py-3 text-sm
-                                               font-medium
-                                               text-slate-900
+
+                                <div>
+
+                                    <h3
+                                        class="text-base
+                                               font-semibold
+                                               text-slate-800
                                                dark:text-slate-100"
                                     >
-                                        {{ sale.code }}
-                                    </td>
+                                        Detalle de salida
+                                    </h3>
 
-                                    <!-- Cliente -->
-                                    <td
-                                        class="px-4 py-3 text-sm
-                                               text-slate-700
-                                               dark:text-slate-300"
+                                    <p
+                                        class="mt-1 text-xs
+                                               text-slate-500
+                                               dark:text-slate-400"
                                     >
-                                        {{ sale.customer.name }}
-                                    </td>
+                                        Código:
 
-                                    <!-- Ubicación -->
-                                    <td
-                                        class="px-4 py-3 text-sm
-                                               text-slate-700
-                                               dark:text-slate-300"
-                                    >
-                                        {{ sale.warehouse.code }}
-                                        -
-                                        {{ sale.warehouse.name }}
-                                    </td>
-
-                                    <!-- Responsable -->
-                                    <td
-                                        class="px-4 py-3 text-sm
-                                               text-slate-700
-                                               dark:text-slate-300"
-                                    >
-                                        {{ sale.seller.name }}
-                                    </td>
-
-                                    <!-- Motivo -->
-                                    <td
-                                        class="px-4 py-3 text-sm
-                                               text-slate-700
-                                               dark:text-slate-300"
-                                    >
-                                        {{ sale.notes || '-' }}
-                                    </td>
-
-                                    <!-- Código producto -->
-                                    <td
-                                        class="px-4 py-3 text-sm
-                                               text-slate-700
-                                               dark:text-slate-300"
-                                    >
-                                        {{ item.store.code_product }}
-                                    </td>
-
-                                    <!-- Producto -->
-                                    <td
-                                        class="px-4 py-3 text-sm
-                                               text-slate-700
-                                               dark:text-slate-300"
-                                    >
-                                        {{ item.store.name_product }}
-                                    </td>
-
-                                    <!-- Cantidad -->
-                                    <td
-                                        class="px-4 py-3 text-sm
-                                               text-slate-700
-                                               dark:text-slate-300"
-                                    >
-                                        {{ item.quantity }}
-
-                                        {{
-                                            item.unit === 'kilos'
-                                                ? 'rollos'
-                                                : item.unit
-                                        }}
-                                    </td>
-
-                                    <!-- Estado -->
-                                    <td
-                                        class="px-4 py-3 text-sm"
-                                    >
                                         <span
-                                            :class="{
-                                                'bg-yellow-100 text-yellow-700 dark:bg-yellow-500/15 dark:text-yellow-400':
-                                                    sale.status === 'pending',
-
-                                                'bg-green-100 text-green-700 dark:bg-green-500/15 dark:text-green-400':
-                                                    sale.status === 'completed',
-
-                                                'bg-blue-100 text-blue-700 dark:bg-blue-500/15 dark:text-blue-400':
-                                                    sale.status === 'approved',
-
-                                                'bg-red-100 text-red-700 dark:bg-red-500/15 dark:text-red-400':
-                                                    sale.status === 'cancelled',
-                                            }"
-                                            class="inline-flex
-                                                   rounded-full
-                                                   px-2.5 py-1
-                                                   text-xs
-                                                   font-semibold"
+                                            class="font-semibold
+                                                   text-slate-700
+                                                   dark:text-slate-200"
                                         >
-                                            {{ sale.status }}
+                                            {{ sale.code }}
                                         </span>
-                                    </td>
+                                    </p>
 
-                                    <!-- Total -->
-                                    <td
-                                        class="px-4 py-3 text-sm
-                                               font-medium
-                                               text-slate-900
-                                               dark:text-slate-100"
-                                    >
-                                        S/
-                                        {{
-                                            Number(
-                                                item.line_total,
-                                            ).toFixed(2)
-                                        }}
-                                    </td>
+                                </div>
 
-                                    <!-- Acción -->
-                                    <td
-                                        class="whitespace-nowrap
-                                               px-4 py-3 text-sm"
-                                    >
-                                        <Link
-                                            :href="`/sales/${sale.id}`"
-                                            class="font-medium
-                                                   text-blue-600
-                                                   hover:text-blue-800
-                                                   dark:text-blue-400
-                                                   dark:hover:text-blue-300"
-                                        >
-                                            Ver detalle
-                                        </Link>
-
-                                        <Link
-                                            :href="`/sales/${sale.id}/edit`"
-                                            class="ml-2 font-medium
-                                                   text-green-600
-                                                   hover:text-green-800
-                                                   dark:text-green-400
-                                                   dark:hover:text-green-300"
-                                        >
-                                            Editar
-                                        </Link>
-                                    </td>
-                                </tr>
-                            </template>
-
-                            <tr
-                                v-if="
-                                    props.sales.data.length === 0
-                                "
-                            >
-                                <td
-                                    colspan="11"
-                                    class="px-4 py-8
-                                           text-center text-sm
+                                <span
+                                    class="text-xs
                                            text-slate-500
                                            dark:text-slate-400"
                                 >
-                                    No hay salidas registradas.
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
+                                    {{
+                                        sale.items?.length ?? 0
+                                    }}
+                                    {{
+                                        (sale.items?.length ?? 0) === 1
+                                            ? 'producto'
+                                            : 'productos'
+                                    }}
+                                </span>
+
+                            </div>
+
+
+                            <!-- TABLA DE PRODUCTOS -->
+
+                            <div class="overflow-x-auto">
+
+                                <table
+                                    class="min-w-full
+                                           divide-y
+                                           divide-slate-200
+                                           dark:divide-slate-700"
+                                >
+
+                                    <thead
+                                        class="bg-slate-50
+                                               dark:bg-slate-900"
+                                    >
+
+                                        <tr>
+
+                                            <th
+                                                class="px-3 py-3
+                                                       text-left
+                                                       text-xs
+                                                       font-semibold
+                                                       uppercase
+                                                       text-slate-600
+                                                       dark:text-slate-300"
+                                            >
+                                                Código producto
+                                            </th>
+
+                                            <th
+                                                class="px-3 py-3
+                                                       text-left
+                                                       text-xs
+                                                       font-semibold
+                                                       uppercase
+                                                       text-slate-600
+                                                       dark:text-slate-300"
+                                            >
+                                                Producto
+                                            </th>
+
+                                            <th
+                                                class="px-3 py-3
+                                                       text-right
+                                                       text-xs
+                                                       font-semibold
+                                                       uppercase
+                                                       text-slate-600
+                                                       dark:text-slate-300"
+                                            >
+                                                Cantidad
+                                            </th>
+
+                                            <th
+                                                class="px-3 py-3
+                                                       text-left
+                                                       text-xs
+                                                       font-semibold
+                                                       uppercase
+                                                       text-slate-600
+                                                       dark:text-slate-300"
+                                            >
+                                                Unidad
+                                            </th>
+
+                                            <th
+                                                class="px-3 py-3
+                                                       text-right
+                                                       text-xs
+                                                       font-semibold
+                                                       uppercase
+                                                       text-slate-600
+                                                       dark:text-slate-300"
+                                            >
+                                                Precio unitario
+                                            </th>
+
+                                            <th
+                                                class="px-3 py-3
+                                                       text-right
+                                                       text-xs
+                                                       font-semibold
+                                                       uppercase
+                                                       text-slate-600
+                                                       dark:text-slate-300"
+                                            >
+                                                Subtotal
+                                            </th>
+
+                                        </tr>
+
+                                    </thead>
+
+
+                                    <tbody
+                                        class="divide-y
+                                               divide-slate-200
+                                               dark:divide-slate-700"
+                                    >
+
+                                        <tr
+                                            v-for="
+                                                item in sale.items
+                                            "
+                                            :key="item.id"
+                                            class="hover:bg-slate-50
+                                                   dark:hover:bg-slate-700/30"
+                                        >
+
+                                            <!-- CÓDIGO -->
+
+                                            <td
+                                                class="whitespace-nowrap
+                                                       px-3 py-3
+                                                       text-sm
+                                                       font-medium
+                                                       text-slate-700
+                                                       dark:text-slate-200"
+                                            >
+                                                {{
+                                                    item.store
+                                                        ?.code_product
+                                                        ?? '-'
+                                                }}
+                                            </td>
+
+
+                                            <!-- PRODUCTO -->
+
+                                            <td
+                                                class="px-3 py-3
+                                                       text-sm
+                                                       text-slate-700
+                                                       dark:text-slate-300"
+                                            >
+                                                {{
+                                                    item.store
+                                                        ?.name_product
+                                                        ?? '-'
+                                                }}
+                                            </td>
+
+
+                                            <!-- CANTIDAD -->
+
+                                            <td
+                                                class="px-3 py-3
+                                                       text-right
+                                                       text-sm
+                                                       font-semibold
+                                                       text-slate-700
+                                                       dark:text-slate-200"
+                                            >
+                                                {{
+                                                    formatNumber(
+                                                        item.quantity
+                                                    )
+                                                }}
+                                            </td>
+
+
+                                            <!-- UNIDAD -->
+
+                                            <td
+                                                class="px-3 py-3
+                                                       text-sm"
+                                            >
+
+                                                <span
+                                                    class="inline-flex
+                                                        rounded-full
+                                                        bg-slate-100
+                                                        px-2 py-1
+                                                        text-xs
+                                                        font-semibold
+                                                        text-slate-700
+                                                        dark:bg-slate-700
+                                                        dark:text-slate-200"
+                                                >
+                                                    {{
+                                                        String(item.unit).toLowerCase() === 'kilos'
+                                                            ? 'ROLLOS'
+                                                            : 'METROS'
+                                                    }}
+                                                </span>
+
+                                            </td>
+
+
+                                            <!-- PRECIO UNITARIO -->
+
+                                            <td
+                                                class="whitespace-nowrap
+                                                       px-3 py-3
+                                                       text-right
+                                                       text-sm
+                                                       text-slate-700
+                                                       dark:text-slate-300"
+                                            >
+                                                {{
+                                                    formatMoney(
+                                                        item.unit_price
+                                                    )
+                                                }}
+                                            </td>
+
+
+                                            <!-- SUBTOTAL -->
+
+                                            <td
+                                                class="whitespace-nowrap
+                                                       px-3 py-3
+                                                       text-right
+                                                       text-sm
+                                                       font-semibold
+                                                       text-slate-800
+                                                       dark:text-slate-100"
+                                            >
+                                                {{
+                                                    formatMoney(
+                                                        item.line_total
+                                                    )
+                                                }}
+                                            </td>
+
+                                        </tr>
+
+
+                                        <!-- SIN PRODUCTOS -->
+
+                                        <tr
+                                            v-if="
+                                                !sale.items ||
+                                                sale.items.length === 0
+                                            "
+                                        >
+
+                                            <td
+                                                colspan="6"
+                                                class="px-4 py-8
+                                                       text-center
+                                                       text-sm
+                                                       text-slate-500
+                                                       dark:text-slate-400"
+                                            >
+                                                No hay productos
+                                                registrados en esta
+                                                salida.
+                                            </td>
+
+                                        </tr>
+
+                                    </tbody>
+
+                                </table>
+
+                            </div>
+
+                        </div>
+
+                    </td>
+
+                </tr>
+
+            </template>
+
+
+            <!-- =====================================================
+                 SIN RESULTADOS
+            ====================================================== -->
+
+            <tr
+                v-if="
+                    !props.sales.data ||
+                    props.sales.data.length === 0
+                "
+            >
+
+                <td
+                    colspan="9"
+                    class="px-6 py-10 text-center"
+                >
+
+                    <p
+                        class="text-sm font-medium
+                               text-slate-600
+                               dark:text-slate-300"
+                    >
+                        No se encontraron salidas.
+                    </p>
+
+                    <p
+                        class="mt-1 text-xs
+                               text-slate-400"
+                    >
+                        Prueba cambiando los filtros.
+                    </p>
+
+                </td>
+
+            </tr>
+
+        </tbody>
+
+    </table>
+</div>
+<!-- PAGINACIÓN -->
+<div
+    v-if="props.sales.last_page > 1"
+    class="flex flex-col gap-3 border-t
+           border-slate-200 px-4 py-4
+           dark:border-slate-700
+           sm:flex-row sm:items-center
+           sm:justify-between"
+>
+    <p class="text-sm text-slate-600 dark:text-slate-400">
+        Mostrando
+        <span class="font-semibold text-slate-800 dark:text-slate-200">
+            {{ props.sales.from ?? 0 }}
+        </span>
+        -
+        <span class="font-semibold text-slate-800 dark:text-slate-200">
+            {{ props.sales.to ?? 0 }}
+        </span>
+        de
+        <span class="font-semibold text-slate-800 dark:text-slate-200">
+            {{ props.sales.total }}
+        </span>
+        salidas
+    </p>
+
+    <div class="flex flex-wrap items-center gap-1">
+        <button
+            v-for="link in props.sales.links"
+            :key="link.label"
+            type="button"
+            :disabled="!link.url"
+            @click="goToPage(link.url)"
+            v-html="link.label"
+            class="min-w-[40px] rounded-lg border
+                   px-3 py-2 text-sm font-medium
+                   transition
+                   disabled:cursor-not-allowed
+                   disabled:opacity-40"
+            :class="
+                link.active
+                    ? 'border-blue-600 bg-blue-600 text-white'
+                    : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700'
+            "
+        ></button>
+    </div>
+</div>
+
             </section>
         </div>
     </AppLayout>

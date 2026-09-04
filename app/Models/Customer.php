@@ -17,4 +17,8 @@ class Customer extends Model
         'address',
         'position',
     ];
+    
+    protected $casts = [
+        'is_active' => 'boolean',
+    ];
 }

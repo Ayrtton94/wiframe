@@ -63,8 +63,7 @@ const props = defineProps<{
     }>;
 }>();
 
-const initialWarehouseId =
-    props.defaultWarehouseId;
+const initialWarehouseId = props.defaultWarehouseId;
 
 const form = useForm({
     code_product: props.product.code_product,
@@ -86,7 +85,14 @@ const form = useForm({
     location: props.product.location,
     description: props.product.description,
 
+    // Almacén seleccionado actualmente
     warehouse_id: initialWarehouseId
+        ? String(initialWarehouseId)
+        : '',
+
+    // IMPORTANTE:
+    // guardamos el almacén que tenía antes de editar
+    current_warehouse_id: initialWarehouseId
         ? String(initialWarehouseId)
         : '',
 
@@ -179,6 +185,30 @@ const submit = () => {
                    overflow-x-auto bg-slate-50 p-4
                    dark:bg-slate-950"
         >
+
+        <div>
+            <h1
+                class="text-2xl font-bold text-slate-800
+                    dark:text-slate-100"
+            >
+                Crear Producto
+            </h1>
+
+            <p
+                class="mt-1 text-sm text-slate-500
+                    dark:text-slate-400"
+            >
+                Registra un nuevo producto y configura
+                su stock, precios y disponibilidad.
+            </p>
+
+            <p
+                class="mt-2 text-sm font-medium text-slate-600
+                    dark:text-slate-300"
+            >
+                Fecha: {{ new Date().toLocaleDateString('es-PE') }}
+            </p>
+        </div>
             <!-- ENCABEZADO -->
             <div class="mx-auto w-full max-w-6xl">
                 <div

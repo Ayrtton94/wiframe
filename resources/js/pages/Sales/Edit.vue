@@ -497,34 +497,63 @@ const submit = () => {
     );
 };
 </script>
-
 <template>
-    <Head
-        :title="`Editar venta ${props.sale.code}`"
-    />
+    <Head :title="`Editar venta ${props.sale.code}`" />
 
-    <AppLayout
-        :breadcrumbs="breadcrumbs"
-    >
+    <AppLayout :breadcrumbs="breadcrumbs">
         <div
-            class="flex flex-1 flex-col gap-6 rounded-xl p-4"
+            class="flex flex-1 flex-col gap-6 rounded-xl
+                   bg-slate-50 p-4
+                   dark:bg-slate-950"
         >
+        <div>
+            <h1
+                class="text-2xl font-bold text-slate-800
+                    dark:text-slate-100"
+            >
+                Crear Producto
+            </h1>
+
+            <p
+                class="mt-1 text-sm text-slate-500
+                    dark:text-slate-400"
+            >
+                Registra un nuevo producto y configura
+                su stock, precios y disponibilidad.
+            </p>
+
+            <p
+                class="mt-2 text-sm font-medium text-slate-600
+                    dark:text-slate-300"
+            >
+                Fecha: {{ new Date().toLocaleDateString('es-PE') }}
+            </p>
+        </div>
+
             <!-- CABECERA -->
             <section
-                class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm"
+                class="rounded-xl
+                       border border-slate-200
+                       bg-white p-5 shadow-sm
+                       dark:border-slate-700
+                       dark:bg-slate-900"
             >
                 <div
                     class="flex items-center justify-between"
                 >
                     <div>
                         <h1
-                            class="text-2xl font-semibold text-slate-900"
+                            class="text-2xl font-semibold
+                                   text-slate-900
+                                   dark:text-slate-100"
                         >
                             Editar venta
                         </h1>
 
                         <p
-                            class="mt-1 text-sm text-slate-500"
+                            class="mt-1 text-sm
+                                   text-slate-500
+                                   dark:text-slate-400"
                         >
                             {{ props.sale.code }}
                         </p>
@@ -532,7 +561,15 @@ const submit = () => {
 
                     <Link
                         href="/sales"
-                        class="rounded-lg bg-slate-200 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-300"
+                        class="rounded-lg
+                               bg-slate-200 px-4 py-2
+                               text-sm font-medium
+                               text-slate-700
+                               transition
+                               hover:bg-slate-300
+                               dark:bg-slate-800
+                               dark:text-slate-200
+                               dark:hover:bg-slate-700"
                     >
                         Volver
                     </Link>
@@ -541,19 +578,38 @@ const submit = () => {
 
             <!-- CLIENTE Y ALMACÉN -->
             <section
-                class="grid gap-4 rounded-xl border border-slate-200 bg-white p-5 shadow-sm md:grid-cols-2"
+                class="grid gap-4 rounded-xl
+                       border border-slate-200
+                       bg-white p-5 shadow-sm
+                       md:grid-cols-2
+                       dark:border-slate-700
+                       dark:bg-slate-900"
             >
+
                 <!-- CLIENTE -->
                 <div>
                     <label
-                        class="mb-1 block text-sm font-medium text-slate-700"
+                        class="mb-1 block text-sm font-medium
+                               text-slate-700
+                               dark:text-slate-300"
                     >
                         Cliente
                     </label>
 
                     <select
                         v-model="form.customer_id"
-                        class="w-full rounded-lg border border-slate-300 px-3 py-2"
+                        class="w-full rounded-lg
+                               border border-slate-300
+                               bg-white px-3 py-2
+                               text-slate-900
+                               transition
+                               focus:border-blue-500
+                               focus:outline-none
+                               focus:ring-2
+                               focus:ring-blue-500/20
+                               dark:border-slate-600
+                               dark:bg-slate-800
+                               dark:text-slate-100"
                     >
                         <option value="">
                             Seleccionar cliente
@@ -562,9 +618,7 @@ const submit = () => {
                         <option
                             v-for="customer in props.customers"
                             :key="customer.id"
-                            :value="
-                                String(customer.id)
-                            "
+                            :value="String(customer.id)"
                         >
                             {{ customer.name }} -
                             {{ customer.dni }}
@@ -572,29 +626,38 @@ const submit = () => {
                     </select>
 
                     <p
-                        v-if="
-                            form.errors.customer_id
-                        "
-                        class="mt-1 text-sm text-red-600"
+                        v-if="form.errors.customer_id"
+                        class="mt-1 text-sm text-red-600
+                               dark:text-red-400"
                     >
-                        {{
-                            form.errors
-                                .customer_id
-                        }}
+                        {{ form.errors.customer_id }}
                     </p>
                 </div>
 
                 <!-- ALMACÉN -->
                 <div>
                     <label
-                        class="mb-1 block text-sm font-medium text-slate-700"
+                        class="mb-1 block text-sm font-medium
+                               text-slate-700
+                               dark:text-slate-300"
                     >
                         Almacén
                     </label>
 
                     <select
                         v-model="form.warehouse_id"
-                        class="w-full rounded-lg border border-slate-300 px-3 py-2"
+                        class="w-full rounded-lg
+                               border border-slate-300
+                               bg-white px-3 py-2
+                               text-slate-900
+                               transition
+                               focus:border-blue-500
+                               focus:outline-none
+                               focus:ring-2
+                               focus:ring-blue-500/20
+                               dark:border-slate-600
+                               dark:bg-slate-800
+                               dark:text-slate-100"
                     >
                         <option value="">
                             Seleccionar almacén
@@ -603,11 +666,7 @@ const submit = () => {
                         <option
                             v-for="warehouse in props.warehouses"
                             :key="warehouse.id"
-                            :value="
-                                String(
-                                    warehouse.id,
-                                )
-                            "
+                            :value="String(warehouse.id)"
                         >
                             {{ warehouse.code }} -
                             {{ warehouse.name }}
@@ -615,36 +674,38 @@ const submit = () => {
                     </select>
 
                     <p
-                        v-if="
-                            form.errors
-                                .warehouse_id
-                        "
-                        class="mt-1 text-sm text-red-600"
+                        v-if="form.errors.warehouse_id"
+                        class="mt-1 text-sm text-red-600
+                               dark:text-red-400"
                     >
-                        {{
-                            form.errors
-                                .warehouse_id
-                        }}
+                        {{ form.errors.warehouse_id }}
                     </p>
                 </div>
             </section>
 
             <!-- PRODUCTOS -->
             <section
-                class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm"
+                class="rounded-xl
+                       border border-slate-200
+                       bg-white p-5 shadow-sm
+                       dark:border-slate-700
+                       dark:bg-slate-900"
             >
                 <div
                     class="mb-4 flex items-center justify-between"
                 >
                     <div>
                         <h2
-                            class="text-lg font-semibold text-slate-900"
+                            class="text-lg font-semibold
+                                   text-slate-900
+                                   dark:text-slate-100"
                         >
                             Productos
                         </h2>
 
                         <p
-                            class="text-sm text-slate-500"
+                            class="text-sm text-slate-500
+                                   dark:text-slate-400"
                         >
                             Modifica los productos o
                             cantidades de la venta.
@@ -654,7 +715,13 @@ const submit = () => {
                     <button
                         type="button"
                         @click="addItem"
-                        class="rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700"
+                        class="rounded-lg
+                               bg-green-600 px-4 py-2
+                               text-sm font-medium
+                               text-white
+                               transition
+                               hover:bg-green-700
+                               dark:hover:bg-green-500"
                     >
                         + Agregar producto
                     </button>
@@ -666,26 +733,45 @@ const submit = () => {
                             item, index
                         ) in form.items"
                         :key="index"
-                        class="rounded-lg border border-slate-200 p-4"
+                        class="rounded-lg
+                               border border-slate-200
+                               bg-slate-50 p-4
+                               dark:border-slate-700
+                               dark:bg-slate-800"
                     >
+
                         <div
-                            class="grid gap-4 md:grid-cols-5"
+                            class="grid gap-4
+                                   md:grid-cols-5"
                         >
+
                             <!-- PRODUCTO -->
                             <div
                                 class="md:col-span-2"
                             >
                                 <label
-                                    class="mb-1 block text-sm font-medium text-slate-700"
+                                    class="mb-1 block text-sm
+                                           font-medium
+                                           text-slate-700
+                                           dark:text-slate-300"
                                 >
                                     Producto
                                 </label>
 
                                 <select
-                                    v-model.number="
-                                        item.store_id
-                                    "
-                                    class="w-full rounded-lg border border-slate-300 px-3 py-2"
+                                    v-model.number="item.store_id"
+                                    class="w-full rounded-lg
+                                           border border-slate-300
+                                           bg-white px-3 py-2
+                                           text-slate-900
+                                           transition
+                                           focus:border-blue-500
+                                           focus:outline-none
+                                           focus:ring-2
+                                           focus:ring-blue-500/20
+                                           dark:border-slate-600
+                                           dark:bg-slate-800
+                                           dark:text-slate-100"
                                 >
                                     <option :value="0">
                                         Seleccionar producto
@@ -694,17 +780,11 @@ const submit = () => {
                                     <option
                                         v-for="product in availableProducts"
                                         :key="product.id"
-                                        :value="
-                                            product.id
-                                        "
+                                        :value="product.id"
                                     >
-                                        {{
-                                            product.code_product
-                                        }}
+                                        {{ product.code_product }}
                                         -
-                                        {{
-                                            product.name_product
-                                        }}
+                                        {{ product.name_product }}
                                     </option>
                                 </select>
                             </div>
@@ -712,14 +792,28 @@ const submit = () => {
                             <!-- UNIDAD -->
                             <div>
                                 <label
-                                    class="mb-1 block text-sm font-medium text-slate-700"
+                                    class="mb-1 block text-sm
+                                           font-medium
+                                           text-slate-700
+                                           dark:text-slate-300"
                                 >
                                     Unidad
                                 </label>
 
                                 <select
                                     v-model="item.unit"
-                                    class="w-full rounded-lg border border-slate-300 px-3 py-2"
+                                    class="w-full rounded-lg
+                                           border border-slate-300
+                                           bg-white px-3 py-2
+                                           text-slate-900
+                                           transition
+                                           focus:border-blue-500
+                                           focus:outline-none
+                                           focus:ring-2
+                                           focus:ring-blue-500/20
+                                           dark:border-slate-600
+                                           dark:bg-slate-800
+                                           dark:text-slate-100"
                                 >
                                     <option value="metros">
                                         Metros
@@ -734,15 +828,16 @@ const submit = () => {
                             <!-- CANTIDAD -->
                             <div>
                                 <label
-                                    class="mb-1 block text-sm font-medium text-slate-700"
+                                    class="mb-1 block text-sm
+                                           font-medium
+                                           text-slate-700
+                                           dark:text-slate-300"
                                 >
                                     Cantidad
                                 </label>
 
                                 <input
-                                    v-model.number="
-                                        item.quantity
-                                    "
+                                    v-model.number="item.quantity"
                                     type="number"
                                     min="0"
                                     step="0.01"
@@ -756,22 +851,33 @@ const submit = () => {
                                             item,
                                         )
                                     "
-                                    class="w-full rounded-lg border border-slate-300 px-3 py-2"
+                                    class="w-full rounded-lg
+                                           border border-slate-300
+                                           bg-white px-3 py-2
+                                           text-slate-900
+                                           transition
+                                           placeholder:text-slate-400
+                                           focus:border-blue-500
+                                           focus:outline-none
+                                           focus:ring-2
+                                           focus:ring-blue-500/20
+                                           dark:border-slate-600
+                                           dark:bg-slate-800
+                                           dark:text-slate-100
+                                           dark:placeholder:text-slate-500"
                                 />
 
                                 <p
-                                    class="mt-1 text-xs text-slate-500"
+                                    class="mt-1 text-xs
+                                           text-slate-500
+                                           dark:text-slate-400"
                                 >
                                     Disponible:
                                     {{
-                                        getAvailableForItem(
-                                            item,
-                                        )
+                                        getAvailableForItem(item)
                                     }}
                                     {{
-                                        getUnitLabel(
-                                            item.unit,
-                                        )
+                                        getUnitLabel(item.unit)
                                     }}
                                 </p>
 
@@ -781,34 +887,33 @@ const submit = () => {
                                             item,
                                         )
                                     "
-                                    class="mt-1 text-sm font-medium text-red-600"
+                                    class="mt-1 text-sm
+                                           font-medium
+                                           text-red-600
+                                           dark:text-red-400"
                                 >
                                     Stock insuficiente.
                                     Disponible:
                                     {{
-                                        getAvailableForItem(
-                                            item,
-                                        )
+                                        getAvailableForItem(item)
                                     }}
                                     {{
-                                        getUnitLabel(
-                                            item.unit,
-                                        )
+                                        getUnitLabel(item.unit)
                                     }}.
                                 </p>
 
                                 <p
                                     v-if="
-                                        form.errors
-                                            .items?.[
+                                        form.errors.items?.[
                                             `${index}.quantity`
                                         ]
                                     "
-                                    class="mt-1 text-sm text-red-600"
+                                    class="mt-1 text-sm
+                                           text-red-600
+                                           dark:text-red-400"
                                 >
                                     {{
-                                        form.errors
-                                            .items[
+                                        form.errors.items[
                                             `${index}.quantity`
                                         ]
                                     }}
@@ -818,7 +923,10 @@ const submit = () => {
                             <!-- PRECIO -->
                             <div>
                                 <label
-                                    class="mb-1 block text-sm font-medium text-slate-700"
+                                    class="mb-1 block text-sm
+                                           font-medium
+                                           text-slate-700
+                                           dark:text-slate-300"
                                 >
                                     Tipo de precio
                                 </label>
@@ -831,33 +939,41 @@ const submit = () => {
                                             ),
                                         ).length > 1
                                     "
-                                    v-model="
-                                        item.price_type
-                                    "
-                                    class="w-full rounded-lg border border-slate-300 px-3 py-2"
+                                    v-model="item.price_type"
+                                    class="w-full rounded-lg
+                                           border border-slate-300
+                                           bg-white px-3 py-2
+                                           text-slate-900
+                                           transition
+                                           focus:border-blue-500
+                                           focus:outline-none
+                                           focus:ring-2
+                                           focus:ring-blue-500/20
+                                           dark:border-slate-600
+                                           dark:bg-slate-800
+                                           dark:text-slate-100"
                                 >
                                     <option
-                                        v-for="option in getProductPriceOptions(
-                                            getProduct(
-                                                item.store_id,
-                                            ),
-                                        )"
-                                        :key="
-                                            option.value
+                                        v-for="
+                                            option in getProductPriceOptions(
+                                                getProduct(
+                                                    item.store_id,
+                                                ),
+                                            )
                                         "
-                                        :value="
-                                            option.value
-                                        "
+                                        :key="option.value"
+                                        :value="option.value"
                                     >
-                                        {{
-                                            option.label
-                                        }}
+                                        {{ option.label }}
                                     </option>
                                 </select>
 
                                 <div
                                     v-else
-                                    class="flex items-center text-sm text-slate-500"
+                                    class="flex h-10 items-center
+                                           text-sm
+                                           text-slate-500
+                                           dark:text-slate-400"
                                 >
                                     Precio: S/
                                     {{
@@ -876,20 +992,28 @@ const submit = () => {
                                     item.store_id,
                                 )
                             "
-                            class="mt-4 rounded-lg bg-slate-50 p-3"
+                            class="mt-4 rounded-lg
+                                   bg-slate-50 p-3
+                                   dark:bg-slate-800"
                         >
                             <div
-                                class="grid gap-3 text-sm md:grid-cols-4"
+                                class="grid gap-3 text-sm
+                                       md:grid-cols-4"
                             >
+
+                                <!-- PRODUCTO -->
                                 <div>
                                     <span
-                                        class="text-slate-500"
+                                        class="text-slate-500
+                                               dark:text-slate-400"
                                     >
                                         Producto
                                     </span>
 
                                     <p
-                                        class="font-medium"
+                                        class="font-medium
+                                               text-slate-800
+                                               dark:text-slate-100"
                                     >
                                         {{
                                             getProduct(
@@ -900,15 +1024,19 @@ const submit = () => {
                                     </p>
                                 </div>
 
+                                <!-- PRECIO UNITARIO -->
                                 <div>
                                     <span
-                                        class="text-slate-500"
+                                        class="text-slate-500
+                                               dark:text-slate-400"
                                     >
                                         Precio unitario
                                     </span>
 
                                     <p
-                                        class="font-medium"
+                                        class="font-medium
+                                               text-slate-800
+                                               dark:text-slate-100"
                                     >
                                         S/
                                         {{
@@ -919,19 +1047,21 @@ const submit = () => {
                                     </p>
                                 </div>
 
+                                <!-- CANTIDAD -->
                                 <div>
                                     <span
-                                        class="text-slate-500"
+                                        class="text-slate-500
+                                               dark:text-slate-400"
                                     >
                                         Cantidad
                                     </span>
 
                                     <p
-                                        class="font-medium"
+                                        class="font-medium
+                                               text-slate-800
+                                               dark:text-slate-100"
                                     >
-                                        {{
-                                            item.quantity
-                                        }}
+                                        {{ item.quantity }}
                                         {{
                                             getUnitLabel(
                                                 item.unit,
@@ -940,15 +1070,19 @@ const submit = () => {
                                     </p>
                                 </div>
 
+                                <!-- TOTAL -->
                                 <div>
                                     <span
-                                        class="text-slate-500"
+                                        class="text-slate-500
+                                               dark:text-slate-400"
                                     >
                                         Total
                                     </span>
 
                                     <p
-                                        class="font-medium"
+                                        class="font-medium
+                                               text-slate-800
+                                               dark:text-slate-100"
                                     >
                                         S/
                                         {{
@@ -970,7 +1104,11 @@ const submit = () => {
                                 @click="
                                     removeItem(index)
                                 "
-                                class="text-sm font-medium text-red-600 hover:text-red-800"
+                                class="text-sm font-medium
+                                       text-red-600
+                                       hover:text-red-800
+                                       dark:text-red-400
+                                       dark:hover:text-red-300"
                             >
                                 Eliminar producto
                             </button>
@@ -980,7 +1118,9 @@ const submit = () => {
 
                 <p
                     v-if="form.errors.items"
-                    class="mt-3 text-sm text-red-600"
+                    class="mt-3 text-sm
+                           text-red-600
+                           dark:text-red-400"
                 >
                     {{ form.errors.items }}
                 </p>
@@ -988,10 +1128,17 @@ const submit = () => {
 
             <!-- OBSERVACIONES -->
             <section
-                class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm"
+                class="rounded-xl
+                       border border-slate-200
+                       bg-white p-5 shadow-sm
+                       dark:border-slate-700
+                       dark:bg-slate-900"
             >
                 <label
-                    class="mb-1 block text-sm font-medium text-slate-700"
+                    class="mb-1 block text-sm
+                           font-medium
+                           text-slate-700
+                           dark:text-slate-300"
                 >
                     Motivo / Observaciones
                 </label>
@@ -999,7 +1146,20 @@ const submit = () => {
                 <textarea
                     v-model="form.notes"
                     rows="3"
-                    class="w-full rounded-lg border border-slate-300 px-3 py-2"
+                    class="w-full rounded-lg
+                           border border-slate-300
+                           bg-white px-3 py-2
+                           text-slate-900
+                           placeholder:text-slate-400
+                           transition
+                           focus:border-blue-500
+                           focus:outline-none
+                           focus:ring-2
+                           focus:ring-blue-500/20
+                           dark:border-slate-600
+                           dark:bg-slate-800
+                           dark:text-slate-100
+                           dark:placeholder:text-slate-500"
                     placeholder="Observaciones de la venta..."
                 ></textarea>
             </section>
@@ -1010,7 +1170,15 @@ const submit = () => {
             >
                 <Link
                     href="/sales/"
-                    class="rounded-lg bg-slate-200 px-5 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-300"
+                    class="rounded-lg
+                           bg-slate-200 px-5 py-2.5
+                           text-sm font-medium
+                           text-slate-700
+                           transition
+                           hover:bg-slate-300
+                           dark:bg-slate-800
+                           dark:text-slate-200
+                           dark:hover:bg-slate-700"
                 >
                     Cancelar
                 </Link>
@@ -1019,7 +1187,14 @@ const submit = () => {
                     type="button"
                     @click="submit"
                     :disabled="form.processing"
-                    class="rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+                    class="rounded-lg
+                           bg-blue-600 px-5 py-2.5
+                           text-sm font-medium
+                           text-white
+                           transition
+                           hover:bg-blue-700
+                           disabled:opacity-50
+                           dark:hover:bg-blue-500"
                 >
                     {{
                         form.processing

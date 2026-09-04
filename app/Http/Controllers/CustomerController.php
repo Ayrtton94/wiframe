@@ -75,9 +75,16 @@ class CustomerController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Customer $customer)
+    public function toggleStatus(Customer $customer)
     {
-        $customer->delete();
-        return redirect()->route('customers.index')->with('success', 'Cliente eliminado exitosamente.');
-    }
+        $customer->is_active = ! $customer->is_active;
+        $customer->save();
+
+        return back()->with(
+            'success',
+            $customer->is_active
+                ? 'Cliente activado correctamente.'
+                : 'Cliente desactivado correctamente.'
+        );
+}
 }

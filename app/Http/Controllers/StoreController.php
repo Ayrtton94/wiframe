@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Exports\ProductsExport;
 use App\Http\Requests\StoreRequest;
+use App\Models\StockInitial;
 use App\Models\Store;
 use App\Models\Suppliers;
 use App\Models\Warehouse;
@@ -47,6 +48,10 @@ public function index(Request $request)
 
         $product->image_url = $imagePath
             ? asset('storage/' . $imagePath)
+            : null;
+            
+        $product->created_date = $product->created_at
+            ? $product->created_at->format('d/m/Y')
             : null;
 
         $product->warehouse_stocks = $product->warehouseStocks->map(function ($stock) {
@@ -129,23 +134,39 @@ public function index(Request $request)
         }
 
         DB::transaction(function () use (&$validated, $warehouse) {
-            $store = Store::create($validated);
+        $store = Store::create($validated);
 
-            if ($warehouse) {
-                $store->warehouseStocks()->updateOrCreate(
-                    [
-                        'warehouse_id' => $warehouse->id,
-                        'store_id' => $store->id,
-                    ],
-                    [
-                        'kilos_available' => (float) ($validated['kilos'] ?? 0),
-                        'metros_available' => (float) ($validated['metros'] ?? 0),
-                        'kilos_reserved' => 0,
-                        'metros_reserved' => 0,
-                    ]
-                );
-            }
-        });
+        if ($warehouse) {
+            $kilosInicial = (float) ($validated['kilos'] ?? 0);
+            $metrosInicial = (float) ($validated['metros'] ?? 0);
+
+            // Stock actual
+            $store->warehouseStocks()->updateOrCreate(
+                [
+                    'warehouse_id' => $warehouse->id,
+                    'store_id' => $store->id,
+                ],
+                [
+                    'kilos_available' => $kilosInicial,
+                    'metros_available' => $metrosInicial,
+                    'kilos_reserved' => 0,
+                    'metros_reserved' => 0,
+                ]
+            );
+
+            // Stock inicial histórico
+            StockInitial::updateOrCreate(
+                [
+                    'store_id' => $store->id,
+                    'warehouse_id' => $warehouse->id,
+                ],
+                [
+                    'kilos_initial' => $kilosInicial,
+                    'metros_initial' => $metrosInicial,
+                ]
+            );
+        }
+    });
 
         return redirect()->route('stores.index')->with('success', 'Producto creado exitosamente.');
     }
@@ -244,7 +265,7 @@ public function show(Store $store)
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(Store $store)
+public function edit(Store $store)
 {
     $user = auth()->user();
 
@@ -252,12 +273,22 @@ public function show(Store $store)
     $warehouseSelectionRequired = false;
     $defaultWarehouseId = null;
 
+    /*
+    |--------------------------------------------------------------------------
+    | Almacenes disponibles para el usuario
+    |--------------------------------------------------------------------------
+    */
+
     if ($user && $user->hasRole('admin')) {
 
         $warehouses = Warehouse::query()
             ->where('is_active', true)
             ->orderBy('name')
-            ->get(['id', 'name', 'code']);
+            ->get([
+                'id',
+                'name',
+                'code',
+            ]);
 
         $warehouseSelectionRequired = true;
 
@@ -271,31 +302,74 @@ public function show(Store $store)
             ->whereIn('id', $assignedWarehouseIds)
             ->where('is_active', true)
             ->orderBy('name')
-            ->get(['id', 'name', 'code']);
+            ->get([
+                'id',
+                'name',
+                'code',
+            ]);
 
-        $defaultWarehouseId = $warehouses->first()?->id;
+        $warehouseSelectionRequired = true;
     }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Cargar stocks del producto
+    |--------------------------------------------------------------------------
+    */
 
     $store->load('warehouseStocks');
 
-    $imagePath = $store->image_path ?? $store->image ?? null;
+    /*
+    |--------------------------------------------------------------------------
+    | Almacén actual del producto
+    |--------------------------------------------------------------------------
+    |
+    | IMPORTANTE:
+    | No usamos el primer almacén asignado al usuario.
+    | Usamos el almacén donde realmente está el producto.
+    |
+    */
+
+    $defaultWarehouseId = $store->warehouseStocks
+        ->first()?->warehouse_id;
+
+    /*
+    |--------------------------------------------------------------------------
+    | Imagen
+    |--------------------------------------------------------------------------
+    */
+
+    $imagePath = $store->image_path
+        ?? $store->image
+        ?? null;
 
     $store->image_url = $imagePath
         ? asset('storage/' . $imagePath)
         : null;
+
+    /*
+    |--------------------------------------------------------------------------
+    | Vista
+    |--------------------------------------------------------------------------
+    */
 
     return Inertia::render('Store/Edit', [
         'product' => $store,
 
         'warehouses' => $warehouses,
 
-        'warehouseSelectionRequired' => $warehouseSelectionRequired,
+        'warehouseSelectionRequired' =>
+            $warehouseSelectionRequired,
 
-        'defaultWarehouseId' => $defaultWarehouseId,
+        'defaultWarehouseId' =>
+            $defaultWarehouseId,
 
         'suppliers' => Suppliers::query()
             ->orderBy('company_name')
-            ->get(['id', 'company_name']),
+            ->get([
+                'id',
+                'company_name',
+            ]),
     ]);
 }
 
@@ -306,21 +380,34 @@ public function update(StoreRequest $request, Store $store)
 {
     $validated = $request->validated();
 
+    // Almacén que tenía antes
+    $oldWarehouseId = $request->input('current_warehouse_id');
+
+    // Nuevo almacén seleccionado
     $warehouseId = $request->input('warehouse_id');
 
     unset(
         $validated['image'],
         $validated['image_path'],
-        $validated['warehouse_id']
+        $validated['warehouse_id'],
+        $validated['current_warehouse_id']
     );
 
     $validated['is_active'] = $request->boolean('is_active', true);
 
+    /*
+    |--------------------------------------------------------------------------
+    | Imagen
+    |--------------------------------------------------------------------------
+    */
+
     $imageColumn = Schema::hasColumn('stores', 'image_path')
         ? 'image_path'
-        : (Schema::hasColumn('stores', 'image')
-            ? 'image'
-            : null);
+        : (
+            Schema::hasColumn('stores', 'image')
+                ? 'image'
+                : null
+        );
 
     $imageFile = $request->file('image')
         ?? $request->file('image_path');
@@ -328,13 +415,19 @@ public function update(StoreRequest $request, Store $store)
     DB::transaction(function () use (
         $store,
         &$validated,
+        $oldWarehouseId,
         $warehouseId,
         $imageColumn,
         $imageFile,
         $request
     ) {
 
-        // Imagen
+        /*
+        |--------------------------------------------------------------------------
+        | Actualizar imagen
+        |--------------------------------------------------------------------------
+        */
+
         if ($imageColumn && $imageFile) {
 
             $existingPath = $store->{$imageColumn};
@@ -349,20 +442,55 @@ public function update(StoreRequest $request, Store $store)
             );
         }
 
-        // Actualizar datos generales del producto
+        /*
+        |--------------------------------------------------------------------------
+        | Actualizar datos del producto
+        |--------------------------------------------------------------------------
+        */
+
         $store->update($validated);
 
-        // Actualizar stock del almacén
+        /*
+        |--------------------------------------------------------------------------
+        | CAMBIO DE ALMACÉN
+        |--------------------------------------------------------------------------
+        */
+
+        if (
+            $oldWarehouseId &&
+            $warehouseId &&
+            (int) $oldWarehouseId !== (int) $warehouseId
+        ) {
+
+            // Eliminar el stock que pertenecía al almacén anterior
+            WarehouseStock::where('store_id', $store->id)
+                ->where('warehouse_id', $oldWarehouseId)
+                ->delete();
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | CREAR / ACTUALIZAR STOCK DEL NUEVO ALMACÉN
+        |--------------------------------------------------------------------------
+        */
+
         if ($warehouseId) {
 
-            $stock = WarehouseStock::updateOrCreate(
+            WarehouseStock::updateOrCreate(
                 [
                     'store_id' => $store->id,
                     'warehouse_id' => $warehouseId,
                 ],
                 [
-                    'kilos_available' => (float) $request->input('kilos', 0),
-                    'metros_available' => (float) $request->input('metros', 0),
+                    'kilos_available' => (float) $request->input(
+                        'kilos',
+                        0
+                    ),
+
+                    'metros_available' => (float) $request->input(
+                        'metros',
+                        0
+                    ),
                 ]
             );
         }
@@ -370,9 +498,11 @@ public function update(StoreRequest $request, Store $store)
 
     return redirect()
         ->route('stores.index')
-        ->with('success', 'Producto actualizado exitosamente.');
+        ->with(
+            'success',
+            'Producto actualizado exitosamente.'
+        );
 }
-
     /**
      * Remove the specified resource from storage.
      */
@@ -501,11 +631,28 @@ public function update(StoreRequest $request, Store $store)
     }
 
     public function export()
-{
-    return Excel::download(
-        new ProductsExport(),
-        'productos.xlsx'
-    );
-}
+    {
+        return Excel::download(
+            new ProductsExport(),
+            'productos.xlsx'
+        );
+    }
+
+    public function toggleStatus($store)
+    {
+        // Buscamos directamente por ID
+        $product = Store::findOrFail($store);
+
+        $product->update([
+            'is_active' => !$product->is_active,
+        ]);
+
+        return back()->with(
+            'success',
+            $product->is_active
+                ? 'Producto activado correctamente.'
+                : 'Producto desactivado correctamente.'
+        );
+    }
 
 }

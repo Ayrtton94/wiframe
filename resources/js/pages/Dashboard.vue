@@ -700,7 +700,7 @@ const alertIconClasses = (type: AlertItem['type']) => {
                             </div>
 
                             <Link
-                                href="#"
+                                href="/reports/transferencias"
                                 class="text-sm font-semibold text-violet-600 hover:text-violet-700"
                             >
                                 Ver todas
@@ -835,13 +835,6 @@ const alertIconClasses = (type: AlertItem['type']) => {
                                     Productos con mayor movimiento
                                 </p>
                             </div>
-
-                            <Link
-                                href="#"
-                                class="text-sm font-semibold text-violet-600 hover:text-violet-700"
-                            >
-                                Ver reporte
-                            </Link>
                         </div>
 
                         <div
@@ -1003,7 +996,7 @@ const alertIconClasses = (type: AlertItem['type']) => {
 
                         <!-- KILOS -->
 
-                        <div
+                        <div hidden
                             class="rounded-xl border border-slate-200 p-5 dark:border-slate-800">
                             <div
                                 class="flex items-center gap-3"

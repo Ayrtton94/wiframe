@@ -18,6 +18,7 @@ const props = defineProps<{
             almacen: string;
             codigo_producto: string;
             producto: string;
+            color: string | null;
             rollos: number | string;
             metros: number | string;
             stock_minimo: number | string;
@@ -608,7 +609,15 @@ const changePage = (page: number) => {
                                 >
                                     Producto
                                 </th>
-
+                                <th
+                                    class="px-4 py-3 text-left
+                                        text-xs font-semibold
+                                        uppercase
+                                        text-slate-600
+                                        dark:text-slate-300"
+                                >
+                                    Color
+                                </th>
                                 <th
                                     class="px-4 py-3 text-right
                                            text-xs font-semibold
@@ -691,6 +700,15 @@ const changePage = (page: number) => {
                                     {{ row.producto }}
                                 </td>
 
+                                <!-- COLOR -->
+                                <td
+                                    class="px-4 py-3 text-sm
+                                        text-slate-700
+                                        dark:text-slate-300"
+                                >
+                                    {{ row.color || '—' }}
+                                </td>
+
                                 <!-- ROLLOS -->
                                 <td
                                     class="px-4 py-3 text-right
@@ -721,35 +739,48 @@ const changePage = (page: number) => {
                                     {{ number(row.stock_minimo, 3) }}
                                 </td>
 
-                                <!-- ESTADO -->
+                                <!-- ESTADO -->                                                            
                                 <td
                                     class="px-4 py-3 text-center"
                                 >
                                     <span
-                                        v-if="
-                                            Number(row.metros) <=
+                                        v-if="Number(row.rollos) <= 0"
+                                        class="inline-flex
+                                            rounded-full
+                                            bg-red-100 px-2.5 py-1
+                                            text-xs font-medium
+                                            text-red-700
+                                            dark:bg-red-500/15
+                                            dark:text-red-400"
+                                    >
+                                        Sin stock
+                                    </span>
+
+                                    <span
+                                        v-else-if="
+                                            Number(row.rollos) <=
                                             Number(row.stock_minimo)
                                         "
                                         class="inline-flex
-                                               rounded-full
-                                               bg-red-100 px-2.5 py-1
-                                               text-xs font-medium
-                                               text-red-700
-                                               dark:bg-red-500/15
-                                               dark:text-red-400"
+                                            rounded-full
+                                            bg-yellow-100 px-2.5 py-1
+                                            text-xs font-medium
+                                            text-yellow-700
+                                            dark:bg-yellow-500/15
+                                            dark:text-yellow-400"
                                     >
-                                        Stock bajo
+                                        Stock mínimo
                                     </span>
 
                                     <span
                                         v-else
                                         class="inline-flex
-                                               rounded-full
-                                               bg-green-100 px-2.5 py-1
-                                               text-xs font-medium
-                                               text-green-700
-                                               dark:bg-green-500/15
-                                               dark:text-green-400"
+                                            rounded-full
+                                            bg-green-100 px-2.5 py-1
+                                            text-xs font-medium
+                                            text-green-700
+                                            dark:bg-green-500/15
+                                            dark:text-green-400"
                                     >
                                         Disponible
                                     </span>

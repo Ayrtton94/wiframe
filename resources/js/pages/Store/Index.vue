@@ -512,8 +512,20 @@ const clearFilters = () => {
                                            tracking-wider
                                            text-slate-600
                                            dark:text-slate-300"
+                                           hidden
                                 >
                                     Imagen
+                                </th>
+                                <th
+                                    class="whitespace-nowrap
+                                        px-6 py-4 text-left
+                                        text-xs font-semibold
+                                        uppercase
+                                        tracking-wider
+                                        text-slate-600
+                                        dark:text-slate-300"
+                                >
+                                    Fecha creación
                                 </th>
 
                                 <th
@@ -647,7 +659,6 @@ const clearFilters = () => {
                                 >
                                     Estado
                                 </th>
-
                                 <th
                                     class="whitespace-nowrap
                                            px-6 py-4 text-center
@@ -680,6 +691,7 @@ const clearFilters = () => {
                                 <td
                                     class="whitespace-nowrap
                                            px-6 py-4"
+                                           hidden
                                 >
                                     <img
                                         v-if="
@@ -716,6 +728,18 @@ const clearFilters = () => {
                                         —
                                     </div>
                                 </td>
+
+                                <!-- Fecha -->
+                                <td
+                                    class="whitespace-nowrap
+                                        px-6 py-4 text-sm
+                                        text-slate-600
+                                        dark:text-slate-400"
+                                >
+                                    {{ product.created_date ?? '-' }}
+                                </td>
+
+
 
                                 <!-- CÓDIGO -->
                                 <td
@@ -834,8 +858,7 @@ const clearFilters = () => {
                                            dark:text-slate-400"
                                 >
                                     {{ product.minimum_stock }}
-                                </td>
-
+                                </td>                                
                                 <!-- ESTADO -->
                                 <td
                                     class="whitespace-nowrap
@@ -859,7 +882,7 @@ const clearFilters = () => {
                                                 : 'Desactivado'
                                         }}
                                     </span>
-                                </td>
+                                </td>                             
 
                                 <!-- ACCIONES -->
                                 <td

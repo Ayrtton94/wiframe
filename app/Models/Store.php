@@ -47,4 +47,9 @@ class Store extends Model
     {
         return $this->hasMany(TransferItem::class);
     }
+
+    public function stockInitials(): HasMany
+    {
+        return $this->hasMany(StockInitial::class);
+    }
 }

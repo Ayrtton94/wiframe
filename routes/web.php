@@ -59,6 +59,7 @@ Route::middleware('auth')->group(function () {
         Route::get('transfers/{transfer}', [TransferController::class, 'show'])->name('transfers.show');
         Route::post('transfers/{transfer}/ship', [TransferController::class, 'ship'])->name('transfers.ship');
         Route::post('transfers/{transfer}/receive', [TransferController::class, 'receive'])->name('transfers.receive');
+        Route::patch('/stores/{store}/toggle-status',[StoreController::class, 'toggleStatus'])->name('stores.toggle-status');        
     });
 
 
@@ -66,12 +67,14 @@ Route::middleware('auth')->group(function () {
     // ADMIN + ALMACEN: visualizar stock
     Route::middleware('role:admin,almacen')->group(function () {
         Route::get('warehouse-stocks', [WarehouseStockController::class, 'index'])->name('warehouse-stocks.index');
-    });
+    });    
 
     // VENDEDOR: Acceso a clientes y productos
-    Route::middleware('role:vendedor')->group(function () {        
-        Route::resource('customers', CustomerController::class);
+    Route::middleware('role:admin,vendedor')->group(function () {        
+        Route::resource('customers', CustomerController::class);    
+        Route::patch('/customers/{customer}/toggle-status',[CustomerController::class, 'toggleStatus'])->name('customers.toggle-status');    
         Route::resource('stores', StoreController::class);
+
     });
 
     // ADMIN: Todos pueden ver clientes (con control de permisos específicos)

@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import AppLayout from '@/layouts/AppLayout.vue';
-import { dashboard } from '@/routes';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link } from '@inertiajs/vue3';
 
@@ -19,6 +18,7 @@ const props = defineProps<{
         phone: string;
         position: string;
         dni: string;
+        is_active: boolean;
     }>;
 }>();
 </script>
@@ -27,19 +27,26 @@ const props = defineProps<{
     <Head title="Listar Cliente" />
 
     <AppLayout :breadcrumbs="breadcrumbs">
+
         <div
             class="flex h-full flex-1 flex-col gap-6
                    overflow-x-auto rounded-xl
                    bg-slate-50 p-4
                    dark:bg-slate-950"
         >
-            <!-- ENCABEZADO -->
+
+            <!-- =========================================
+                 ENCABEZADO
+            ========================================== -->
+
             <div
                 class="flex flex-col gap-2
                        sm:flex-row sm:items-center
                        sm:justify-between"
             >
+
                 <div>
+
                     <h1
                         class="text-2xl font-bold
                                text-slate-800
@@ -56,6 +63,7 @@ const props = defineProps<{
                         Administra la información de tus clientes
                         registrados.
                     </p>
+
                 </div>
 
                 <Link
@@ -64,7 +72,8 @@ const props = defineProps<{
                            justify-center rounded-lg
                            bg-blue-600 px-5 py-2.5
                            text-sm font-medium
-                           text-white shadow-sm transition
+                           text-white shadow-sm
+                           transition
                            hover:bg-blue-700
                            focus:outline-none
                            focus:ring-2
@@ -74,9 +83,14 @@ const props = defineProps<{
                 >
                     + Crear Nuevo
                 </Link>
+
             </div>
 
-            <!-- CARD PRINCIPAL -->
+
+            <!-- =========================================
+                 TABLA
+            ========================================== -->
+
             <div
                 class="overflow-hidden rounded-xl
                        border border-slate-200
@@ -84,18 +98,28 @@ const props = defineProps<{
                        dark:border-slate-700
                        dark:bg-slate-900"
             >
+
                 <div class="overflow-x-auto">
+
                     <table
                         class="min-w-full divide-y
                                divide-slate-200
                                dark:divide-slate-700"
                     >
-                        <!-- ENCABEZADO -->
+
+                        <!-- =====================================
+                             CABECERA
+                        ====================================== -->
+
                         <thead
                             class="bg-slate-100
                                    dark:bg-slate-800"
                         >
+
                             <tr>
+
+                                <!-- DNI -->
+
                                 <th
                                     class="whitespace-nowrap
                                            px-6 py-4 text-left
@@ -107,6 +131,8 @@ const props = defineProps<{
                                 >
                                     Número de identificación
                                 </th>
+
+                                <!-- NOMBRE -->
 
                                 <th
                                     class="whitespace-nowrap
@@ -120,6 +146,8 @@ const props = defineProps<{
                                     Razón Social / Nombre
                                 </th>
 
+                                <!-- TELEFONO -->
+
                                 <th
                                     class="whitespace-nowrap
                                            px-6 py-4 text-left
@@ -131,6 +159,8 @@ const props = defineProps<{
                                 >
                                     Teléfono
                                 </th>
+
+                                <!-- CORREO -->
 
                                 <th
                                     class="whitespace-nowrap
@@ -144,6 +174,8 @@ const props = defineProps<{
                                     Correo Electrónico
                                 </th>
 
+                                <!-- CARGO -->
+
                                 <th
                                     class="whitespace-nowrap
                                            px-6 py-4 text-left
@@ -156,6 +188,22 @@ const props = defineProps<{
                                     Cargo
                                 </th>
 
+                                <!-- ESTADO -->
+
+                                <th
+                                    class="whitespace-nowrap
+                                           px-6 py-4 text-center
+                                           text-xs font-semibold
+                                           uppercase
+                                           tracking-wider
+                                           text-slate-600
+                                           dark:text-slate-300"
+                                >
+                                    Estado
+                                </th>
+
+                                <!-- ACCIONES -->
+
                                 <th
                                     class="whitespace-nowrap
                                            px-6 py-4 text-center
@@ -167,10 +215,16 @@ const props = defineProps<{
                                 >
                                     Acciones
                                 </th>
+
                             </tr>
+
                         </thead>
 
-                        <!-- DATOS -->
+
+                        <!-- =====================================
+                             CUERPO
+                        ====================================== -->
+
                         <tbody
                             class="divide-y
                                    divide-slate-200
@@ -178,6 +232,7 @@ const props = defineProps<{
                                    dark:divide-slate-700
                                    dark:bg-slate-900"
                         >
+
                             <tr
                                 v-for="customer in props.customers"
                                 :key="customer.id"
@@ -185,7 +240,9 @@ const props = defineProps<{
                                        hover:bg-slate-50
                                        dark:hover:bg-slate-800/70"
                             >
+
                                 <!-- DNI -->
+
                                 <td
                                     class="whitespace-nowrap
                                            px-6 py-4 text-sm
@@ -196,7 +253,9 @@ const props = defineProps<{
                                     {{ customer.dni }}
                                 </td>
 
+
                                 <!-- NOMBRE -->
+
                                 <td
                                     class="px-6 py-4 text-sm
                                            font-medium
@@ -206,7 +265,9 @@ const props = defineProps<{
                                     {{ customer.name }}
                                 </td>
 
-                                <!-- TELÉFONO -->
+
+                                <!-- TELEFONO -->
+
                                 <td
                                     class="whitespace-nowrap
                                            px-6 py-4 text-sm
@@ -216,7 +277,9 @@ const props = defineProps<{
                                     {{ customer.phone }}
                                 </td>
 
+
                                 <!-- CORREO -->
+
                                 <td
                                     class="px-6 py-4 text-sm
                                            text-slate-600
@@ -225,7 +288,9 @@ const props = defineProps<{
                                     {{ customer.email }}
                                 </td>
 
+
                                 <!-- CARGO -->
+
                                 <td
                                     class="whitespace-nowrap
                                            px-6 py-4 text-sm
@@ -235,16 +300,65 @@ const props = defineProps<{
                                     {{ customer.position }}
                                 </td>
 
-                                <!-- ACCIONES -->
+
+                                <!-- =================================
+                                     ESTADO
+                                ================================== -->
+
+                                <td class="px-6 py-4 text-center">
+
+                                    <!-- ACTIVO -->
+
+                                    <span
+                                        v-if="customer.is_active"
+                                        class="inline-flex items-center
+                                               rounded-full
+                                               bg-green-100
+                                               px-3 py-1
+                                               text-xs font-semibold
+                                               text-green-700
+                                               dark:bg-green-900/30
+                                               dark:text-green-400"
+                                    >
+                                        Activo
+                                    </span>
+
+                                    <!-- DESACTIVADO -->
+
+                                    <span
+                                        v-else
+                                        class="inline-flex items-center
+                                               rounded-full
+                                               bg-red-100
+                                               px-3 py-1
+                                               text-xs font-semibold
+                                               text-red-700
+                                               dark:bg-red-900/30
+                                               dark:text-red-400"
+                                    >
+                                        Desactivado
+                                    </span>
+
+                                </td>
+
+
+                                <!-- =================================
+                                     ACCIONES
+                                ================================== -->
+
                                 <td
                                     class="whitespace-nowrap
                                            px-6 py-4 text-center"
                                 >
+
                                     <div
                                         class="flex items-center
                                                justify-center
                                                gap-3"
                                     >
+
+                                        <!-- VER -->
+
                                         <Link
                                             :href="
                                                 `/customers/${customer.id}`
@@ -258,6 +372,9 @@ const props = defineProps<{
                                         >
                                             Ver
                                         </Link>
+
+
+                                        <!-- EDITAR -->
 
                                         <Link
                                             :href="
@@ -273,51 +390,70 @@ const props = defineProps<{
                                             Editar
                                         </Link>
 
+
+                                        <!-- =================================
+                                             DESACTIVAR / ACTIVAR
+                                        ================================== -->
+
                                         <Link
                                             :href="
-                                                `/customers/${customer.id}`
+                                                `/customers/${customer.id}/toggle-status`
                                             "
-                                            method="delete"
+                                            method="patch"
                                             as="button"
                                             class="font-medium
-                                                   text-red-600
-                                                   transition
-                                                   hover:text-red-800
-                                                   dark:text-red-400
-                                                   dark:hover:text-red-300"
+                                                   transition"
+                                            :class="
+                                                customer.is_active
+                                                    ? 'text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300'
+                                                    : 'text-green-600 hover:text-green-800 dark:text-green-400 dark:hover:text-green-300'
+                                            "
                                         >
-                                            Eliminar
+                                            {{
+                                                customer.is_active
+                                                    ? 'Desactivar'
+                                                    : 'Activar'
+                                            }}
                                         </Link>
+
                                     </div>
+
                                 </td>
+
                             </tr>
 
-                            <!-- SIN RESULTADOS -->
+
+                            <!-- =====================================
+                                 SIN CLIENTES
+                            ====================================== -->
+
                             <tr
                                 v-if="
-                                    props.customers.length ===
-                                    0
+                                    props.customers.length === 0
                                 "
                             >
+
                                 <td
-                                    colspan="6"
+                                    colspan="7"
                                     class="px-6 py-14 text-center"
                                 >
+
                                     <div
                                         class="flex flex-col
                                                items-center
                                                justify-center"
                                     >
+
                                         <div
                                             class="mb-3 rounded-full
                                                    bg-slate-100 p-4
                                                    dark:bg-slate-800"
                                         >
-                                            <span
-                                                class="text-2xl"
-                                            >
+
+                                            <span class="text-2xl">
                                                 👥
                                             </span>
+
                                         </div>
 
                                         <p
@@ -338,14 +474,24 @@ const props = defineProps<{
                                             Los clientes que registres
                                             aparecerán aquí.
                                         </p>
+
                                     </div>
+
                                 </td>
+
                             </tr>
+
                         </tbody>
+
                     </table>
+
                 </div>
 
-                <!-- FOOTER -->
+
+                <!-- =========================================
+                     FOOTER
+                ========================================== -->
+
                 <div
                     class="border-t
                            border-slate-200
@@ -353,6 +499,7 @@ const props = defineProps<{
                            dark:border-slate-700
                            dark:bg-slate-800/60"
                 >
+
                     <p
                         class="text-sm
                                text-slate-500
@@ -367,9 +514,14 @@ const props = defineProps<{
                         >
                             {{ props.customers.length }}
                         </span>
+
                     </p>
+
                 </div>
+
             </div>
+
         </div>
+
     </AppLayout>
 </template>

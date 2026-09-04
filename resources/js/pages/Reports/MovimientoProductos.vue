@@ -121,6 +121,136 @@ const number = (
     }).format(numberValue);
 };
 
+const groupedRows = computed(() => {
+    const groups = new Map<
+        string,
+        {
+            product_id: number;
+            warehouse_id: number;
+            codigo_producto: string;
+            producto: string;
+            almacen: string;
+
+            rollos_inicial: number;
+            rollos_actual: number;
+            rollos_salida: number;
+
+            metros_inicial: number;
+            metros_actual: number;
+            metros_salida: number;
+        }
+    >();
+
+    for (const row of props.rows.data) {
+        const key = `${row.product_id}-${row.warehouse_id}`;
+
+        if (!groups.has(key)) {
+            groups.set(key, {
+                product_id: row.product_id,
+                warehouse_id: row.warehouse_id,
+                codigo_producto: row.codigo_producto,
+                producto: row.producto,
+                almacen: row.almacen,
+
+                rollos_inicial: 0,
+                rollos_actual: 0,
+                rollos_salida: 0,
+
+                metros_inicial: 0,
+                metros_actual: 0,
+                metros_salida: 0,
+            });
+        }
+
+        const group = groups.get(key)!;
+
+        const unidad = String(
+            row.unidad ?? '',
+        ).toUpperCase();
+
+        if (
+            unidad === 'KILOS' ||
+            unidad === 'ROLLOS'
+        ) {
+            group.rollos_inicial += Number(
+                row.saldo_inicial || 0,
+            );
+
+            group.rollos_actual += Number(
+                row.saldo_actual || 0,
+            );
+
+            group.rollos_salida += Number(
+                row.salidas || 0,
+            );
+        }
+
+        if (unidad === 'METROS') {
+            group.metros_inicial += Number(
+                row.saldo_inicial || 0,
+            );
+
+            group.metros_actual += Number(
+                row.saldo_actual || 0,
+            );
+
+            group.metros_salida += Number(
+                row.salidas || 0,
+            );
+        }
+    }
+
+    return Array.from(groups.values());
+});
+
+const totalRollosInicial = computed(() =>
+    groupedRows.value.reduce(
+        (sum, row) =>
+            sum + Number(row.rollos_inicial || 0),
+        0,
+    ),
+);
+
+const totalRollosActual = computed(() =>
+    groupedRows.value.reduce(
+        (sum, row) =>
+            sum + Number(row.rollos_actual || 0),
+        0,
+    ),
+);
+
+const totalRollosSalidas = computed(() =>
+    groupedRows.value.reduce(
+        (sum, row) =>
+            sum + Number(row.rollos_salida || 0),
+        0,
+    ),
+);
+
+const totalMetrosInicial = computed(() =>
+    groupedRows.value.reduce(
+        (sum, row) =>
+            sum + Number(row.metros_inicial || 0),
+        0,
+    ),
+);
+
+const totalMetrosActual = computed(() =>
+    groupedRows.value.reduce(
+        (sum, row) =>
+            sum + Number(row.metros_actual || 0),
+        0,
+    ),
+);
+
+const totalMetrosSalidas = computed(() =>
+    groupedRows.value.reduce(
+        (sum, row) =>
+            sum + Number(row.metros_salida || 0),
+        0,
+    ),
+);
+
 const applyFilters = () => {
     router.get(
         '/reports/movimiento-productos',
@@ -669,300 +799,517 @@ const changePage = (page: number) => {
             </section>
 
             <!-- TABLA -->
-            <section
-                class="rounded-xl border
-                       border-slate-200
-                       bg-white p-5 shadow-sm
-                       dark:border-slate-700
-                       dark:bg-slate-900"
-            >
-                <div class="mb-4">
-                    <h2
-                        class="text-lg font-semibold
+<section
+    class="rounded-xl
+           border border-slate-200
+           bg-white p-5 shadow-sm
+           dark:border-slate-700
+           dark:bg-slate-900"
+>
+    <div class="mb-4">
+        <h2
+            class="text-lg font-semibold
+                   text-slate-900
+                   dark:text-slate-100"
+        >
+            Detalle de movimientos
+        </h2>
+
+        <p
+            class="text-sm
+                   text-slate-500
+                   dark:text-slate-400"
+        >
+            Mostrando
+            {{ groupedRows.length }}
+            productos.
+        </p>
+    </div>
+
+    <div class="overflow-x-auto">
+        <table
+            class="min-w-[1250px]
+                   w-full
+                   border-collapse"
+        >
+            <thead>
+                <!-- CABECERA PRINCIPAL -->
+                <tr
+                    class="bg-slate-100
+                           dark:bg-slate-800"
+                >
+                    <th
+                        rowspan="2"
+                        class="border
+                               border-slate-200
+                               px-4 py-3
+                               text-left
+                               text-xs
+                               font-bold
+                               uppercase
+                               text-slate-700
+                               dark:border-slate-700
+                               dark:text-slate-200"
+                    >
+                        Código
+                    </th>
+
+                    <th
+                        rowspan="2"
+                        class="border
+                               border-slate-200
+                               px-4 py-3
+                               text-left
+                               text-xs
+                               font-bold
+                               uppercase
+                               text-slate-700
+                               dark:border-slate-700
+                               dark:text-slate-200"
+                    >
+                        Producto
+                    </th>
+
+                    <th
+                        rowspan="2"
+                        class="border
+                               border-slate-200
+                               px-4 py-3
+                               text-left
+                               text-xs
+                               font-bold
+                               uppercase
+                               text-slate-700
+                               dark:border-slate-700
+                               dark:text-slate-200"
+                    >
+                        Almacén
+                    </th>
+
+                    <!-- ROLLOS -->
+                    <th
+                        colspan="3"
+                        class="border
+                               border-slate-200
+                               bg-blue-50
+                               px-4 py-3
+                               text-center
+                               text-sm
+                               font-bold
+                               uppercase
+                               text-blue-800
+                               dark:border-slate-700
+                               dark:bg-blue-500/10
+                               dark:text-blue-300"
+                    >
+                        ROLLOS
+                    </th>
+
+                    <!-- METROS -->
+                    <th
+                        colspan="3"
+                        class="border
+                               border-slate-200
+                               bg-cyan-50
+                               px-4 py-3
+                               text-center
+                               text-sm
+                               font-bold
+                               uppercase
+                               text-cyan-800
+                               dark:border-slate-700
+                               dark:bg-cyan-500/10
+                               dark:text-cyan-300"
+                    >
+                        METROS
+                    </th>
+                </tr>
+
+                <!-- SUBCABECERA -->
+                <tr
+                    class="bg-slate-50
+                           dark:bg-slate-800/80"
+                >
+                    <!-- ROLLOS -->
+                    <th
+                        class="border
+                               border-slate-200
+                               px-4 py-3
+                               text-right
+                               text-xs
+                               font-semibold
+                               uppercase
+                               text-slate-600
+                               dark:border-slate-700
+                               dark:text-slate-300"
+                    >
+                        Inicial
+                    </th>
+
+                    <th
+                        class="border
+                               border-slate-200
+                               px-4 py-3
+                               text-right
+                               text-xs
+                               font-semibold
+                               uppercase
+                               text-slate-600
+                               dark:border-slate-700
+                               dark:text-slate-300"
+                    >
+                        Actual
+                    </th>
+
+                    <th
+                        class="border
+                               border-slate-200
+                               px-4 py-3
+                               text-right
+                               text-xs
+                               font-semibold
+                               uppercase
+                               text-slate-600
+                               dark:border-slate-700
+                               dark:text-slate-300"
+                    >
+                        Salida
+                    </th>
+
+                    <!-- METROS -->
+                    <th
+                        class="border
+                               border-slate-200
+                               px-4 py-3
+                               text-right
+                               text-xs
+                               font-semibold
+                               uppercase
+                               text-slate-600
+                               dark:border-slate-700
+                               dark:text-slate-300"
+                    >
+                        Inicial
+                    </th>
+
+                    <th
+                        class="border
+                               border-slate-200
+                               px-4 py-3
+                               text-right
+                               text-xs
+                               font-semibold
+                               uppercase
+                               text-slate-600
+                               dark:border-slate-700
+                               dark:text-slate-300"
+                    >
+                        Actual
+                    </th>
+
+                    <th
+                        class="border
+                               border-slate-200
+                               px-4 py-3
+                               text-right
+                               text-xs
+                               font-semibold
+                               uppercase
+                               text-slate-600
+                               dark:border-slate-700
+                               dark:text-slate-300"
+                    >
+                        Salida
+                    </th>
+                </tr>
+            </thead>
+
+            <tbody>
+                <tr
+                    v-for="row in groupedRows"
+                    :key="`${row.product_id}-${row.warehouse_id}`"
+                    class="transition
+                           hover:bg-slate-50
+                           dark:hover:bg-slate-800/60"
+                >
+                    <!-- CÓDIGO -->
+                    <td
+                        class="border
+                               border-slate-200
+                               px-4 py-4
+                               text-sm
+                               font-semibold
                                text-slate-900
+                               dark:border-slate-700
                                dark:text-slate-100"
                     >
-                        Detalle de movimientos
-                    </h2>
+                        {{ row.codigo_producto }}
+                    </td>
 
-                    <p
-                        class="text-sm
+                    <!-- PRODUCTO -->
+                    <td
+                        class="border
+                               border-slate-200
+                               px-4 py-4
+                               text-sm
+                               text-slate-700
+                               dark:border-slate-700
+                               dark:text-slate-300"
+                    >
+                        {{ row.producto }}
+                    </td>
+
+                    <!-- ALMACÉN -->
+                    <td
+                        class="border
+                               border-slate-200
+                               px-4 py-4
+                               text-sm
+                               text-slate-700
+                               dark:border-slate-700
+                               dark:text-slate-300"
+                    >
+                        {{ row.almacen }}
+                    </td>
+
+                    <!-- ==================== -->
+                    <!-- ROLLOS -->
+                    <!-- ==================== -->
+
+                    <td
+                        class="border
+                               border-slate-200
+                               bg-blue-50/30
+                               px-4 py-4
+                               text-right
+                               text-sm
+                               font-semibold
+                               text-slate-800
+                               dark:border-slate-700
+                               dark:bg-blue-500/5
+                               dark:text-slate-200"
+                    >
+                        {{ number(row.rollos_inicial, 0) }}
+                    </td>
+
+                    <td
+                        class="border
+                               border-slate-200
+                               bg-blue-50/30
+                               px-4 py-4
+                               text-right
+                               text-sm
+                               font-semibold
+                               text-slate-800
+                               dark:border-slate-700
+                               dark:bg-blue-500/5
+                               dark:text-slate-200"
+                    >
+                        {{ number(row.rollos_actual, 0) }}
+                    </td>
+
+                    <td
+                        class="border
+                               border-slate-200
+                               bg-red-50/40
+                               px-4 py-4
+                               text-right
+                               text-sm
+                               font-semibold
+                               text-red-700
+                               dark:border-slate-700
+                               dark:bg-red-500/5
+                               dark:text-red-400"
+                    >
+                        {{ number(row.rollos_salida, 0) }}
+                    </td>
+
+                    <!-- ==================== -->
+                    <!-- METROS -->
+                    <!-- ==================== -->
+
+                    <td
+                        class="border
+                               border-slate-200
+                               bg-cyan-50/30
+                               px-4 py-4
+                               text-right
+                               text-sm
+                               font-semibold
+                               text-slate-800
+                               dark:border-slate-700
+                               dark:bg-cyan-500/5
+                               dark:text-slate-200"
+                    >
+                        {{ number(row.metros_inicial, 3) }}
+                    </td>
+
+                    <td
+                        class="border
+                               border-slate-200
+                               bg-cyan-50/30
+                               px-4 py-4
+                               text-right
+                               text-sm
+                               font-semibold
+                               text-slate-800
+                               dark:border-slate-700
+                               dark:bg-cyan-500/5
+                               dark:text-slate-200"
+                    >
+                        {{ number(row.metros_actual, 3) }}
+                    </td>
+
+                    <td
+                        class="border
+                               border-slate-200
+                               bg-red-50/40
+                               px-4 py-4
+                               text-right
+                               text-sm
+                               font-semibold
+                               text-red-700
+                               dark:border-slate-700
+                               dark:bg-red-500/5
+                               dark:text-red-400"
+                    >
+                        {{ number(row.metros_salida, 3) }}
+                    </td>
+                </tr>
+
+                <!-- SIN RESULTADOS -->
+                <tr
+                    v-if="groupedRows.length === 0"
+                >
+                    <td
+                        colspan="9"
+                        class="border
+                               border-slate-200
+                               px-4 py-10
+                               text-center
+                               text-sm
                                text-slate-500
+                               dark:border-slate-700
                                dark:text-slate-400"
                     >
-                        Mostrando
-                        {{ props.rows.from ?? 0 }}
-                        -
-                        {{ props.rows.to ?? 0 }}
-                        de
-                        {{ props.rows.total }}
-                        registros.
-                    </p>
-                </div>
+                        No hay movimientos registrados
+                        para los filtros seleccionados.
+                    </td>
+                </tr>
+            </tbody>
 
-                <div class="overflow-x-auto">
-                    <table
-                        class="w-full min-w-[1300px]
-                               divide-y
-                               divide-slate-200
-                               dark:divide-slate-700"
+            <!-- TOTAL -->
+            <tfoot>
+                <tr
+                    class="bg-slate-100
+                           dark:bg-slate-800"
+                >
+                    <td
+                        colspan="3"
+                        class="border
+                               border-slate-300
+                               px-4 py-4
+                               text-right
+                               text-sm
+                               font-bold
+                               uppercase
+                               text-slate-900
+                               dark:border-slate-600
+                               dark:text-slate-100"
                     >
-                        <thead
-                            class="bg-slate-50
-                                   dark:bg-slate-800"
-                        >
-                            <tr>
-                                <th
-                                    class="px-4 py-3 text-left
-                                           text-xs font-semibold
-                                           uppercase
-                                           text-slate-600
-                                           dark:text-slate-300"
-                                >
-                                    Código
-                                </th>
+                        TOTAL
+                    </td>
 
-                                <th
-                                    class="px-4 py-3 text-left
-                                           text-xs font-semibold
-                                           uppercase
-                                           text-slate-600
-                                           dark:text-slate-300"
-                                >
-                                    Producto
-                                </th>
+                    <!-- ROLLOS -->
+                    <td
+                        class="border
+                               border-slate-300
+                               px-4 py-4
+                               text-right
+                               text-sm
+                               font-bold
+                               text-slate-900
+                               dark:border-slate-600
+                               dark:text-slate-100"
+                    >
+                        {{ number(totalRollosInicial, 0) }}
+                    </td>
 
-                                <th
-                                    class="px-4 py-3 text-left
-                                           text-xs font-semibold
-                                           uppercase
-                                           text-slate-600
-                                           dark:text-slate-300"
-                                >
-                                    Almacén
-                                </th>
+                    <td
+                        class="border
+                               border-slate-300
+                               px-4 py-4
+                               text-right
+                               text-sm
+                               font-bold
+                               text-slate-900
+                               dark:border-slate-600
+                               dark:text-slate-100"
+                    >
+                        {{ number(totalRollosActual, 0) }}
+                    </td>
 
-                                <th
-                                    class="px-4 py-3 text-left
-                                           text-xs font-semibold
-                                           uppercase
-                                           text-slate-600
-                                           dark:text-slate-300"
-                                >
-                                    Unidad
-                                </th>
+                    <td
+                        class="border
+                               border-slate-300
+                               px-4 py-4
+                               text-right
+                               text-sm
+                               font-bold
+                               text-red-700
+                               dark:border-slate-600
+                               dark:text-red-400"
+                    >
+                        {{ number(totalRollosSalidas, 0) }}
+                    </td>
 
-                                <th
-                                    class="px-4 py-3 text-right
-                                           text-xs font-semibold
-                                           uppercase
-                                           text-slate-600
-                                           dark:text-slate-300"
-                                >
-                                    Saldo inicial
-                                </th>
+                    <!-- METROS -->
+                    <td
+                        class="border
+                               border-slate-300
+                               px-4 py-4
+                               text-right
+                               text-sm
+                               font-bold
+                               text-slate-900
+                               dark:border-slate-600
+                               dark:text-slate-100"
+                    >
+                        {{ number(totalMetrosInicial, 3) }}
+                    </td>
 
-                                <th
-                                    class="px-4 py-3 text-right
-                                           text-xs font-semibold
-                                           uppercase
-                                           text-slate-600
-                                           dark:text-slate-300"
-                                >
-                                    Ingresos
-                                </th>
+                    <td
+                        class="border
+                               border-slate-300
+                               px-4 py-4
+                               text-right
+                               text-sm
+                               font-bold
+                               text-slate-900
+                               dark:border-slate-600
+                               dark:text-slate-100"
+                    >
+                        {{ number(totalMetrosActual, 3) }}
+                    </td>
 
-                                <th
-                                    class="px-4 py-3 text-right
-                                           text-xs font-semibold
-                                           uppercase
-                                           text-slate-600
-                                           dark:text-slate-300"
-                                >
-                                    Salidas
-                                </th>
-
-                                <th
-                                    class="px-4 py-3 text-right
-                                           text-xs font-semibold
-                                           uppercase
-                                           text-slate-600
-                                           dark:text-slate-300"
-                                >
-                                    Transferencias recibidas
-                                </th>
-
-                                <th
-                                    class="px-4 py-3 text-right
-                                           text-xs font-semibold
-                                           uppercase
-                                           text-slate-600
-                                           dark:text-slate-300"
-                                >
-                                    Transferencias enviadas
-                                </th>
-
-                                <th
-                                    class="px-4 py-3 text-right
-                                           text-xs font-semibold
-                                           uppercase
-                                           text-slate-600
-                                           dark:text-slate-300"
-                                >
-                                    Saldo actual
-                                </th>
-                            </tr>
-                        </thead>
-
-                        <tbody
-                            class="divide-y
-                                   divide-slate-100
-                                   dark:divide-slate-700"
-                        >
-                            <tr
-                                v-for="row in props.rows.data"
-                                :key="
-                                    `${row.product_id}-${row.warehouse_id}-${row.unidad}`
-                                "
-                                class="transition
-                                       hover:bg-slate-50
-                                       dark:hover:bg-slate-800/70"
-                            >
-                                <!-- CÓDIGO -->
-                                <td
-                                    class="px-4 py-3 text-sm
-                                           font-medium
-                                           text-slate-900
-                                           dark:text-slate-100"
-                                >
-                                    {{ row.codigo_producto }}
-                                </td>
-
-                                <!-- PRODUCTO -->
-                                <td
-                                    class="px-4 py-3 text-sm
-                                           text-slate-700
-                                           dark:text-slate-300"
-                                >
-                                    {{ row.producto }}
-                                </td>
-
-                                <!-- ALMACÉN -->
-                                <td
-                                    class="px-4 py-3 text-sm
-                                           text-slate-700
-                                           dark:text-slate-300"
-                                >
-                                    {{ row.almacen }}
-                                </td>
-
-                                <!-- UNIDAD -->
-                                <td
-                                    class="px-4 py-3 text-sm
-                                           text-slate-700
-                                           dark:text-slate-300"
-                                >
-                                    {{
-                                        row.unidad === 'kilos'
-                                            ? 'rollos'
-                                            : row.unidad
-                                    }}
-                                </td>
-
-                                <!-- SALDO INICIAL -->
-                                <td
-                                    class="px-4 py-3 text-right
-                                           text-sm
-                                           text-slate-700
-                                           dark:text-slate-300"
-                                >
-                                    {{ number(row.saldo_inicial, 3) }}
-                                </td>
-
-                                <!-- INGRESOS -->
-                                <td
-                                    class="px-4 py-3 text-right
-                                           text-sm
-                                           text-green-700
-                                           dark:text-green-400"
-                                >
-                                    {{ number(row.ingresos, 3) }}
-                                </td>
-
-                                <!-- SALIDAS -->
-                                <td
-                                    class="px-4 py-3 text-right
-                                           text-sm
-                                           text-red-700
-                                           dark:text-red-400"
-                                >
-                                    {{ number(row.salidas, 3) }}
-                                </td>
-
-                                <!-- TRANSFERENCIAS RECIBIDAS -->
-                                <td
-                                    class="px-4 py-3 text-right
-                                           text-sm
-                                           text-blue-700
-                                           dark:text-blue-400"
-                                >
-                                    {{
-                                        number(
-                                            row.transferencias_recibidas,
-                                            3,
-                                        )
-                                    }}
-                                </td>
-
-                                <!-- TRANSFERENCIAS ENVIADAS -->
-                                <td
-                                    class="px-4 py-3 text-right
-                                           text-sm
-                                           text-orange-700
-                                           dark:text-orange-400"
-                                >
-                                    {{
-                                        number(
-                                            row.transferencias_enviadas,
-                                            3,
-                                        )
-                                    }}
-                                </td>
-
-                                <!-- SALDO ACTUAL -->
-                                <td
-                                    class="px-4 py-3 text-right
-                                           text-sm font-bold
-                                           text-slate-900
-                                           dark:text-slate-100"
-                                >
-                                    {{ number(row.saldo_actual, 3) }}
-                                </td>
-                            </tr>
-
-                            <!-- SIN RESULTADOS -->
-                            <tr
-                                v-if="
-                                    props.rows.data.length ===
-                                    0
-                                "
-                            >
-                                <td
-                                    colspan="10"
-                                    class="px-4 py-8
-                                           text-center text-sm
-                                           text-slate-500
-                                           dark:text-slate-400"
-                                >
-                                    No hay movimientos registrados
-                                    para los filtros seleccionados.
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </section>
-
+                    <td
+                        class="border
+                               border-slate-300
+                               px-4 py-4
+                               text-right
+                               text-sm
+                               font-bold
+                               text-red-700
+                               dark:border-slate-600
+                               dark:text-red-400"
+                    >
+                        {{ number(totalMetrosSalidas, 3) }}
+                    </td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+</section>
             <!-- PAGINACIÓN -->
             <section
                 v-if="props.rows.last_page > 1"

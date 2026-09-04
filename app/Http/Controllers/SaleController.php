@@ -26,6 +26,10 @@ public function index(Request $request)
         ? null
         : $user->warehouses()->pluck('warehouses.id');
 
+    // =========================================================
+    // VENTAS
+    // =========================================================
+
     $salesQuery = Sale::query()
         ->with([
             'customer:id,name',
@@ -43,8 +47,12 @@ public function index(Request $request)
     }
 
     $sales = $salesQuery
-        ->paginate(15)
+        ->paginate(10)
         ->withQueryString();
+
+    // =========================================================
+    // ALMACENES
+    // =========================================================
 
     $warehousesQuery = Warehouse::query()
         ->where('is_active', true)
@@ -67,6 +75,10 @@ public function index(Request $request)
         ? $warehouses->first()->id
         : null;
 
+    // =========================================================
+    // STOCK
+    // =========================================================
+
     $warehouseStocks = WarehouseStock::query()
         ->with('warehouse:id,name,code')
         ->whereHas(
@@ -82,19 +94,34 @@ public function index(Request $request)
         );
     }
 
-    // ✅ Cliente por defecto
+    // =========================================================
+    // CLIENTE POR DEFECTO
+    // =========================================================
+
     $defaultCustomer = Customer::query()
         ->where('dni', '00000000')
+        ->where('is_active', true)
         ->first([
             'id',
             'name',
             'dni',
         ]);
 
+    // =========================================================
+    // RESPUESTA
+    // =========================================================
+
     return Inertia::render('Sales/Index', [
+
+        // Ventas
         'sales' => $sales,
 
+        // =====================================================
+        // CLIENTES ACTIVOS
+        // =====================================================
+
         'customers' => Customer::query()
+            ->where('is_active', true)
             ->orderBy('name')
             ->get([
                 'id',
@@ -102,20 +129,31 @@ public function index(Request $request)
                 'dni',
             ]),
 
+        // Cliente por defecto
         'defaultCustomer' => $defaultCustomer,
+
+        // =====================================================
+        // ALMACENES
+        // =====================================================
 
         'warehouses' => $warehouses,
 
-        'defaultWarehouseId' =>
-            $defaultWarehouseId,
+        'defaultWarehouseId' => $defaultWarehouseId,
 
-        'warehouseStocks' =>
-            $warehouseStocks->get([
-                'warehouse_id',
-                'store_id',
-                'kilos_available',
-                'metros_available',
-            ]),
+        // =====================================================
+        // STOCK
+        // =====================================================
+
+        'warehouseStocks' => $warehouseStocks->get([
+            'warehouse_id',
+            'store_id',
+            'kilos_available',
+            'metros_available',
+        ]),
+
+        // =====================================================
+        // PRODUCTOS ACTIVOS
+        // =====================================================
 
         'products' => Store::query()
             ->where('is_active', true)
@@ -124,6 +162,7 @@ public function index(Request $request)
                 'id',
                 'code_product',
                 'name_product',
+                'color',
                 'price',
                 'public_price',
                 'wholesale_price',
@@ -238,6 +277,21 @@ public function index(Request $request)
                         'unit_price' => $unitPrice,
                         'line_total' => $lineTotal,
                     ]);
+
+                    DB::table('inventory_movements')->insert([
+                            'warehouse_id' => $validated['warehouse_id'],
+                            'store_id' => $product->id,
+                            'unit' => $unit === 'kilos'
+                                ? 'kilos'
+                                : 'metros',
+                            'type' => 'SALIDA',
+                            'quantity' => $quantity,
+                            'reference_type' => 'sale',
+                            'reference_id' => $sale->id,
+                            'reason' => $validated['notes'] ?? null,
+                            'created_at' => now(),
+                            'updated_at' => now(),
+                        ]);
                 }
 
                 $sale->update([

@@ -1,18 +1,80 @@
 <script setup lang="ts">
-import { computed } from 'vue';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem } from '@/types';
-import { Head, router, useForm } from '@inertiajs/vue3';
-import { Button } from '@/components/ui/button';
+import { Head, router } from '@inertiajs/vue3';
+import { computed, ref } from 'vue';
 
-const breadcrumbs: BreadcrumbItem[] = [
-    {
-        title: 'Reportes',
-        href: '/reports',
-    },
-];
+type SaleRow = {
+    id: number;
+    salida_code: string;
+    fecha_hora: string;
+    warehouse_id: number;
+    almacen: string | null;
+
+    customer_id: number | null;
+    cliente: string | null;
+
+    responsible_id: number | null;
+    responsable: string | null;
+
+    product_id: number | null;
+    codigo_producto: string | null;
+    producto: string | null;
+    color: string | null;
+
+    cantidad: number | string;
+    unidad: string;
+
+    precio: number | string;
+    total: number | string;
+
+    motivo: string | null;
+};
+
+type GroupedItem = {
+    id: string;
+    product_id: number | null;
+    product_code: string;
+    product_name: string;
+    color: string | null;
+    quantity: number;
+    unit: string;
+    unit_price: number;
+    total: number;
+};
+
+type GroupedSale = {
+    id: number;
+    code: string;
+    created_at: string;
+
+    warehouse_id: number;
+    warehouse_name: string;
+
+    customer_id: number | null;
+    customer_name: string;
+
+    responsible_id: number | null;
+    responsible_name: string;
+
+    reason: string;
+    total: number;
+
+    items_count: number;
+    items: GroupedItem[];
+};
 
 const props = defineProps<{
+    rows: {
+        data: SaleRow[];
+        current_page: number;
+        last_page: number;
+        per_page: number;
+        from: number | null;
+        to: number | null;
+        total: number;
+    };
+
     filters: {
         from: string;
         to: string;
@@ -26,7 +88,7 @@ const props = defineProps<{
     warehouses: Array<{
         id: number;
         name: string;
-        code: string;
+        code?: string;
     }>;
 
     responsibles: Array<{
@@ -38,39 +100,24 @@ const props = defineProps<{
         id: number;
         name: string;
     }>;
-
-    rows: {
-        data: Array<{
-            id: number;
-            salida_code: string;
-            fecha_hora: string;
-            warehouse_id: number;
-            almacen: string;
-            customer_id: number | null;
-            cliente: string | null;
-            responsible_id: number;
-            responsable: string;
-            product_id: number | null;
-            codigo_producto: string | null;
-            producto: string | null;
-            cantidad: number | string;
-            unidad: string;
-            precio: number | string;
-            total: number | string;
-            motivo: string | null;
-        }>;
-        current_page: number;
-        last_page: number;
-        total: number;
-        per_page: number
-        from: number | null;
-        to: number | null;
-    };
 }>();
 
-const form = useForm({
-    from: props.filters.from,
-    to: props.filters.to,
+const breadcrumbs: BreadcrumbItem[] = [
+    {
+        title: 'Reportes',
+        href: '/reports',
+    },
+    {
+        title: 'Salidas',
+        href: '/reports/salidas',
+    },
+];
+
+const expanded = ref<number | null>(null);
+
+const filters = ref({
+    from: props.filters.from ?? '',
+    to: props.filters.to ?? '',
     warehouse_id: props.filters.warehouse_id
         ? String(props.filters.warehouse_id)
         : '',
@@ -84,60 +131,20 @@ const form = useForm({
     per_page: props.filters.per_page ?? 25,
 });
 
-const applyFilters = () => {
+const applyFilters = (page = 1) => {
     router.get(
         '/reports/salidas',
         {
-            from: form.from,
-            to: form.to,
-            warehouse_id: form.warehouse_id || undefined,
-            responsible_id: form.responsible_id || undefined,
-            customer_id: form.customer_id || undefined,
-            search: form.search || undefined,
-            per_page: form.per_page,
-        },
-        {
-            preserveState: true,
-            preserveScroll: true,
-            replace: true,
-        },
-    );
-};
-
-const clearFilters = () => {
-    router.get(
-        '/reports/salidas',
-        {},
-        {
-            replace: true,
-        },
-    );
-};
-
-const exportExcel = () => {
-    const params = new URLSearchParams({
-        from: form.from,
-        to: form.to,
-        warehouse_id: form.warehouse_id || '',
-        responsible_id: form.responsible_id || '',
-        customer_id: form.customer_id || '',
-        search: form.search || '',
-    });
-
-    window.location.href = `/reports/salidas/export?${params.toString()}`;
-};
-
-const changePage = (page: number) => {
-    router.get(
-        '/reports/salidas',
-        {
-            from: form.from,
-            to: form.to,
-            warehouse_id: form.warehouse_id || undefined,
-            responsible_id: form.responsible_id || undefined,
-            customer_id: form.customer_id || undefined,
-            search: form.search || undefined,
-            per_page: form.per_page,
+            from: filters.value.from || undefined,
+            to: filters.value.to || undefined,
+            warehouse_id:
+                filters.value.warehouse_id || undefined,
+            responsible_id:
+                filters.value.responsible_id || undefined,
+            customer_id:
+                filters.value.customer_id || undefined,
+            search: filters.value.search || undefined,
+            per_page: filters.value.per_page,
             page,
         },
         {
@@ -148,79 +155,255 @@ const changePage = (page: number) => {
     );
 };
 
-const total = computed(() =>
-    props.rows.data.reduce(
-        (sum, row) => sum + Number(row.total || 0),
+const clearFilters = () => {
+    filters.value = {
+        from: '',
+        to: '',
+        warehouse_id: '',
+        responsible_id: '',
+        customer_id: '',
+        search: '',
+        per_page: 25,
+    };
+
+    router.get(
+        '/reports/salidas',
+        {},
+        {
+            replace: true,
+            preserveState: false,
+        },
+    );
+};
+
+const exportExcel = () => {
+    const params = new URLSearchParams();
+
+    if (filters.value.from) {
+        params.set('from', filters.value.from);
+    }
+
+    if (filters.value.to) {
+        params.set('to', filters.value.to);
+    }
+
+    if (filters.value.warehouse_id) {
+        params.set(
+            'warehouse_id',
+            filters.value.warehouse_id,
+        );
+    }
+
+    if (filters.value.responsible_id) {
+        params.set(
+            'responsible_id',
+            filters.value.responsible_id,
+        );
+    }
+
+    if (filters.value.customer_id) {
+        params.set(
+            'customer_id',
+            filters.value.customer_id,
+        );
+    }
+
+    if (filters.value.search) {
+        params.set(
+            'search',
+            filters.value.search,
+        );
+    }
+
+    window.location.href =
+        `/reports/salidas/export?${params.toString()}`;
+};
+
+const money = (value: number | string) => {
+    return new Intl.NumberFormat('es-PE', {
+        style: 'currency',
+        currency: 'PEN',
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+    }).format(Number(value || 0));
+};
+
+const number = (
+    value: number | string,
+    digits = 2,
+) => {
+    const numberValue = Number(value);
+
+    if (Number.isNaN(numberValue)) {
+        return '0';
+    }
+
+    return new Intl.NumberFormat('es-PE', {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: digits,
+    }).format(numberValue);
+};
+
+const dateTime = (value: string) => {
+    if (!value) {
+        return '-';
+    }
+
+    const date = new Date(
+        value.replace(' ', 'T'),
+    );
+
+    if (Number.isNaN(date.getTime())) {
+        return value;
+    }
+
+    return new Intl.DateTimeFormat('es-PE', {
+        dateStyle: 'short',
+        timeStyle: 'short',
+    }).format(date);
+};
+
+const groupedRows = computed<GroupedSale[]>(() => {
+    const groups = new Map<number, GroupedSale>();
+
+    for (const row of props.rows.data) {
+        if (!groups.has(row.id)) {
+            groups.set(row.id, {
+                id: row.id,
+                code: row.salida_code,
+                created_at: row.fecha_hora,
+
+                warehouse_id: row.warehouse_id,
+                warehouse_name:
+                    row.almacen ?? '-',
+
+                customer_id: row.customer_id,
+                customer_name:
+                    row.cliente ??
+                    'CONSUMIDOR FINAL',
+
+                responsible_id:
+                    row.responsible_id,
+                responsible_name:
+                    row.responsable ?? '-',
+
+                reason:
+                    row.motivo ??
+                    'SALIDA',
+
+                total: 0,
+
+                items_count: 0,
+                items: [],
+            });
+        }
+
+        const sale = groups.get(row.id)!;
+
+        const quantity = Number(
+            row.cantidad || 0,
+        );
+
+        const unitPrice = Number(
+            row.precio || 0,
+        );
+
+        const lineTotal = Number(
+            row.total || 0,
+        );
+
+        sale.items.push({
+            id: `${row.id}-${row.product_id}-${sale.items_count}`,
+            product_id: row.product_id,
+            product_code: row.codigo_producto ?? '-',
+            product_name: row.producto ?? '-',
+            color: row.color ?? null,
+            quantity,
+            unit: row.unidad ?? '',
+            unit_price: unitPrice,
+            total: lineTotal,
+        });
+
+        sale.items_count += 1;
+        sale.total += lineTotal;
+    }
+
+    return Array.from(
+        groups.values(),
+    );
+});
+
+const totalSales = computed(() =>
+    groupedRows.value.length,
+);
+
+const totalAmount = computed(() =>
+    groupedRows.value.reduce(
+        (sum, row) =>
+            sum + Number(row.total || 0),
         0,
     ),
 );
 
 const totalUnits = computed(() =>
-    props.rows.data.reduce(
-        (sum, row) => sum + Number(row.cantidad || 0),
+    groupedRows.value.reduce(
+        (sum, row) =>
+            sum +
+            row.items.reduce(
+                (itemSum, item) =>
+                    itemSum +
+                    Number(item.quantity || 0),
+                0,
+            ),
         0,
     ),
 );
 
-const currency = (value: number | string) => {
-    return new Intl.NumberFormat('es-PE', {
-        style: 'currency',
-        currency: 'PEN',
-        minimumFractionDigits: 2,
-    }).format(Number(value || 0));
-};
-
-const formatNumber = (
-    value: number | string,
-    fractionDigits = 0,
-) => {
-    const numberValue = Number(value);
-
-    if (Number.isNaN(numberValue)) {
-        return String(value);
-    }
-
-    return new Intl.NumberFormat('es-PE', {
-        minimumFractionDigits: fractionDigits,
-        maximumFractionDigits: fractionDigits,
-    }).format(numberValue);
-};
-
-const formatDateTime = (value: string | null) => {
-    if (!value) {
-        return '—';
-    }
-
-    return new Date(
-        value.replace(' ', 'T'),
-    ).toLocaleString('es-PE');
+const toggleDetails = (id: number) => {
+    expanded.value =
+        expanded.value === id
+            ? null
+            : id;
 };
 </script>
+
 <template>
     <Head title="Reporte de Salidas" />
 
     <AppLayout :breadcrumbs="breadcrumbs">
         <div
-            class="space-y-6 bg-slate-50 p-4
+            class="space-y-6
+                   bg-slate-50 p-4
                    dark:bg-slate-950"
         >
-            <!-- ENCABEZADO + FILTROS -->
+            <!-- ENCABEZADO -->
             <section
-                class="rounded-xl border
-                       border-slate-200
-                       bg-white p-5 shadow-sm
+                class="rounded-xl
+                       border border-slate-200
+                       bg-white p-5
+                       shadow-sm
                        dark:border-slate-700
                        dark:bg-slate-900"
             >
-                <!-- ENCABEZADO -->
                 <div
-                    class="flex flex-col gap-3
-                           sm:flex-row sm:items-center
-                           sm:justify-between"
+                    class="flex flex-col
+                           gap-4
+                           lg:flex-row
+                           lg:items-center
+                           lg:justify-between"
                 >
                     <div>
+                        <p
+                            class="text-xs font-bold
+                                   uppercase tracking-[0.18em]
+                                   text-blue-600
+                                   dark:text-blue-400"
+                        >
+                            Consulta y control
+                        </p>
+
                         <h1
-                            class="text-xl font-semibold
+                            class="mt-1 text-2xl font-semibold
                                    text-slate-900
                                    dark:text-slate-100"
                         >
@@ -232,33 +415,60 @@ const formatDateTime = (value: string | null) => {
                                    text-slate-500
                                    dark:text-slate-400"
                         >
-                            Detalle de productos registrados como salida.
+                            Consulta y control de todas
+                            las salidas registradas.
                         </p>
                     </div>
 
-                    <Button
-                        type="button"
-                        variant="outline"
-                        class="border-slate-300
-                               bg-white
-                               text-slate-700
-                               hover:bg-slate-50
-                               dark:border-slate-600
-                               dark:bg-slate-800
-                               dark:text-slate-300
-                               dark:hover:bg-slate-700"
-                        @click="applyFilters"
+                    <div
+                        class="flex flex-wrap gap-2"
                     >
-                        Actualizar
-                    </Button>
+                        <button
+                            type="button"
+                            class="rounded-lg
+                                   border border-slate-300
+                                   bg-white px-4 py-2
+                                   text-sm font-medium
+                                   text-slate-700
+                                   transition
+                                   hover:bg-slate-100
+                                   dark:border-slate-600
+                                   dark:bg-slate-800
+                                   dark:text-slate-200
+                                   dark:hover:bg-slate-700"
+                            @click="clearFilters"
+                        >
+                            ↻ Limpiar filtros
+                        </button>
+
+                        <button
+                            type="button"
+                            class="rounded-lg
+                                   border border-emerald-300
+                                   bg-emerald-50 px-4 py-2
+                                   text-sm font-medium
+                                   text-emerald-700
+                                   transition
+                                   hover:bg-emerald-100
+                                   dark:border-emerald-500/40
+                                   dark:bg-emerald-500/10
+                                   dark:text-emerald-400
+                                   dark:hover:bg-emerald-500/20"
+                            @click="exportExcel"
+                        >
+                            ⇩ Exportar Excel
+                        </button>
+                    </div>
                 </div>
 
                 <!-- FILTROS -->
                 <form
-                    class="mt-5 grid gap-4
-                           md:grid-cols-3
+                    class="mt-6 grid gap-4
+                           md:grid-cols-2
                            lg:grid-cols-4"
-                    @submit.prevent="applyFilters"
+                    @submit.prevent="
+                        applyFilters(1)
+                    "
                 >
                     <!-- FECHA INICIO -->
                     <div>
@@ -272,13 +482,15 @@ const formatDateTime = (value: string | null) => {
                         </label>
 
                         <input
-                            v-model="form.from"
+                            v-model="filters.from"
                             type="date"
                             class="w-full rounded-lg
                                    border border-slate-300
                                    bg-white px-3 py-2
-                                   text-sm text-slate-900
+                                   text-sm
+                                   text-slate-900
                                    outline-none
+                                   transition
                                    focus:border-blue-500
                                    focus:ring-2
                                    focus:ring-blue-500/20
@@ -300,13 +512,15 @@ const formatDateTime = (value: string | null) => {
                         </label>
 
                         <input
-                            v-model="form.to"
+                            v-model="filters.to"
                             type="date"
                             class="w-full rounded-lg
                                    border border-slate-300
                                    bg-white px-3 py-2
-                                   text-sm text-slate-900
+                                   text-sm
+                                   text-slate-900
                                    outline-none
+                                   transition
                                    focus:border-blue-500
                                    focus:ring-2
                                    focus:ring-blue-500/20
@@ -328,12 +542,14 @@ const formatDateTime = (value: string | null) => {
                         </label>
 
                         <select
-                            v-model="form.warehouse_id"
+                            v-model="filters.warehouse_id"
                             class="w-full rounded-lg
                                    border border-slate-300
                                    bg-white px-3 py-2
-                                   text-sm text-slate-900
+                                   text-sm
+                                   text-slate-900
                                    outline-none
+                                   transition
                                    focus:border-blue-500
                                    focus:ring-2
                                    focus:ring-blue-500/20
@@ -348,13 +564,13 @@ const formatDateTime = (value: string | null) => {
                             <option
                                 v-for="warehouse in props.warehouses"
                                 :key="warehouse.id"
-                                :value="
-                                    String(
-                                        warehouse.id,
-                                    )
-                                "
+                                :value="String(warehouse.id)"
                             >
-                                {{ warehouse.name }}
+                                {{
+                                    warehouse.code
+                                        ? `${warehouse.code} - ${warehouse.name}`
+                                        : warehouse.name
+                                }}
                             </option>
                         </select>
                     </div>
@@ -371,12 +587,16 @@ const formatDateTime = (value: string | null) => {
                         </label>
 
                         <select
-                            v-model="form.responsible_id"
+                            v-model="
+                                filters.responsible_id
+                            "
                             class="w-full rounded-lg
                                    border border-slate-300
                                    bg-white px-3 py-2
-                                   text-sm text-slate-900
+                                   text-sm
+                                   text-slate-900
                                    outline-none
+                                   transition
                                    focus:border-blue-500
                                    focus:ring-2
                                    focus:ring-blue-500/20
@@ -414,12 +634,14 @@ const formatDateTime = (value: string | null) => {
                         </label>
 
                         <select
-                            v-model="form.customer_id"
+                            v-model="filters.customer_id"
                             class="w-full rounded-lg
                                    border border-slate-300
                                    bg-white px-3 py-2
-                                   text-sm text-slate-900
+                                   text-sm
+                                   text-slate-900
                                    outline-none
+                                   transition
                                    focus:border-blue-500
                                    focus:ring-2
                                    focus:ring-blue-500/20
@@ -445,7 +667,7 @@ const formatDateTime = (value: string | null) => {
                         </select>
                     </div>
 
-                    <!-- BÚSQUEDA -->
+                    <!-- BUSCADOR -->
                     <div
                         class="md:col-span-2"
                     >
@@ -459,15 +681,17 @@ const formatDateTime = (value: string | null) => {
                         </label>
 
                         <input
-                            v-model="form.search"
-                            type="search"
-                            placeholder="Código salida, cliente, código o producto..."
+                            v-model="filters.search"
+                            type="text"
+                            placeholder="Código salida, cliente, código, producto o color..."
                             class="w-full rounded-lg
                                    border border-slate-300
                                    bg-white px-3 py-2
-                                   text-sm text-slate-900
+                                   text-sm
+                                   text-slate-900
                                    placeholder:text-slate-400
                                    outline-none
+                                   transition
                                    focus:border-blue-500
                                    focus:ring-2
                                    focus:ring-blue-500/20
@@ -475,11 +699,10 @@ const formatDateTime = (value: string | null) => {
                                    dark:bg-slate-800
                                    dark:text-slate-100
                                    dark:placeholder:text-slate-500"
-                            @keyup.enter="applyFilters"
                         />
                     </div>
 
-                    <!-- REGISTROS POR PÁGINA -->
+                    <!-- POR PÁGINA -->
                     <div>
                         <label
                             class="mb-1 block text-sm
@@ -491,12 +714,16 @@ const formatDateTime = (value: string | null) => {
                         </label>
 
                         <select
-                            v-model.number="form.per_page"
+                            v-model.number="
+                                filters.per_page
+                            "
                             class="w-full rounded-lg
                                    border border-slate-300
                                    bg-white px-3 py-2
-                                   text-sm text-slate-900
+                                   text-sm
+                                   text-slate-900
                                    outline-none
+                                   transition
                                    focus:border-blue-500
                                    focus:ring-2
                                    focus:ring-blue-500/20
@@ -504,252 +731,220 @@ const formatDateTime = (value: string | null) => {
                                    dark:bg-slate-800
                                    dark:text-slate-100"
                         >
-                            <option :value="10">10</option>
-                            <option :value="25">25</option>
-                            <option :value="50">50</option>
-                            <option :value="100">100</option>
+                            <option :value="25">
+                                25
+                            </option>
+
+                            <option :value="50">
+                                50
+                            </option>
+
+                            <option :value="100">
+                                100
+                            </option>
                         </select>
                     </div>
 
                     <!-- BOTONES -->
-                     
-<div
-    class="flex flex-col gap-2
-           md:col-span-1
-           sm:flex-row"
->
-    <Button
-        type="submit"
-        class="flex-1 bg-blue-600
-               text-white
-               hover:bg-blue-700
-               dark:hover:bg-blue-500"
-    >
-        Aplicar filtros
-    </Button>
-
-    <Button
-        type="button"
-        variant="outline"
-        class="flex-1
-               border-slate-300
-               bg-white
-               text-slate-700
-               hover:bg-slate-50
-               dark:border-slate-600
-               dark:bg-slate-800
-               dark:text-slate-300
-               dark:hover:bg-slate-700"
-        @click="clearFilters"
-    >
-        Limpiar
-    </Button>
-
-    <Button
-        type="button"
-        variant="outline"
-        class="flex-1
-               border-emerald-300
-               bg-white
-               text-emerald-700
-               hover:bg-emerald-50
-               dark:border-emerald-500/40
-               dark:bg-slate-800
-               dark:text-emerald-400
-               dark:hover:bg-emerald-500/10"
-        @click="exportExcel"
-    >
-        Exportar Excel
-    </Button>
-</div>
-
+                    <div
+                        class="flex items-end gap-2"
+                    >
+                        <button
+                            type="submit"
+                            class="w-full rounded-lg
+                                   bg-blue-600 px-4 py-2
+                                   text-sm font-medium
+                                   text-white
+                                   transition
+                                   hover:bg-blue-700
+                                   dark:hover:bg-blue-500"
+                        >
+                            ⌕ Aplicar filtros
+                        </button>
+                    </div>
                 </form>
+            </section>
 
-                <!-- RESUMEN -->
+            <!-- TARJETAS -->
+            <section
+                class="grid gap-4
+                       sm:grid-cols-2
+                       xl:grid-cols-4"
+            >
+                <!-- SALIDAS -->
                 <div
-                    class="mt-6 grid gap-4
-                           sm:grid-cols-2
-                           lg:grid-cols-4"
+                    class="rounded-xl
+                           border border-blue-200
+                           bg-blue-50 p-4
+                           dark:border-blue-500/30
+                           dark:bg-blue-500/10"
                 >
-                    <!-- REGISTROS -->
-                    <div
-                        class="rounded-2xl border
-                               border-slate-200
-                               bg-slate-50 p-4
-                               dark:border-slate-700
-                               dark:bg-slate-800"
+                    <span
+                        class="text-sm font-medium
+                               text-blue-700
+                               dark:text-blue-400"
                     >
-                        <p
-                            class="text-sm font-medium
-                                   text-slate-600
-                                   dark:text-slate-300"
-                        >
-                            Registros
-                        </p>
+                        Total de salidas
+                    </span>
 
-                        <p
-                            class="mt-2 text-3xl font-semibold
-                                   text-slate-900
-                                   dark:text-slate-100"
-                        >
-                            {{ formatNumber(props.rows.total) }}
-                        </p>
-
-                        <p
-                            class="text-sm
-                                   text-slate-500
-                                   dark:text-slate-400"
-                        >
-                            salidas registradas
-                        </p>
-                    </div>
-
-                    <!-- TOTAL VENDIDO -->
-                    <div
-                        class="rounded-2xl border
-                               border-emerald-200
-                               bg-emerald-50 p-4
-                               dark:border-emerald-500/30
-                               dark:bg-emerald-500/10"
+                    <strong
+                        class="mt-2 block text-3xl
+                               font-semibold
+                               text-slate-900
+                               dark:text-slate-100"
                     >
-                        <p
-                            class="text-sm font-medium
-                                   text-emerald-700
-                                   dark:text-emerald-400"
-                        >
-                            Total vendido
-                        </p>
+                        {{ totalSales }}
+                    </strong>
 
-                        <p
-                            class="mt-2 text-3xl font-semibold
-                                   text-slate-900
-                                   dark:text-slate-100"
-                        >
-                            {{ currency(total) }}
-                        </p>
-
-                        <p
-                            class="text-sm
-                                   text-slate-500
-                                   dark:text-slate-400"
-                        >
-                            página actual
-                        </p>
-                    </div>
-
-                    <!-- UNIDADES -->
-                    <div
-                        class="rounded-2xl border
-                               border-yellow-200
-                               bg-yellow-50 p-4
-                               dark:border-yellow-500/30
-                               dark:bg-yellow-500/10"
+                    <small
+                        class="text-sm
+                               text-slate-500
+                               dark:text-slate-400"
                     >
-                        <p
-                            class="text-sm font-medium
-                                   text-yellow-700
-                                   dark:text-yellow-400"
-                        >
-                            Unidades
-                        </p>
+                        registros en esta página
+                    </small>
+                </div>
 
-                        <p
-                            class="mt-2 text-3xl font-semibold
-                                   text-slate-900
-                                   dark:text-slate-100"
-                        >
-                            {{ formatNumber(totalUnits, 3) }}
-                        </p>
-
-                        <p
-                            class="text-sm
-                                   text-slate-500
-                                   dark:text-slate-400"
-                        >
-                            página actual
-                        </p>
-                    </div>
-
-                    <!-- PÁGINA -->
-                    <div
-                        class="rounded-2xl border
-                               border-violet-200
-                               bg-violet-50 p-4
-                               dark:border-violet-500/30
-                               dark:bg-violet-500/10"
+                <!-- TOTAL -->
+                <div
+                    class="rounded-xl
+                           border border-emerald-200
+                           bg-emerald-50 p-4
+                           dark:border-emerald-500/30
+                           dark:bg-emerald-500/10"
+                >
+                    <span
+                        class="text-sm font-medium
+                               text-emerald-700
+                               dark:text-emerald-400"
                     >
-                        <p
-                            class="text-sm font-medium
-                                   text-violet-700
-                                   dark:text-violet-400"
-                        >
-                            Página
-                        </p>
+                        Total de salidas
+                    </span>
 
-                        <p
-                            class="mt-2 text-3xl font-semibold
-                                   text-slate-900
-                                   dark:text-slate-100"
-                        >
-                            {{ props.rows.current_page }}
-                        </p>
+                    <strong
+                        class="mt-2 block text-3xl
+                               font-semibold
+                               text-slate-900
+                               dark:text-slate-100"
+                    >
+                        {{ money(totalAmount) }}
+                    </strong>
 
-                        <p
-                            class="text-sm
-                                   text-slate-500
-                                   dark:text-slate-400"
-                        >
-                            de {{ props.rows.last_page }}
-                        </p>
-                    </div>
+                    <small
+                        class="text-sm
+                               text-slate-500
+                               dark:text-slate-400"
+                    >
+                        monto en la página actual
+                    </small>
+                </div>
+
+                <!-- UNIDADES -->
+                <div
+                    class="rounded-xl
+                           border border-amber-200
+                           bg-amber-50 p-4
+                           dark:border-amber-500/30
+                           dark:bg-amber-500/10"
+                >
+                    <span
+                        class="text-sm font-medium
+                               text-amber-700
+                               dark:text-amber-400"
+                    >
+                        Total de unidades
+                    </span>
+
+                    <strong
+                        class="mt-2 block text-3xl
+                               font-semibold
+                               text-slate-900
+                               dark:text-slate-100"
+                    >
+                        {{ number(totalUnits, 3) }}
+                    </strong>
+
+                    <small
+                        class="text-sm
+                               text-slate-500
+                               dark:text-slate-400"
+                    >
+                        unidades en la página
+                    </small>
+                </div>
+
+                <!-- PAGINA -->
+                <div
+                    class="rounded-xl
+                           border border-violet-200
+                           bg-violet-50 p-4
+                           dark:border-violet-500/30
+                           dark:bg-violet-500/10"
+                >
+                    <span
+                        class="text-sm font-medium
+                               text-violet-700
+                               dark:text-violet-400"
+                    >
+                        Página actual
+                    </span>
+
+                    <strong
+                        class="mt-2 block text-3xl
+                               font-semibold
+                               text-slate-900
+                               dark:text-slate-100"
+                    >
+                        {{ props.rows.current_page }}
+                    </strong>
+
+                    <small
+                        class="text-sm
+                               text-slate-500
+                               dark:text-slate-400"
+                    >
+                        de {{ props.rows.last_page }}
+                    </small>
                 </div>
             </section>
 
             <!-- TABLA -->
             <section
-                class="rounded-xl border
-                       border-slate-200
-                       bg-white p-5 shadow-sm
+                class="rounded-xl
+                       border border-slate-200
+                       bg-white shadow-sm
                        dark:border-slate-700
                        dark:bg-slate-900"
             >
-                <div
-                    class="mb-4 flex flex-col gap-2
-                           sm:flex-row
-                           sm:items-center
-                           sm:justify-between"
-                >
-                    <div>
-                        <h2
-                            class="text-lg font-semibold
-                                   text-slate-900
-                                   dark:text-slate-100"
-                        >
-                            Detalle de salidas
-                        </h2>
+                <div class="p-5">
+                    <h2
+                        class="text-lg font-semibold
+                               text-slate-900
+                               dark:text-slate-100"
+                    >
+                        Detalle de salidas
+                    </h2>
 
-                        <p
-                            class="text-sm
-                                   text-slate-500
-                                   dark:text-slate-400"
-                        >
-                            Mostrando
-                            {{ props.rows.from ?? 0 }}
-                            -
-                            {{ props.rows.to ?? 0 }}
-                            de
-                            {{ props.rows.total }}
-                            registros.
-                        </p>
-                    </div>
+                    <p
+                        class="mt-1 text-sm
+                               text-slate-500
+                               dark:text-slate-400"
+                    >
+                        Mostrando
+                        {{ props.rows.from ?? 0 }}
+                        -
+                        {{ props.rows.to ?? 0 }}
+                        de
+                        {{ props.rows.total }}
+                        registros.
+                    </p>
                 </div>
 
                 <div class="overflow-x-auto">
                     <table
-                        class="w-full min-w-[1400px]
-                               divide-y
-                               divide-slate-200
-                               dark:divide-slate-700"
+                        class="min-w-[1150px]
+                               w-full
+                               border-collapse"
                     >
                         <thead
                             class="bg-slate-50
@@ -757,17 +952,19 @@ const formatDateTime = (value: string | null) => {
                         >
                             <tr>
                                 <th
-                                    class="px-4 py-3 text-left
+                                    class="px-4 py-3
+                                           text-left
                                            text-xs font-semibold
                                            uppercase
                                            text-slate-600
                                            dark:text-slate-300"
                                 >
-                                    Fecha / hora
+                                    Fecha / Hora
                                 </th>
 
                                 <th
-                                    class="px-4 py-3 text-left
+                                    class="px-4 py-3
+                                           text-left
                                            text-xs font-semibold
                                            uppercase
                                            text-slate-600
@@ -777,7 +974,8 @@ const formatDateTime = (value: string | null) => {
                                 </th>
 
                                 <th
-                                    class="px-4 py-3 text-left
+                                    class="px-4 py-3
+                                           text-left
                                            text-xs font-semibold
                                            uppercase
                                            text-slate-600
@@ -787,7 +985,8 @@ const formatDateTime = (value: string | null) => {
                                 </th>
 
                                 <th
-                                    class="px-4 py-3 text-left
+                                    class="px-4 py-3
+                                           text-left
                                            text-xs font-semibold
                                            uppercase
                                            text-slate-600
@@ -797,7 +996,8 @@ const formatDateTime = (value: string | null) => {
                                 </th>
 
                                 <th
-                                    class="px-4 py-3 text-left
+                                    class="px-4 py-3
+                                           text-left
                                            text-xs font-semibold
                                            uppercase
                                            text-slate-600
@@ -807,57 +1007,19 @@ const formatDateTime = (value: string | null) => {
                                 </th>
 
                                 <th
-                                    class="px-4 py-3 text-left
+                                    class="px-4 py-3
+                                           text-center
                                            text-xs font-semibold
                                            uppercase
                                            text-slate-600
                                            dark:text-slate-300"
                                 >
-                                    Código producto
+                                    Ítems
                                 </th>
 
                                 <th
-                                    class="px-4 py-3 text-left
-                                           text-xs font-semibold
-                                           uppercase
-                                           text-slate-600
-                                           dark:text-slate-300"
-                                >
-                                    Producto
-                                </th>
-
-                                <th
-                                    class="px-4 py-3 text-right
-                                           text-xs font-semibold
-                                           uppercase
-                                           text-slate-600
-                                           dark:text-slate-300"
-                                >
-                                    Cantidad
-                                </th>
-
-                                <th
-                                    class="px-4 py-3 text-left
-                                           text-xs font-semibold
-                                           uppercase
-                                           text-slate-600
-                                           dark:text-slate-300"
-                                >
-                                    Unidad
-                                </th>
-
-                                <th
-                                    class="px-4 py-3 text-right
-                                           text-xs font-semibold
-                                           uppercase
-                                           text-slate-600
-                                           dark:text-slate-300"
-                                >
-                                    Precio
-                                </th>
-
-                                <th
-                                    class="px-4 py-3 text-right
+                                    class="px-4 py-3
+                                           text-right
                                            text-xs font-semibold
                                            uppercase
                                            text-slate-600
@@ -867,7 +1029,8 @@ const formatDateTime = (value: string | null) => {
                                 </th>
 
                                 <th
-                                    class="px-4 py-3 text-left
+                                    class="px-4 py-3
+                                           text-left
                                            text-xs font-semibold
                                            uppercase
                                            text-slate-600
@@ -875,222 +1038,661 @@ const formatDateTime = (value: string | null) => {
                                 >
                                     Motivo
                                 </th>
+
+                                <th
+                                    class="px-4 py-3
+                                           text-center
+                                           text-xs font-semibold
+                                           uppercase
+                                           text-slate-600
+                                           dark:text-slate-300"
+                                >
+                                    Acciones
+                                </th>
                             </tr>
                         </thead>
 
                         <tbody
                             class="divide-y
-                                   divide-slate-100
+                                   divide-slate-200
                                    dark:divide-slate-700"
                         >
-                            <tr
-                                v-for="row in props.rows.data"
-                                :key="
-                                    `${row.id}-${row.product_id}`
-                                "
-                                class="transition
-                                       hover:bg-slate-50
-                                       dark:hover:bg-slate-800/70"
+                            <template
+                                v-for="sale in groupedRows"
+                                :key="sale.id"
                             >
-                                <td
-                                    class="px-4 py-3 text-sm
-                                           text-slate-700
-                                           dark:text-slate-300"
+                                <!-- FILA PRINCIPAL -->
+                                <tr
+                                    class="transition
+                                           hover:bg-slate-50
+                                           dark:hover:bg-slate-800/60"
                                 >
-                                    {{ formatDateTime(row.fecha_hora) }}
-                                </td>
+                                    <td
+                                        class="px-4 py-3
+                                               text-sm
+                                               text-slate-700
+                                               dark:text-slate-300"
+                                    >
+                                        {{
+                                            dateTime(
+                                                sale.created_at,
+                                            )
+                                        }}
+                                    </td>
 
-                                <td
-                                    class="px-4 py-3 text-sm
-                                           font-medium
-                                           text-slate-900
-                                           dark:text-slate-100"
+                                    <td
+                                        class="px-4 py-3
+                                               text-sm font-semibold
+                                               text-slate-900
+                                               dark:text-slate-100"
+                                    >
+                                        {{ sale.code }}
+                                    </td>
+
+                                    <td
+                                        class="px-4 py-3
+                                               text-sm
+                                               text-slate-700
+                                               dark:text-slate-300"
+                                    >
+                                        {{ sale.warehouse_name }}
+                                    </td>
+
+                                    <td
+                                        class="px-4 py-3
+                                               text-sm
+                                               text-slate-700
+                                               dark:text-slate-300"
+                                    >
+                                        {{ sale.customer_name }}
+                                    </td>
+
+                                    <td
+                                        class="px-4 py-3
+                                               text-sm
+                                               text-slate-700
+                                               dark:text-slate-300"
+                                    >
+                                        {{
+                                            sale.responsible_name
+                                        }}
+                                    </td>
+
+                                    <td
+                                        class="px-4 py-3
+                                               text-center"
+                                    >
+                                        <span
+                                            class="inline-flex
+                                                   rounded-full
+                                                   bg-slate-100
+                                                   px-2.5 py-1
+                                                   text-xs font-semibold
+                                                   text-slate-700
+                                                   dark:bg-slate-800
+                                                   dark:text-slate-300"
+                                        >
+                                            {{ sale.items_count }}
+                                            {{
+                                                sale.items_count ===
+                                                1
+                                                    ? 'producto'
+                                                    : 'productos'
+                                            }}
+                                        </span>
+                                    </td>
+
+                                    <td
+                                        class="px-4 py-3
+                                               text-right
+                                               text-sm font-bold
+                                               text-slate-900
+                                               dark:text-slate-100"
+                                    >
+                                        {{ money(sale.total) }}
+                                    </td>
+
+                                    <td
+                                        class="px-4 py-3"
+                                    >
+                                        <span
+                                            class="inline-flex
+                                                   rounded-full
+                                                   bg-emerald-50
+                                                   px-2.5 py-1
+                                                   text-xs font-semibold
+                                                   text-emerald-700
+                                                   dark:bg-emerald-500/10
+                                                   dark:text-emerald-400"
+                                        >
+                                            {{
+                                                sale.reason
+                                            }}
+                                        </span>
+                                    </td>
+
+                                    <td
+                                        class="px-4 py-3
+                                               text-center"
+                                    >
+                                        <button
+                                            type="button"
+                                            class="rounded-lg
+                                                   border
+                                                   border-blue-300
+                                                   bg-blue-50
+                                                   px-3 py-1.5
+                                                   text-xs font-medium
+                                                   text-blue-700
+                                                   transition
+                                                   hover:bg-blue-100
+                                                   dark:border-blue-500/40
+                                                   dark:bg-blue-500/10
+                                                   dark:text-blue-400
+                                                   dark:hover:bg-blue-500/20"
+                                            @click="
+                                                toggleDetails(
+                                                    sale.id,
+                                                )
+                                            "
+                                        >
+                                            {{
+                                                expanded ===
+                                                sale.id
+                                                    ? 'Ocultar'
+                                                    : 'Ver detalle'
+                                            }}
+                                        </button>
+                                    </td>
+                                </tr>
+
+                                <!-- DETALLE -->
+                                <tr
+                                    v-if="
+                                        expanded ===
+                                        sale.id
+                                    "
                                 >
-                                    {{ row.salida_code }}
-                                </td>
+                                    <td
+                                        colspan="9"
+                                        class="bg-slate-50
+                                               px-4 py-4
+                                               dark:bg-slate-950"
+                                    >
+                                        <div
+                                            class="rounded-xl
+                                                   border
+                                                   border-slate-200
+                                                   bg-white
+                                                   p-4
+                                                   dark:border-slate-700
+                                                   dark:bg-slate-900"
+                                        >
+                                            <div
+                                                class="flex
+                                                       flex-col
+                                                       gap-3
+                                                       lg:flex-row
+                                                       lg:items-center
+                                                       lg:justify-between"
+                                            >
+                                                <div>
+                                                    <p
+                                                        class="text-xs
+                                                               font-semibold
+                                                               uppercase
+                                                               text-blue-600
+                                                               dark:text-blue-400"
+                                                    >
+                                                        Detalle de salida
+                                                    </p>
 
-                                <td
-                                    class="px-4 py-3 text-sm
-                                           text-slate-700
-                                           dark:text-slate-300"
-                                >
-                                    {{ row.almacen }}
-                                </td>
+                                                    <h3
+                                                        class="mt-1
+                                                               text-base
+                                                               font-semibold
+                                                               text-slate-900
+                                                               dark:text-slate-100"
+                                                    >
+                                                        {{
+                                                            sale.code
+                                                        }}
+                                                    </h3>
+                                                </div>
 
-                                <td
-                                    class="px-4 py-3 text-sm
-                                           text-slate-700
-                                           dark:text-slate-300"
-                                >
-                                    {{ row.cliente }}
-                                </td>
+                                                <div
+                                                    class="flex flex-wrap
+                                                           gap-2 text-xs
+                                                           text-slate-500
+                                                           dark:text-slate-400"
+                                                >
+                                                    <span>
+                                                        Fecha:
+                                                        {{
+                                                            dateTime(
+                                                                sale.created_at,
+                                                            )
+                                                        }}
+                                                    </span>
 
-                                <td
-                                    class="px-4 py-3 text-sm
-                                           text-slate-700
-                                           dark:text-slate-300"
-                                >
-                                    {{ row.responsable }}
-                                </td>
+                                                    <span>
+                                                        Almacén:
+                                                        {{
+                                                            sale.warehouse_name
+                                                        }}
+                                                    </span>
 
-                                <td
-                                    class="px-4 py-3 text-sm
-                                           text-slate-700
-                                           dark:text-slate-300"
-                                >
-                                    {{ row.codigo_producto }}
-                                </td>
+                                                    <span>
+                                                        Cliente:
+                                                        {{
+                                                            sale.customer_name
+                                                        }}
+                                                    </span>
 
-                                <td
-                                    class="px-4 py-3 text-sm
-                                           text-slate-700
-                                           dark:text-slate-300"
-                                >
-                                    {{ row.producto }}
-                                </td>
+                                                    <span>
+                                                        Responsable:
+                                                        {{
+                                                            sale.responsible_name
+                                                        }}
+                                                    </span>
 
-                                <td
-                                    class="px-4 py-3 text-right
-                                           text-sm
-                                           text-slate-700
-                                           dark:text-slate-300"
-                                >
-                                    {{ formatNumber(row.cantidad, 3) }}
-                                </td>
+                                                    <span>
+                                                        Motivo:
+                                                        {{
+                                                            sale.reason
+                                                        }}
+                                                    </span>
+                                                </div>
+                                            </div>
 
-                                <td
-                                    class="px-4 py-3 text-sm
-                                           text-slate-700
-                                           dark:text-slate-300"
-                                >
-                                    {{
-                                        row.unidad === 'kilos'
-                                            ? 'rollos'
-                                            : row.unidad
-                                    }}
-                                </td>
+                                            <div
+                                                class="mt-4
+                                                       overflow-x-auto"
+                                            >
+                                                <table
+                                                    class="min-w-full
+                                                           border-collapse"
+                                                >
+                                                    <thead
+                                                        class="bg-slate-50
+                                                               dark:bg-slate-800"
+                                                    >
+                                                        <tr>
+                                                            <th
+                                                                class="px-3 py-2
+                                                                       text-left
+                                                                       text-xs
+                                                                       font-semibold
+                                                                       uppercase
+                                                                       text-slate-600
+                                                                       dark:text-slate-300"
+                                                            >
+                                                                Código producto
+                                                            </th>
 
-                                <td
-                                    class="px-4 py-3 text-right
-                                           text-sm
-                                           text-slate-700
-                                           dark:text-slate-300"
-                                >
-                                    {{ currency(row.precio) }}
-                                </td>
+                                                            <th
+                                                                class="px-3 py-2
+                                                                       text-left
+                                                                       text-xs
+                                                                       font-semibold
+                                                                       uppercase
+                                                                       text-slate-600
+                                                                       dark:text-slate-300"
+                                                            >
+                                                                Producto
+                                                            </th>
 
-                                <td
-                                    class="px-4 py-3 text-right
-                                           text-sm font-medium
-                                           text-slate-900
-                                           dark:text-slate-100"
-                                >
-                                    {{ currency(row.total) }}
-                                </td>
+                                                            <th
+                                                                class="px-3 py-2
+                                                                       text-left
+                                                                       text-xs
+                                                                       font-semibold
+                                                                       uppercase
+                                                                       text-slate-600
+                                                                       dark:text-slate-300"
+                                                            >
+                                                                Color
+                                                            </th>
 
-                                <td
-                                    class="px-4 py-3 text-sm
-                                           text-slate-700
-                                           dark:text-slate-300"
-                                >
-                                    {{ row.motivo || '—' }}
-                                </td>
-                            </tr>
+                                                            <th
+                                                                class="px-3 py-2
+                                                                       text-right
+                                                                       text-xs
+                                                                       font-semibold
+                                                                       uppercase
+                                                                       text-slate-600
+                                                                       dark:text-slate-300"
+                                                            >
+                                                                Cantidad
+                                                            </th>
 
+                                                            <th
+                                                                class="px-3 py-2
+                                                                       text-left
+                                                                       text-xs
+                                                                       font-semibold
+                                                                       uppercase
+                                                                       text-slate-600
+                                                                       dark:text-slate-300"
+                                                            >
+                                                                Unidad
+                                                            </th>
+
+                                                            <th
+                                                                class="px-3 py-2
+                                                                       text-right
+                                                                       text-xs
+                                                                       font-semibold
+                                                                       uppercase
+                                                                       text-slate-600
+                                                                       dark:text-slate-300"
+                                                            >
+                                                                Precio unitario
+                                                            </th>
+
+                                                            <th
+                                                                class="px-3 py-2
+                                                                       text-right
+                                                                       text-xs
+                                                                       font-semibold
+                                                                       uppercase
+                                                                       text-slate-600
+                                                                       dark:text-slate-300"
+                                                            >
+                                                                Subtotal
+                                                            </th>
+                                                        </tr>
+                                                    </thead>
+
+                                                    <tbody
+                                                        class="divide-y
+                                                               divide-slate-200
+                                                               dark:divide-slate-700"
+                                                    >
+                                                        <tr
+                                                            v-for="item in sale.items"
+                                                            :key="item.id"
+                                                        >
+                                                            <td
+                                                                class="px-3 py-2
+                                                                       text-sm
+                                                                       font-medium
+                                                                       text-slate-900
+                                                                       dark:text-slate-100"
+                                                            >
+                                                                {{
+                                                                    item.product_code
+                                                                }}
+                                                            </td>
+
+                                                            <td
+                                                                class="px-3 py-2
+                                                                       text-sm
+                                                                       text-slate-700
+                                                                       dark:text-slate-300"
+                                                            >
+                                                                {{
+                                                                    item.product_name
+                                                                }}
+                                                            </td>
+
+                                                            <td
+                                                                class="px-3 py-2
+                                                                       text-sm
+                                                                       text-slate-700
+                                                                       dark:text-slate-300"
+                                                            >
+                                                                {{ item.color || '—' }}
+                                                            </td>
+
+                                                            <td
+                                                                class="px-3 py-2
+                                                                       text-right
+                                                                       text-sm
+                                                                       text-slate-700
+                                                                       dark:text-slate-300"
+                                                            >
+                                                                {{
+                                                                    number(
+                                                                        item.quantity,
+                                                                        String(
+                                                                            item.unit,
+                                                                        ).toLowerCase() ===
+                                                                            'kilos'
+                                                                            ? 0
+                                                                            : 3,
+                                                                    )
+                                                                }}
+                                                            </td>
+
+                                                            <td
+                                                                class="px-3 py-2
+                                                                       text-sm
+                                                                       text-slate-700
+                                                                       dark:text-slate-300"
+                                                            >
+                                                                {{
+                                                                    String(
+                                                                        item.unit ||
+                                                                            '',
+                                                                    ).toLowerCase() ===
+                                                                    'kilos'
+                                                                        ? 'Rollos'
+                                                                        : 'Metros'
+                                                                }}
+                                                            </td>
+
+                                                            <td
+                                                                class="px-3 py-2
+                                                                       text-right
+                                                                       text-sm
+                                                                       text-slate-700
+                                                                       dark:text-slate-300"
+                                                            >
+                                                                {{
+                                                                    money(
+                                                                        item.unit_price,
+                                                                    )
+                                                                }}
+                                                            </td>
+
+                                                            <td
+                                                                class="px-3 py-2
+                                                                       text-right
+                                                                       text-sm
+                                                                       font-semibold
+                                                                       text-slate-900
+                                                                       dark:text-slate-100"
+                                                            >
+                                                                {{
+                                                                    money(
+                                                                        item.total,
+                                                                    )
+                                                                }}
+                                                            </td>
+                                                        </tr>
+                                                    </tbody>
+                                                </table>
+                                            </div>
+
+                                            <div
+                                                class="mt-4 flex
+                                                       justify-end
+                                                       border-t
+                                                       border-slate-200
+                                                       pt-3
+                                                       dark:border-slate-700"
+                                            >
+                                                <div
+                                                    class="flex
+                                                           items-center
+                                                           gap-5"
+                                                >
+                                                    <span
+                                                        class="text-sm
+                                                               text-slate-500
+                                                               dark:text-slate-400"
+                                                    >
+                                                        TOTAL DE LA SALIDA
+                                                    </span>
+
+                                                    <strong
+                                                        class="text-lg
+                                                               text-slate-900
+                                                               dark:text-slate-100"
+                                                    >
+                                                        {{
+                                                            money(
+                                                                sale.total,
+                                                            )
+                                                        }}
+                                                    </strong>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </template>
+
+                            <!-- SIN RESULTADOS -->
                             <tr
                                 v-if="
-                                    props.rows.data.length ===
+                                    groupedRows.length ===
                                     0
                                 "
                             >
                                 <td
-                                    colspan="12"
-                                    class="px-4 py-8 text-center
+                                    colspan="9"
+                                    class="px-4 py-10
+                                           text-center
                                            text-sm
                                            text-slate-500
                                            dark:text-slate-400"
                                 >
-                                    No hay salidas para los filtros
-                                    seleccionados.
+                                    No se encontraron
+                                    salidas.
                                 </td>
                             </tr>
                         </tbody>
                     </table>
                 </div>
-            </section>
 
-            <!-- PAGINACIÓN -->
-            <section
-                v-if="props.rows.last_page > 1"
-                class="flex flex-col
-                       items-center justify-between
-                       gap-3 rounded-xl border
-                       border-slate-200
-                       bg-white p-4
-                       dark:border-slate-700
-                       dark:bg-slate-900
-                       sm:flex-row"
-            >
-                <p
-                    class="text-sm
-                           text-slate-500
-                           dark:text-slate-400"
+                <!-- PAGINACIÓN -->
+                <div
+                    v-if="
+                        props.rows.last_page > 1
+                    "
+                    class="flex flex-col
+                           items-center
+                           justify-between
+                           gap-3
+                           border-t
+                           border-slate-200
+                           p-4
+                           dark:border-slate-700
+                           sm:flex-row"
                 >
-                    Página
-                    {{ props.rows.current_page }}
-                    de
-                    {{ props.rows.last_page }}
-                </p>
-
-                <div class="flex gap-2">
-                    <Button
-                        type="button"
-                        variant="outline"
-                        class="border-slate-300
-                               bg-white
-                               text-slate-700
-                               hover:bg-slate-50
-                               dark:border-slate-600
-                               dark:bg-slate-800
-                               dark:text-slate-300
-                               dark:hover:bg-slate-700"
-                        :disabled="
-                            props.rows.current_page <= 1
-                        "
-                        @click="
-                            changePage(
-                                props.rows.current_page - 1,
-                            )
-                        "
+                    <span
+                        class="text-sm
+                               text-slate-500
+                               dark:text-slate-400"
                     >
-                        Anterior
-                    </Button>
+                        Página
+                        {{ props.rows.current_page }}
+                        de
+                        {{ props.rows.last_page }}
+                    </span>
 
-                    <Button
-                        type="button"
-                        variant="outline"
-                        class="border-slate-300
-                               bg-white
-                               text-slate-700
-                               hover:bg-slate-50
-                               dark:border-slate-600
-                               dark:bg-slate-800
-                               dark:text-slate-300
-                               dark:hover:bg-slate-700"
-                        :disabled="
-                            props.rows.current_page >=
-                            props.rows.last_page
-                        "
-                        @click="
-                            changePage(
-                                props.rows.current_page + 1,
-                            )
-                        "
+                    <div
+                        class="flex items-center
+                               gap-2"
                     >
-                        Siguiente
-                    </Button>
+                        <button
+                            type="button"
+                            :disabled="
+                                props.rows.current_page <= 1
+                            "
+                            class="rounded-lg
+                                   border
+                                   border-slate-300
+                                   bg-white
+                                   px-3 py-2
+                                   text-sm
+                                   text-slate-700
+                                   transition
+                                   hover:bg-slate-100
+                                   disabled:cursor-not-allowed
+                                   disabled:opacity-40
+                                   dark:border-slate-600
+                                   dark:bg-slate-800
+                                   dark:text-slate-200
+                                   dark:hover:bg-slate-700"
+                            @click="
+                                applyFilters(
+                                    props.rows.current_page -
+                                        1,
+                                )
+                            "
+                        >
+                            ‹
+                        </button>
+
+                        <span
+                            class="rounded-lg
+                                   bg-blue-600
+                                   px-3 py-2
+                                   text-sm
+                                   font-medium
+                                   text-white"
+                        >
+                            {{
+                                props.rows.current_page
+                            }}
+                        </span>
+
+                        <button
+                            type="button"
+                            :disabled="
+                                props.rows.current_page >=
+                                props.rows.last_page
+                            "
+                            class="rounded-lg
+                                   border
+                                   border-slate-300
+                                   bg-white
+                                   px-3 py-2
+                                   text-sm
+                                   text-slate-700
+                                   transition
+                                   hover:bg-slate-100
+                                   disabled:cursor-not-allowed
+                                   disabled:opacity-40
+                                   dark:border-slate-600
+                                   dark:bg-slate-800
+                                   dark:text-slate-200
+                                   dark:hover:bg-slate-700"
+                            @click="
+                                applyFilters(
+                                    props.rows.current_page +
+                                        1,
+                                )
+                            "
+                        >
+                            ›
+                        </button>
+                    </div>
                 </div>
             </section>
+
+            <p
+                class="text-xs
+                       text-slate-500
+                       dark:text-slate-500"
+            >
+                Los montos mostrados corresponden a las
+                salidas registradas. El reporte utiliza la
+                fecha de registro de la salida.
+            </p>
         </div>
     </AppLayout>
 </template>

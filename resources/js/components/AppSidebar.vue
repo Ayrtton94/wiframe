@@ -93,7 +93,7 @@ const mainNavItems: NavItem[] = [
               },
               {
                   title: 'Reportes',
-                  href: '/reports',
+                  href: '',
                   icon: BarChart3,
               },
               {
