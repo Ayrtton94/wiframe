@@ -97,6 +97,10 @@ const alerts = computed(() => props.alerts ?? []);
 
 const salesTrend = computed(() => props.month_sales_trend ?? []);
 
+const hasSalesTrendData = computed(() =>
+    salesTrend.value.some((item) => Number(item.total ?? 0) > 0),
+);
+
 /*
 |--------------------------------------------------------------------------
 | Formateadores
@@ -1170,7 +1174,7 @@ const alertIconClasses = (type: AlertItem['type']) => {
                         </div>
 
                         <div
-                            v-if="!salesTrend.length"
+                            v-if="!salesTrend.length || !hasSalesTrendData"
                             class="flex h-[280px] items-center justify-center text-sm text-slate-500"
                         >
                             No hay información disponible.

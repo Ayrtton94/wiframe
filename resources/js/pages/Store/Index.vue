@@ -16,8 +16,13 @@ import {
     Link,
     router,
     useForm,
+    usePage,
 } from '@inertiajs/vue3';
 import { reactive, ref } from 'vue';
+
+const page = usePage();
+const roles = (page.props.auth?.roles ?? []) as string[];
+const isAdmin = roles.includes('admin');
 
 const props = defineProps<{
     products: {
@@ -108,6 +113,18 @@ const toggleProductStatus = (product: {
                 preserveScroll: true,
             },
         );
+    }
+};
+
+const deleteProduct = (product: { id: number }) => {
+    if (
+        window.confirm(
+            '¿Estás seguro de que deseas eliminar este producto?',
+        )
+    ) {
+        router.delete(`/stores/${product.id}`, {
+            preserveScroll: true,
+        });
     }
 };
 
@@ -920,6 +937,20 @@ const clearFilters = () => {
                                         >
                                             Editar
                                         </Link>
+
+                                        <button
+                                            v-if="isAdmin && !product.is_active"
+                                            type="button"
+                                            @click="deleteProduct(product)"
+                                            class="font-medium
+                                                   text-red-600
+                                                   transition
+                                                   hover:text-red-800
+                                                   dark:text-red-400
+                                                   dark:hover:text-red-300"
+                                        >
+                                            Eliminar
+                                        </button>
 
                                         <button
                                             type="button"

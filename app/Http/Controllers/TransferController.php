@@ -24,7 +24,7 @@ class TransferController extends Controller
     public function index(Request $request)
     {
         $user = $request->user();
-        $assignedWarehouseIds = $user->hasRole('admin')
+        $assignedWarehouseIds = ($user->hasRole('admin') || $user->hasRole('almacen'))
             ? null
             : $user->warehouses()->pluck('warehouses.id');
 

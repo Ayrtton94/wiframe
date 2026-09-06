@@ -217,12 +217,12 @@ class DashboardController extends Controller
 
     /*
     |--------------------------------------------------------------------------
-    | TENDENCIA DE VENTAS DEL MES
+    | TENDENCIA DE VENTAS DE LOS ÚLTIMOS 30 DÍAS
     |--------------------------------------------------------------------------
     */
 
-    $monthStart = Carbon::now()->startOfMonth();
-    $monthEnd = Carbon::now()->endOfMonth();
+    $trendStart = Carbon::now()->subDays(29)->startOfDay();
+    $trendEnd = Carbon::now()->endOfDay();
 
     $rawDailySales = Sale::query()
         ->selectRaw(
@@ -230,7 +230,7 @@ class DashboardController extends Controller
         )
         ->whereBetween(
             'created_at',
-            [$monthStart, $monthEnd]
+            [$trendStart, $trendEnd]
         )
         ->when(
             $assignedWarehouseIds !== null,
@@ -251,9 +251,9 @@ class DashboardController extends Controller
 
     $monthSalesTrend = [];
 
-    $cursorDate = $monthStart->copy();
+    $cursorDate = $trendStart->copy();
 
-    while ($cursorDate->lte($monthEnd)) {
+    while ($cursorDate->lte($trendEnd)) {
         $key = $cursorDate->toDateString();
 
         $dayTotal = (float) (
@@ -278,7 +278,11 @@ class DashboardController extends Controller
 |--------------------------------------------------------------------------
 */
 
-$transfers = DB::table('transfers as t')
+$dateFormatSql = DB::getDriverName() === 'sqlite'
+        ? "strftime('%d/%m/%Y', t.created_at) as date"
+        : "DATE_FORMAT(t.created_at, '%d/%m/%Y') as date";
+
+    $transfers = DB::table('transfers as t')
     ->join(
         'warehouses as wo',
         'wo.id',
@@ -322,9 +326,7 @@ $transfers = DB::table('transfers as t')
     ->get([
         't.id',
         't.code',
-        DB::raw(
-            'DATE_FORMAT(t.created_at, "%d/%m/%Y") as date'
-        ),
+        DB::raw($dateFormatSql),
         'wo.name as origin',
         'wd.name as destination',
         DB::raw(

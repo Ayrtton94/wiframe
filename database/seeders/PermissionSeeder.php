@@ -15,6 +15,8 @@ class PermissionSeeder extends Seeder
     {
         // Crear Roles
         $admin = Role::firstOrCreate(['name' => 'admin', 'guard_name' => 'web']);
+        $adminAlmacen = Role::firstOrCreate(['name' => 'admin_almacen', 'guard_name' => 'web']);
+        
         $vendedor = Role::firstOrCreate(['name' => 'vendedor', 'guard_name' => 'web']);
         $almacen = Role::firstOrCreate(['name' => 'almacen', 'guard_name' => 'web']);
         $contador = Role::firstOrCreate(['name' => 'contador', 'guard_name' => 'web']);

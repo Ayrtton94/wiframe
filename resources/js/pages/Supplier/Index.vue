@@ -1,8 +1,12 @@
 <script setup lang="ts">
 import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem } from '@/types';
-import { Head, Link, router } from '@inertiajs/vue3';
+import { Head, Link, router, usePage } from '@inertiajs/vue3';
 import { reactive } from 'vue';
+
+const page = usePage();
+const roles = (page.props.auth?.roles ?? []) as string[];
+const isAdmin = roles.includes('admin');
 
 const props = defineProps<{
     suppliers: {
@@ -413,6 +417,7 @@ const clearFilters = () => {
                                         </Link>
 
                                         <button
+                                            v-if="isAdmin"
                                             type="button"
                                             class="cursor-pointer
                                                    font-medium

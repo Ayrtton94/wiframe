@@ -476,21 +476,27 @@ const submit = () => {
             Number(data.warehouse_id),
 
         items: data.items.map(
-            (item: any) => ({
-                store_id:
-                    Number(item.store_id),
+            (item: any) => {
+                const quantity = Number(item.quantity || 0);
 
-                unit:
-                    item.unit === 'rollos'
-                        ? 'kilos'
-                        : item.unit,
+                return {
+                    store_id:
+                        Number(item.store_id),
 
-                quantity:
-                    Number(item.quantity),
+                    rollos:
+                        item.unit === 'rollos'
+                            ? quantity
+                            : 0,
 
-                price_type:
-                    item.price_type,
-            }),
+                    metros:
+                        item.unit === 'metros'
+                            ? quantity
+                            : 0,
+
+                    price_type:
+                        item.price_type,
+                };
+            },
         ),
     })).put(
         `/sales/${props.sale.id}`,

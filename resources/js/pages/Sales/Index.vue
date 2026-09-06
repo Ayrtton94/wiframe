@@ -129,8 +129,8 @@ const breadcrumbs: BreadcrumbItem[] = [
 
 type SaleItemForm = {
     store_id: string;
-    unit: 'kilos' | 'metros';
-    quantity: number;
+    rollos: number;
+    metros: number;
     price_type: PriceType;
     search_text: string;
 };
@@ -150,8 +150,8 @@ const form = useForm({
     items: [
         {
             store_id: '',
-            unit: 'metros',
-            quantity: 1,
+            rollos: 0,
+            metros: 0,
             price_type: 'public' as PriceType,
             search_text: '',
         },
@@ -285,8 +285,8 @@ const resetToDefaultCustomer = () => {
 const addItem = () => {
     form.items.push({
         store_id: '',
-        unit: 'metros',
-        quantity: 1,
+        rollos: 0,
+        metros: 0,
         price_type: 'public',
         search_text: '',
     });
@@ -365,12 +365,10 @@ watch(
                 const stock =
                     getStockForItem(item);
 
-                const available =
-                    item.unit === 'kilos'
-                        ? stock?.kilos_available ?? 0
-                        : stock?.metros_available ?? 0;
+                const availableRollos = stock?.kilos_available ?? 0;
+                const availableMetros = stock?.metros_available ?? 0;
 
-                if (!stock || available <= 0) {
+                if (!stock || (availableRollos <= 0 && availableMetros <= 0)) {
                     item.store_id = '';
                     item.search_text = '';
                 }
@@ -488,10 +486,14 @@ const getSelectedProductPrice = (
 const estimateLineTotal = (
     item: SaleItemForm,
 ) => {
-    return (
-        Number(item.quantity || 0) *
-        getSelectedProductPrice(item)
-    ).toFixed(2);
+    const price = getSelectedProductPrice(item);
+    const rollos = Number(item.rollos || 0);
+    const metros = Number(item.metros || 0);
+
+    const totalRollos = rollos * price;
+    const totalMetros = metros * price;
+
+    return (totalRollos + totalMetros).toFixed(2);
 };
 
 const getStockForItem = (
@@ -645,63 +647,48 @@ const selectProduct = (
 
     item.price_type = defaultPriceType;
 
-    item.quantity = 1;
+    item.rollos = 0;
+    item.metros = 0;
 };
 
 const getAvailableForItem = (
     item: SaleItemForm,
 ) => {
-    const stock =
-        getStockForItem(item);
+    const stock = getStockForItem(item);
 
     if (!stock) {
-        return 0;
+        return { rollos: 0, metros: 0 };
     }
 
-    return item.unit === 'kilos'
-        ? stock.kilos_available
-        : stock.metros_available;
+    return {
+        rollos: Number(stock.kilos_available || 0),
+        metros: Number(stock.metros_available || 0),
+    };
 };
 
 const getStockMessage = (
     item: SaleItemForm,
 ) => {
-    const stock =
-        getStockForItem(item);
+    const stock = getStockForItem(item);
 
     if (!stock) {
         return 'Sin stock configurado para esta ubicación';
     }
 
-    const unitLabel =
-        item.unit === 'kilos'
-            ? 'rollos'
-            : 'metros';
-
-    const available =
-        item.unit === 'kilos'
-            ? stock.kilos_available
-            : stock.metros_available;
-
-    return `Stock disponible: ${available} ${unitLabel}`;
+    return `Stock disponible: ${formatNumber(stock.kilos_available)} rollos · ${formatNumber(stock.metros_available)} metros`;
 };
 
 const hasStockForItem = (
     item: SaleItemForm,
 ) => {
-    const stock =
-        getStockForItem(item);
+    const stock = getStockForItem(item);
 
     if (!stock) {
         return false;
     }
 
-    const available =
-        item.unit === 'kilos'
-            ? stock.kilos_available
-            : stock.metros_available;
-
-    return available > 0;
+    return Number(stock.kilos_available || 0) > 0 ||
+        Number(stock.metros_available || 0) > 0;
 };
 
 const clearSaleQuantityInvalidMessage = (
@@ -734,95 +721,77 @@ const setSaleQuantityInvalidMessage = (
     }
 };
 
-const clampSaleItemQuantity = (
+const clampSaleItemRollos = (
     item: SaleItemForm,
     event: Event,
 ) => {
-    clearSaleQuantityInvalidMessage(
-        event,
-    );
+    clearSaleQuantityInvalidMessage(event);
 
-    const quantity = Number(
-        item.quantity || 0,
-    );
-
-    if (quantity < 0) {
-        item.quantity = 0;
-        return;
+    let rollos = Number(item.rollos || 0);
+    if (!Number.isFinite(rollos) || rollos < 0) {
+        rollos = 0;
     }
 
-    const available =
-        getAvailableForItem(item);
+    const stock = getStockForItem(item);
+    const available = Number(stock?.kilos_available || 0);
 
-    if (quantity > available) {
-        item.quantity = available;
+    item.rollos = Math.min(Math.floor(rollos), Math.floor(available));
+};
+
+const clampSaleItemMetros = (
+    item: SaleItemForm,
+    event: Event,
+) => {
+    clearSaleQuantityInvalidMessage(event);
+
+    let metros = Number(item.metros || 0);
+    if (!Number.isFinite(metros) || metros < 0) {
+        metros = 0;
     }
+
+    const stock = getStockForItem(item);
+    const available = Number(stock?.metros_available || 0);
+
+    item.metros = Math.min(metros, available);
 };
 
 const validateItemStock = (
     item: SaleItemForm,
 ) => {
     if (!form.warehouse_id) {
-        window.alert(
-            'Selecciona un almacén o tienda antes de elegir productos.',
-        );
-
+        window.alert('Selecciona un almacén o tienda antes de elegir productos.');
         return false;
     }
 
     if (!item.store_id) {
-        window.alert(
-            'Selecciona un producto.',
-        );
-
+        window.alert('Selecciona un producto.');
         return false;
     }
 
-    const stock =
-        getStockForItem(item);
+    const stock = getStockForItem(item);
 
     if (!stock) {
-        window.alert(
-            'El producto seleccionado no tiene stock configurado en la ubicación seleccionada.',
-        );
-
+        window.alert('El producto seleccionado no tiene stock configurado en la ubicación seleccionada.');
         return false;
     }
 
-    const available =
-        item.unit === 'kilos'
-            ? stock.kilos_available
-            : stock.metros_available;
+    const rollos = Number(item.rollos || 0);
+    const metros = Number(item.metros || 0);
+    const availableRollos = Number(stock.kilos_available || 0);
+    const availableMetros = Number(stock.metros_available || 0);
 
-    const requested = Number(
-        item.quantity || 0,
-    );
-
-    if (requested <= 0) {
-        window.alert(
-            'La cantidad debe ser mayor a 0.',
-        );
-
+    if (rollos <= 0 && metros <= 0) {
+        window.alert('Debes ingresar al menos una cantidad de rollos o metros.');
         return false;
     }
 
-    if (available <= 0) {
-        window.alert(
-            'El producto seleccionado no tiene stock disponible en esta ubicación.',
-        );
-
+    if (rollos > availableRollos) {
+        window.alert(`Los rollos solicitados superan el stock disponible (${availableRollos}).`);
         return false;
     }
 
-    if (requested > available) {
-        window.alert(
-            `La cantidad solicitada supera el stock disponible (${available} ${
-                item.unit === 'kilos'
-                    ? 'rollos'
-                    : 'metros'
-            }).`,
-        );
-
+    if (metros > availableMetros) {
+        window.alert(`Los metros solicitados superan el stock disponible (${availableMetros}).`);
         return false;
     }
 
@@ -854,10 +823,11 @@ const submit = () => {
                 store_id:
                     Number(item.store_id),
 
-                unit: item.unit,
+                rollos:
+                    Number(item.rollos || 0),
 
-                quantity:
-                    Number(item.quantity),
+                metros:
+                    Number(item.metros || 0),
 
                 price_type:
                     item.price_type,
@@ -890,6 +860,18 @@ const toggleDetail = (id: number) => {
         expanded.value === id
             ? null
             : id;
+};
+
+const deleteSale = (saleId: number) => {
+    if (
+        window.confirm(
+            '¿Estás seguro de que deseas eliminar esta salida?',
+        )
+    ) {
+        router.delete(`/sales/${saleId}`, {
+            preserveScroll: true,
+        });
+    }
 };
 
 const goToPage = (url: string | null) => {
@@ -1236,7 +1218,7 @@ const formatMoney = (value: number | string) => {
                                    bg-slate-50 p-4
                                    dark:border-slate-700
                                    dark:bg-slate-800
-                                   md:grid-cols-[2fr_1fr_1fr_1fr_auto]"
+                                   md:grid-cols-[minmax(320px,2fr)_minmax(110px,1fr)_minmax(110px,1fr)_minmax(210px,1.4fr)_auto]"
                         >
                             <!-- BUSCAR PRODUCTO -->
                             <div class="space-y-2">
@@ -1375,154 +1357,92 @@ const formatMoney = (value: number | string) => {
                                 </p>
                             </div>
 
-                            <!-- UNIDAD -->
+                            <!-- ROLLOS -->
                             <div>
                                 <label
-                                    class="mb-1 block text-sm
-                                           font-medium
-                                           text-slate-700
-                                           dark:text-slate-300"
+                                    class="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300"
                                 >
-                                    Unidad
-                                </label>
-
-                                <select
-                                    v-model="item.unit"
-                                    class="w-full rounded-lg
-                                           border
-                                           border-slate-300
-                                           bg-white px-3 py-2
-                                           text-slate-900
-                                           dark:border-slate-600
-                                           dark:bg-slate-900
-                                           dark:text-slate-100"
-                                >
-                                    <option value="metros">
-                                        Metros
-                                    </option>
-
-                                    <option value="kilos">
-                                        Rollos
-                                    </option>
-                                </select>
-                            </div>
-
-                            <!-- CANTIDAD -->
-                            <div>
-                                <label
-                                    class="mb-1 block text-sm
-                                           font-medium
-                                           text-slate-700
-                                           dark:text-slate-300"
-                                >
-                                    Cantidad
+                                    Rollos
                                 </label>
 
                                 <input
-                                    v-model.number="item.quantity"
+                                    v-model.number="item.rollos"
                                     type="number"
-                                    min="0.001"
-                                    :max="
-                                        getAvailableForItem(item)
-                                        || undefined
-                                    "
-                                    step="0.001"
-                                    placeholder="Cantidad"
-                                    required
-                                    class="w-full rounded-lg
-                                           border
-                                           border-slate-300
-                                           bg-white px-3 py-2
-                                           text-slate-900
-                                           placeholder:text-slate-400
-                                           focus:border-blue-500
-                                           focus:outline-none
-                                           focus:ring-2
-                                           focus:ring-blue-500/20
-                                           dark:border-slate-600
-                                           dark:bg-slate-900
-                                           dark:text-slate-100
-                                           dark:placeholder:text-slate-500"
-                                    @input="
-                                        clampSaleItemQuantity(
-                                            item,
-                                            $event,
-                                        )
-                                    "
-                                    @invalid="
-                                        setSaleQuantityInvalidMessage
-                                    "
+                                    min="0"
+                                    :max="getAvailableForItem(item).rollos || undefined"
+                                    step="1"
+                                    placeholder="Rollos"
+                                    class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100"
+                                    @input="clampSaleItemRollos(item, $event)"
+                                    @invalid="setSaleQuantityInvalidMessage"
+                                />
+                            </div>
+
+                            <!-- METROS -->
+                            <div>
+                                <label
+                                    class="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300"
+                                >
+                                    Metros
+                                </label>
+
+                                <input
+                                    v-model.number="item.metros"
+                                    type="number"
+                                    min="0"
+                                    :max="getAvailableForItem(item).metros || undefined"
+                                    step="0.01"
+                                    placeholder="Metros"
+                                    class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100"
+                                    @input="clampSaleItemMetros(item, $event)"
+                                    @invalid="setSaleQuantityInvalidMessage"
                                 />
                             </div>
 
                             <!-- PRECIO -->
-                            <div>
-                                <label
-                                    class="mb-1 block text-sm
-                                           font-medium
-                                           text-slate-700
-                                           dark:text-slate-300"
-                                >
-                                    Precio
-                                </label>
+                                <div class="w-full min-w-0">
+                                    <label
+                                        class="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300"
+                                    >
+                                        Precio
+                                    </label>
 
-                                <div
-                                    v-if="
-                                        getProductPriceOptions(
-                                            productMap.get(
-                                                Number(
-                                                    item.store_id,
-                                                ),
-                                            ),
-                                        ).length > 1
-                                    "
-                                    class="w-full"
-                                >
                                     <select
+                                        v-if="item.store_id"
                                         v-model="item.price_type"
-                                        class="w-full rounded-lg
-                                               border
-                                               border-slate-300
-                                               bg-white px-3 py-2
-                                               text-slate-900
-                                               dark:border-slate-600
-                                               dark:bg-slate-900
-                                               dark:text-slate-100"
+                                        class="h-10 w-full min-w-0 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100"
                                     >
                                         <option
                                             v-for="option in getProductPriceOptions(
-                                                productMap.get(
-                                                    Number(
-                                                        item.store_id,
-                                                    ),
-                                                ),
+                                                productMap.get(Number(item.store_id)),
                                             )"
                                             :key="option.value"
                                             :value="option.value"
                                         >
-                                            {{ option.label }}
+                                            {{ option.label }} — S/ {{ Number(option.price).toFixed(2) }}
                                         </option>
                                     </select>
-                                </div>
 
-                                <div
-                                    v-else
-                                    class="flex h-10 items-center
-                                           text-sm
-                                           text-slate-500
-                                           dark:text-slate-400"
-                                >
-                                    Precio: S/
-                                    {{
-                                        getSelectedProductPrice(
-                                            item,
-                                        )
-                                    }}
+                                    <div
+                                        v-else
+                                        class="flex h-10 w-full items-center rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-400 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-500"
+                                    >
+                                        Selecciona un producto
+                                    </div>
+
+                                    <p
+                                        v-if="item.store_id"
+                                        class="mt-1 truncate text-xs leading-4 text-slate-500 dark:text-slate-400"
+                                    >
+                                        Precio seleccionado:
+                                        <span class="font-semibold text-slate-700 dark:text-slate-200">
+                                            S/ {{ getSelectedProductPrice(item).toFixed(2) }}
+                                        </span>
+                                    </p>
                                 </div>
-                            </div>
 
                             <!-- QUITAR -->
-                            <div class="flex items-end">
+                            <div class="flex items-end justify-start">
                                 <button
                                     type="button"
                                     class="rounded-lg
@@ -1547,7 +1467,7 @@ const formatMoney = (value: number | string) => {
                                         ? 'text-slate-500 dark:text-slate-400'
                                         : 'text-red-600 dark:text-red-400'
                                 "
-                                class="text-sm md:col-span-5"
+                                class="text-sm md:col-span-6"
                             >
                                 {{ getStockMessage(item) }}
 
@@ -2037,6 +1957,29 @@ const formatMoney = (value: number | string) => {
                                 Editar
                             </Link>
 
+
+                            <!-- ELIMINAR -->
+
+                            <button
+                                v-if="isAdmin"
+                                type="button"
+                                @click="deleteSale(sale.id)"
+                                class="rounded-lg border
+                                       border-red-200
+                                       bg-red-50
+                                       px-3 py-1.5
+                                       text-xs
+                                       font-semibold
+                                       text-red-700
+                                       transition
+                                       hover:bg-red-100
+                                       dark:border-red-800
+                                       dark:bg-red-900/20
+                                       dark:text-red-300
+                                       dark:hover:bg-red-900/40"
+                            >
+                                Eliminar
+                            </button>
 
                             <!-- VER DETALLE -->
 
