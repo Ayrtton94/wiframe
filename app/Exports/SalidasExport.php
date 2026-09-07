@@ -315,8 +315,8 @@ class SalidasExport implements
                 'CÓDIGO PRODUCTO',
                 'PRODUCTO',
                 'COLOR',
-                'CANTIDAD',
-                'UNIDAD',
+                'ROLLOS',
+                'METROS',
                 'PRECIO UNITARIO',
                 'SUBTOTAL',
                 'MOTIVO',
@@ -331,9 +331,20 @@ class SalidasExport implements
                 )
                 : null;
 
-            $cantidad = $this->cleanNumber(
-                $row->cantidad
+            $unidad = strtolower(
+                trim((string) ($row->unidad ?? ''))
             );
+
+            $rollos = 0;
+            $metros = 0;
+
+            if (in_array($unidad, ['kilos', 'kilo', 'rollos', 'rollo'], true)) {
+                $rollos = $this->cleanNumber($row->cantidad);
+            }
+
+            if (in_array($unidad, ['metros', 'metro'], true)) {
+                $metros = $this->cleanNumber($row->cantidad);
+            }
 
             $precio = round(
                 (float) (
@@ -442,17 +453,9 @@ class SalidasExport implements
                 |--------------------------------------------------------------------------
                 */
 
-                $cantidad,
+                $rollos,
 
-                /*
-                |--------------------------------------------------------------------------
-                | UNIDAD
-                |--------------------------------------------------------------------------
-                */
-
-                $this->unitLabel(
-                    $row->unidad
-                ),
+                $metros,
 
                 /*
                 |--------------------------------------------------------------------------
@@ -734,8 +737,8 @@ class SalidasExport implements
             'G' => 18,
             'H' => 30,
             'I' => 24,
-            'J' => 13,
-            'K' => 14,
+            'J' => 12,
+            'K' => 12,
             'L' => 18,
             'M' => 18,
             'N' => 16,
@@ -998,11 +1001,11 @@ class SalidasExport implements
                 );
 
                 $sheet->mergeCells(
-                    'K6:N6'
+                    'J6:N6'
                 );
 
                 $sheet->mergeCells(
-                    'J7:M7'
+                    'J7:N7'
                 );
 
                 $sheet->setCellValue(
@@ -1026,7 +1029,7 @@ class SalidasExport implements
                         'A6:C6',
                         'D6:F6',
                         'G6:I6',
-                        'K6:N6',
+                        'J6:N6',
                     ] as $range
                 ) {
 
@@ -1074,7 +1077,7 @@ class SalidasExport implements
                     );
 
                 $sheet
-                    ->getStyle('K6:N6')
+                    ->getStyle('J6:N6')
                     ->getFill()
                     ->setFillType(
                         Fill::FILL_SOLID
@@ -1226,7 +1229,7 @@ class SalidasExport implements
 
                     $sheet
                         ->getStyle(
-                            "J{$firstRow}:J{$lastRow}"
+                            "J{$firstRow}:K{$lastRow}"
                         )
                         ->getNumberFormat()
                         ->setFormatCode(
@@ -1261,11 +1264,11 @@ class SalidasExport implements
 
                     $sheet
                         ->getStyle(
-                            "K{$firstRow}:K{$lastRow}"
+                            "J{$firstRow}:K{$lastRow}"
                         )
                         ->getAlignment()
                         ->setHorizontal(
-                            Alignment::HORIZONTAL_CENTER
+                            Alignment::HORIZONTAL_RIGHT
                         );
 
                     /*
@@ -1310,24 +1313,14 @@ class SalidasExport implements
                     "A{$totalRow}:I{$totalRow}"
                 );
 
-                $totalCantidad =
-                    $this->rows->sum(
-                        fn ($row) =>
-                            (float) (
-                                $row->cantidad ?? 0
-                            )
-                    );
-
                 $sheet->setCellValue(
-                    "K{$totalRow}",
-                    $this->cleanNumber(
-                        $totalCantidad
-                    )
+                    "J{$totalRow}",
+                    $totalRollos
                 );
 
                 $sheet->setCellValue(
                     "K{$totalRow}",
-                    'Metros / Rollos'
+                    $totalMetros
                 );
 
                 $sheet->setCellValue(
@@ -1343,7 +1336,7 @@ class SalidasExport implements
 
                 $sheet
                     ->getStyle(
-                        "A{$totalRow}:M{$totalRow}"
+                        "A{$totalRow}:N{$totalRow}"
                     )
                     ->getFill()
                     ->setFillType(
@@ -1356,7 +1349,7 @@ class SalidasExport implements
 
                 $sheet
                     ->getStyle(
-                        "A{$totalRow}:M{$totalRow}"
+                        "A{$totalRow}:N{$totalRow}"
                     )
                     ->getFont()
                     ->setBold(true)
@@ -1367,7 +1360,7 @@ class SalidasExport implements
 
                 $sheet
                     ->getStyle(
-                        "J{$totalRow}"
+                        "J{$totalRow}:K{$totalRow}"
                     )
                     ->getNumberFormat()
                     ->setFormatCode(
@@ -1376,7 +1369,7 @@ class SalidasExport implements
 
                 $sheet
                     ->getStyle(
-                        "M{$totalRow}"
+                        "L{$totalRow}"
                     )
                     ->getNumberFormat()
                     ->setFormatCode(
@@ -1438,7 +1431,7 @@ class SalidasExport implements
                     'Total de rollos' =>
                         $totalRollos,
 
-                    'Total de salidas' =>
+                    'Importe total' =>
                         'S/ '
                         . number_format(
                             $importeTotal,
@@ -1475,7 +1468,7 @@ class SalidasExport implements
 
                 $sheet
                     ->getStyle(
-                        "A11:M{$totalRow}"
+                        "A11:N{$totalRow}"
                     )
                     ->getBorders()
                     ->getAllBorders()
