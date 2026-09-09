@@ -32,6 +32,7 @@ import {
 const page = usePage();
 const roles = (page.props.auth?.roles ?? []) as string[];
 const isAdmin = roles.includes('admin');
+const isAdminAlmacen = roles.includes('admin_almacen');
 const isAlmacen = roles.includes('almacen');
 const isTienda = roles.includes('tienda');
 const isVendedor = roles.includes('vendedor');
@@ -124,6 +125,31 @@ const mainNavItems: NavItem[] = [
           ]
         : []),
 
+    ...(isAdminAlmacen
+        ? [
+              {
+                  title: 'Productos',
+                  href: '/stores',
+                  icon: Boxes,
+              },
+              {
+                  title: 'Creación de almacenes',
+                  href: '/warehouses',
+                  icon: Boxes,
+              },
+              {
+                  title: 'Stock por almacén',
+                  href: '/warehouse-stocks',
+                  icon: Boxes,
+              },
+              {
+                  title: 'Traslados',
+                  href: '/transfers',
+                  icon: Boxes,
+              },
+          ]
+        : []),
+
     // 🔹 ALMACÉN (solo gestión de stock)
     ...(isAlmacen
         ? [
@@ -154,7 +180,7 @@ const mainNavItems: NavItem[] = [
     ...(isTienda || isVendedor
         ? [
               {
-                  title: 'Ventas',
+                  title: 'Salidas',
                   href: '/sales',
                   icon: ShoppingCart,
               },
@@ -162,6 +188,11 @@ const mainNavItems: NavItem[] = [
                   title: 'Catálogo',
                   href: '/catalog',
                   icon: Boxes,
+              },
+              {
+                  title: 'Clientes',
+                  href: '/customers',
+                  icon: Users,
               },
           ]
         : []),

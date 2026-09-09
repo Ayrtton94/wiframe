@@ -2,6 +2,7 @@
 import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link } from '@inertiajs/vue3';
+import { usePage } from '@inertiajs/vue3';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -9,6 +10,10 @@ const breadcrumbs: BreadcrumbItem[] = [
         href: '/customers',
     },
 ];
+
+const page = usePage();
+const roles = (page.props.auth?.roles ?? []) as string[];
+const isAdmin = roles.includes('admin');
 
 const props = defineProps<{
     customers: Array<{
@@ -396,6 +401,7 @@ const props = defineProps<{
                                         ================================== -->
 
                                         <Link
+                                            v-if="isAdmin"
                                             :href="
                                                 `/customers/${customer.id}/toggle-status`
                                             "

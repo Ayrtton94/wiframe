@@ -468,52 +468,6 @@ const currency = (value: number | null | undefined) => {
                             }}
                         </p>
                     </div>
-
-                    <div
-                        class="rounded-lg bg-amber-50 p-4
-                               dark:bg-amber-500/10"
-                    >
-                        <p
-                            class="text-sm
-                                   text-amber-700
-                                   dark:text-amber-400"
-                        >
-                            Rollos reservados
-                        </p>
-
-                        <p
-                            class="mt-1 text-2xl font-bold
-                                   text-amber-900
-                                   dark:text-amber-300"
-                        >
-                            {{
-                                stock_summary.kilos_reserved
-                            }}
-                        </p>
-                    </div>
-
-                    <div
-                        class="rounded-lg bg-amber-50 p-4
-                               dark:bg-amber-500/10"
-                    >
-                        <p
-                            class="text-sm
-                                   text-amber-700
-                                   dark:text-amber-400"
-                        >
-                            Metros reservados
-                        </p>
-
-                        <p
-                            class="mt-1 text-2xl font-bold
-                                   text-amber-900
-                                   dark:text-amber-300"
-                        >
-                            {{
-                                stock_summary.metros_reserved
-                            }}
-                        </p>
-                    </div>
                 </div>
             </div>
 

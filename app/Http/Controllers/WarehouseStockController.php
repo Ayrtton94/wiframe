@@ -17,7 +17,7 @@ class WarehouseStockController extends Controller
     public function index(Request $request)
     {
         $user = $request->user();
-        $assignedWarehouseIds = ($user->hasRole('admin') || $user->hasRole('almacen'))
+        $assignedWarehouseIds = ($user->hasAnyRole(['admin', 'admin_almacen', 'almacen']))
             ? null
             : $user->warehouses()->pluck('warehouses.id');
 
@@ -77,7 +77,7 @@ class WarehouseStockController extends Controller
         $validated = $request->validated();
 
         $user = $request->user();
-        if (! $user->hasRole('admin')) {
+        if (! $user->hasAnyRole(['admin', 'admin_almacen'])) {
             $assignedWarehouseIds = $user->warehouses()->pluck('warehouses.id');
             if (! $assignedWarehouseIds->contains($validated['warehouse_id'])) {
                 abort(403, 'No puedes gestionar stock en almacenes no asignados.');
@@ -137,7 +137,7 @@ class WarehouseStockController extends Controller
         $validated = $request->validated();
 
         $user = $request->user();
-        if (! $user->hasRole('admin')) {
+        if (! $user->hasAnyRole(['admin', 'admin_almacen'])) {
             $assignedWarehouseIds = $user->warehouses()->pluck('warehouses.id');
             if (! $assignedWarehouseIds->contains($validated['warehouse_id'])) {
                 abort(403, 'No puedes gestionar stock en almacenes no asignados.');
@@ -186,7 +186,7 @@ class WarehouseStockController extends Controller
     public function destroy(Request $request, WarehouseStock $warehouseStock)
     {
         $user = $request->user();
-        if (! $user->hasRole('admin')) {
+        if (! $user->hasAnyRole(['admin', 'admin_almacen'])) {
             $assignedWarehouseIds = $user->warehouses()->pluck('warehouses.id');
             if (! $assignedWarehouseIds->contains($warehouseStock->warehouse_id)) {
                 abort(403, 'No puedes eliminar stock de almacenes no asignados.');

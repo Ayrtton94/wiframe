@@ -8,6 +8,20 @@ import { initializeTheme } from './composables/useAppearance';
 
 const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
 
+const keepSessionAlive = () => {
+    if (document.visibilityState !== 'visible') {
+        return;
+    }
+
+    void fetch('/session/keep-alive', {
+        credentials: 'same-origin',
+        headers: {
+            Accept: 'application/json',
+            'X-Requested-With': 'XMLHttpRequest',
+        },
+    });
+};
+
 createInertiaApp({
     title: (title) => (title ? `${title} - ${appName}` : appName),
     resolve: (name) =>
@@ -24,6 +38,8 @@ createInertiaApp({
         color: '#4B5563',
     },
 });
+
+window.setInterval(keepSessionAlive, 10 * 60 * 1000);
 
 // This will set light / dark mode on page load...
 initializeTheme();

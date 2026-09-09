@@ -29,6 +29,12 @@ Route::get('dashboard', DashboardController::class)
     ->name('dashboard');
 
 Route::middleware('auth')->group(function () {
+    Route::get('session/keep-alive', function () {
+        request()->session()->put('_keep_alive', now()->timestamp);
+
+        return response()->noContent();
+    })->name('session.keep-alive');
+
     // ADMIN: Acceso a proveedores y empleados
     Route::middleware('role:admin')->group(function () {
         Route::resource('suppliers', SuppliersController::class);
@@ -40,7 +46,7 @@ Route::middleware('auth')->group(function () {
 
 
     // ADMIN: Gestión completa de almacenes y traslados
-    Route::middleware('role:admin')->group(function () {
+    Route::middleware('role:admin,admin_almacen')->group(function () {
         Route::resource('warehouses', WarehouseController::class)
             ->except(['show', 'create', 'edit']);
 
@@ -52,7 +58,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/stores/export', [StoreController::class, 'export'])->name('stores.export');
 
     // ADMIN + ALMACEN: gestión de traslados
-    Route::middleware('role:admin,almacen')->group(function () {
+    Route::middleware('role:admin,admin_almacen,almacen')->group(function () {
         Route::resource('stores', StoreController::class);
         Route::get('transfers', [TransferController::class, 'index'])->name('transfers.index');
         Route::post('transfers', [TransferController::class, 'store'])->name('transfers.store');
@@ -65,21 +71,26 @@ Route::middleware('auth')->group(function () {
 
 
     // ADMIN + ALMACEN: visualizar stock
-    Route::middleware('role:admin,almacen')->group(function () {
+    Route::middleware('role:admin,admin_almacen,almacen')->group(function () {
         Route::get('warehouse-stocks', [WarehouseStockController::class, 'index'])->name('warehouse-stocks.index');
     });    
 
-    // VENDEDOR: Acceso a clientes y productos
-    Route::middleware('role:admin,vendedor')->group(function () {        
-        Route::resource('customers', CustomerController::class);    
-        Route::patch('/customers/{customer}/toggle-status',[CustomerController::class, 'toggleStatus'])->name('customers.toggle-status');    
+    // ADMIN + VENDEDOR: consultar, crear y editar clientes
+    Route::middleware('role:admin,vendedor')->group(function () {
+        Route::resource('customers', CustomerController::class)
+            ->except(['destroy']);
+
         Route::resource('stores', StoreController::class);
 
     });
 
-    // ADMIN: Todos pueden ver clientes (con control de permisos específicos)
-    Route::resource('customers', CustomerController::class)
-        ->middleware('permission:view_customers');
+    // ADMIN: eliminar y cambiar el estado de clientes
+    Route::middleware('role:admin')->group(function () {
+        Route::delete('customers/{customer}', [CustomerController::class, 'destroy'])
+            ->name('customers.destroy');
+        Route::patch('/customers/{customer}/toggle-status', [CustomerController::class, 'toggleStatus'])
+            ->name('customers.toggle-status');
+    });
 
     // ADMIN: Todos pueden ver productos (con control de permisos específicos)
     Route::resource('stores', StoreController::class)
@@ -87,7 +98,7 @@ Route::middleware('auth')->group(function () {
 
     Route::post('stores/import', [StoreController::class, 'import'])
         ->name('stores.import')
-        ->middleware(['role:admin,almacen', 'permission:view_products']);  
+        ->middleware(['role:admin,admin_almacen,almacen', 'permission:view_products']);  
     
     Route::resource('catalog', CatalogController::class);
     Route::get('/catalog/{id}', [CatalogController::class, 'show']);

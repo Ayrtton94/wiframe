@@ -40,7 +40,9 @@ const editableUsers = reactive(
 );
 
 const onRoleChange = (user: any) => {
-    if (!['almacen', 'tienda'].includes(user.selectedRole)) {
+    if (['admin', 'admin_almacen'].includes(user.selectedRole)) {
+        user.selectedWarehouses = [];
+    } else if (!['almacen', 'tienda'].includes(user.selectedRole)) {
         user.selectedWarehouses = [];
     }
 };
@@ -339,6 +341,11 @@ const updateUserAccess = (userId: number) => {
                                             user.selectedWarehouses
                                         "
                                         multiple
+                                        :disabled="
+                                            ['admin', 'admin_almacen'].includes(
+                                                user.selectedRole,
+                                            )
+                                        "
                                         class="min-h-28 w-full min-w-72
                                                rounded-lg
                                                border
@@ -353,7 +360,9 @@ const updateUserAccess = (userId: number) => {
                                                focus:ring-blue-500/20
                                                dark:border-slate-600
                                                dark:bg-slate-800
-                                               dark:text-slate-100"
+                                               dark:text-slate-100
+                                               disabled:cursor-not-allowed
+                                               disabled:opacity-50"
                                     >
                                         <option
                                             v-for="warehouse in props.warehouses"
@@ -375,8 +384,20 @@ const updateUserAccess = (userId: number) => {
                                                text-slate-400
                                                dark:text-slate-500"
                                     >
-                                        Mantén presionado Ctrl para
-                                        seleccionar varios.
+                                        <span
+                                            v-if="
+                                                ['admin', 'admin_almacen'].includes(
+                                                    user.selectedRole,
+                                                )
+                                            "
+                                        >
+                                            Este rol tiene acceso a todos los
+                                            almacenes.
+                                        </span>
+                                        <span v-else>
+                                            Mantén presionado Ctrl para
+                                            seleccionar varios.
+                                        </span>
                                     </p>
                                 </td>
 

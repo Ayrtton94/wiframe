@@ -323,161 +323,122 @@ class SalidasExport implements
             ],
         ];
 
-        foreach ($this->rows as $row) {
+        /*
+        |--------------------------------------------------------------------------
+        | AGRUPAR ROLLOS Y METROS
+        |--------------------------------------------------------------------------
+        |
+        | Una misma salida puede tener dos registros para el mismo producto:
+        |
+        |   SAL-001 -> 1 rollo
+        |   SAL-001 -> 100 metros
+        |
+        | En Excel se mostrará una sola fila:
+        |
+        |   SAL-001 -> ROLLOS: 1 | METROS: 100
+        |
+        | La agrupación se hace por CÓDIGO DE SALIDA + PRODUCTO + COLOR.
+        |
+        */
 
+        $groupedRows = $this->rows
+            ->groupBy(function ($row) {
+                return implode('|', [
+                    trim((string) ($row->salida_code ?? '')),
+                    trim((string) ($row->codigo_producto ?? '')),
+                    trim((string) ($row->color ?? '')),
+                ]);
+            })
+            ->map(function ($group) {
+                $first = clone $group->first();
+
+                $rollos = 0;
+                $metros = 0;
+                $subtotal = 0;
+
+                foreach ($group as $item) {
+                    $unidad = strtolower(
+                        trim((string) ($item->unidad ?? ''))
+                    );
+
+                    $cantidad = (float) ($item->cantidad ?? 0);
+
+                    if (in_array(
+                        $unidad,
+                        ['kilos', 'kilo', 'rollos', 'rollo'],
+                        true
+                    )) {
+                        $rollos += $cantidad;
+                    }
+
+                    if (in_array(
+                        $unidad,
+                        ['metros', 'metro'],
+                        true
+                    )) {
+                        $metros += $cantidad;
+                    }
+
+                    $subtotal += (float) ($item->total ?? 0);
+                }
+
+                $first->rollos_export = $this->cleanNumber($rollos);
+                $first->metros_export = $this->cleanNumber($metros);
+                $first->subtotal_export = round($subtotal, 2);
+
+                return $first;
+            })
+            ->values();
+
+        foreach ($groupedRows as $row) {
             $fecha = $row->fecha_hora
-                ? Carbon::parse(
-                    $row->fecha_hora
-                )
+                ? Carbon::parse($row->fecha_hora)
                 : null;
 
-            $unidad = strtolower(
-                trim((string) ($row->unidad ?? ''))
-            );
-
-            $rollos = 0;
-            $metros = 0;
-
-            if (in_array($unidad, ['kilos', 'kilo', 'rollos', 'rollo'], true)) {
-                $rollos = $this->cleanNumber($row->cantidad);
-            }
-
-            if (in_array($unidad, ['metros', 'metro'], true)) {
-                $metros = $this->cleanNumber($row->cantidad);
-            }
+            $rollos = $row->rollos_export ?? 0;
+            $metros = $row->metros_export ?? 0;
 
             $precio = round(
-                (float) (
-                    $row->precio ?? 0
-                ),
+                (float) ($row->precio ?? 0),
                 2
             );
 
             $subtotal = round(
-                (float) (
-                    $row->total
-                    ??
-                    (
-                        (float) (
-                            $row->cantidad ?? 0
-                        )
-                        *
-                        $precio
-                    )
-                ),
+                (float) ($row->subtotal_export ?? 0),
                 2
             );
 
             $data[] = [
-
-                /*
-                |--------------------------------------------------------------------------
-                | FECHA
-                |--------------------------------------------------------------------------
-                */
-
                 $fecha
                     ? $fecha->format('d/m/Y')
                     : '',
-
-                /*
-                |--------------------------------------------------------------------------
-                | HORA
-                |--------------------------------------------------------------------------
-                */
 
                 $fecha
                     ? $fecha->format('h:i A')
                     : '',
 
-                /*
-                |--------------------------------------------------------------------------
-                | CÓDIGO
-                |--------------------------------------------------------------------------
-                */
-
                 $row->salida_code ?? '',
 
-                /*
-                |--------------------------------------------------------------------------
-                | ALMACÉN
-                |--------------------------------------------------------------------------
-                */
-
                 $row->almacen ?? '',
-
-                /*
-                |--------------------------------------------------------------------------
-                | CLIENTE
-                |--------------------------------------------------------------------------
-                */
 
                 $row->cliente
                     ?: 'CONSUMIDOR FINAL',
 
-                /*
-                |--------------------------------------------------------------------------
-                | RESPONSABLE
-                |--------------------------------------------------------------------------
-                */
-
                 $row->responsable ?? '',
-
-                /*
-                |--------------------------------------------------------------------------
-                | CÓDIGO PRODUCTO
-                |--------------------------------------------------------------------------
-                */
 
                 $row->codigo_producto ?? '',
 
-                /*
-                |--------------------------------------------------------------------------
-                | PRODUCTO
-                |--------------------------------------------------------------------------
-                */
-
                 $row->producto ?? '',
 
-                /*
-                |--------------------------------------------------------------------------
-                | COLOR
-                |--------------------------------------------------------------------------
-                */
-
                 $row->color ?? '',
-
-                /*
-                |--------------------------------------------------------------------------
-                | CANTIDAD
-                |--------------------------------------------------------------------------
-                */
 
                 $rollos,
 
                 $metros,
 
-                /*
-                |--------------------------------------------------------------------------
-                | PRECIO
-                |--------------------------------------------------------------------------
-                */
-
                 $precio,
 
-                /*
-                |--------------------------------------------------------------------------
-                | SUBTOTAL
-                |--------------------------------------------------------------------------
-                */
-
                 $subtotal,
-
-                /*
-                |--------------------------------------------------------------------------
-                | MOTIVO
-                |--------------------------------------------------------------------------
-                */
 
                 $row->motivo
                     ?: 'SALIDA',
@@ -549,6 +510,24 @@ class SalidasExport implements
 
             default => ucfirst($unit),
         };
+    }
+
+    /**
+     * Número de filas que se mostrarán realmente en el detalle.
+     * Rollos y metros del mismo código de salida/producto/color
+     * cuentan como una sola fila.
+     */
+    protected function consolidatedRowCount(): int
+    {
+        return $this->rows
+            ->groupBy(function ($row) {
+                return implode('|', [
+                    trim((string) ($row->salida_code ?? '')),
+                    trim((string) ($row->codigo_producto ?? '')),
+                    trim((string) ($row->color ?? '')),
+                ]);
+            })
+            ->count();
     }
 
     /*
@@ -1149,7 +1128,7 @@ class SalidasExport implements
                 $sheet->setCellValue(
                     'A10',
                     'Mostrando '
-                    . $this->rows->count()
+                    . $this->consolidatedRowCount()
                     . ' registros de productos.'
                 );
 
@@ -1218,7 +1197,7 @@ class SalidasExport implements
 
                 $lastRow =
                     $firstRow
-                    + $this->rows->count()
+                    + $this->consolidatedRowCount()
                     - 1;
 
                 if ($lastRow >= $firstRow) {
@@ -1302,7 +1281,7 @@ class SalidasExport implements
 
                 $totalRow =
                     $firstRow
-                    + $this->rows->count();
+                    + $this->consolidatedRowCount();
 
                 $sheet->setCellValue(
                     "A{$totalRow}",
@@ -1423,7 +1402,7 @@ class SalidasExport implements
                         $totalSalidas,
 
                     'Total de ítems' =>
-                        $this->rows->count(),
+                        $this->consolidatedRowCount(),
 
                     'Total de metros' =>
                         $totalMetros,

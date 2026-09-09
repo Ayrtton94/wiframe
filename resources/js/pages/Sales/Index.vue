@@ -921,29 +921,6 @@ const formatMoney = (value: number | string) => {
                    bg-slate-50 p-4
                    dark:bg-slate-950"
         >
-        <div>
-            <h1
-                class="text-2xl font-bold text-slate-800
-                    dark:text-slate-100"
-            >
-                Crear Producto
-            </h1>
-
-            <p
-                class="mt-1 text-sm text-slate-500
-                    dark:text-slate-400"
-            >
-                Registra un nuevo producto y configura
-                su stock, precios y disponibilidad.
-            </p>
-
-            <p
-                class="mt-2 text-sm font-medium text-slate-600
-                    dark:text-slate-300"
-            >
-                Fecha: {{ new Date().toLocaleDateString('es-PE') }}
-            </p>
-        </div>
 
             <h1
                 class="text-2xl font-semibold
@@ -952,6 +929,12 @@ const formatMoney = (value: number | string) => {
             >
                 Salidas
             </h1>
+            <p
+                class="mt-2 text-sm font-medium text-slate-600
+                    dark:text-slate-300"
+            >
+                Fecha: {{ new Date().toLocaleDateString('es-PE') }}
+            </p>
 
             <!-- REGISTRAR SALIDA -->
             <section

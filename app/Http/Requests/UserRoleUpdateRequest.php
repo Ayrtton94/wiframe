@@ -7,6 +7,13 @@ use Illuminate\Validation\Rule;
 
 class UserRoleUpdateRequest extends FormRequest
 {
+    protected function prepareForValidation(): void
+    {
+        if (in_array($this->input('role'), ['admin', 'admin_almacen'], true)) {
+            $this->merge(['warehouse_ids' => []]);
+        }
+    }
+
     /**
      * Determine if the user is authorized to make this request.
      */

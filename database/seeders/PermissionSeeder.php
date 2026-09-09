@@ -95,9 +95,12 @@ class PermissionSeeder extends Seeder
         $all_permissions = array_merge($supplier_ids, $customer_ids, $store_ids, $employee_ids, $report_ids);
         $admin->permissions()->sync($all_permissions);
 
+        // ADMIN ALMACEN: Productos y gestión completa de almacenes
+        $adminAlmacen->permissions()->sync($store_ids);
+
         // VENDEDOR: Clientes, Productos, Reportes
         $vendedor_permissions = array_merge(
-            array_slice($customer_ids, 0, 2), // view, create customer
+            array_slice($customer_ids, 0, 3), // view, create, edit customer
             array_slice($store_ids, 0, 1),    // view products
             $report_ids                        // all reports
         );

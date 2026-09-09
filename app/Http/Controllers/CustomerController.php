@@ -77,6 +77,8 @@ class CustomerController extends Controller
      */
     public function toggleStatus(Customer $customer)
     {
+        abort_unless(auth()->user()?->hasRole('admin'), 403);
+
         $customer->is_active = ! $customer->is_active;
         $customer->save();
 
@@ -86,5 +88,14 @@ class CustomerController extends Controller
                 ? 'Cliente activado correctamente.'
                 : 'Cliente desactivado correctamente.'
         );
-}
+    }
+
+    public function destroy(Customer $customer)
+    {
+        abort_unless(auth()->user()?->hasRole('admin'), 403);
+
+        $customer->delete();
+
+        return back()->with('success', 'Cliente eliminado correctamente.');
+    }
 }

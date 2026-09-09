@@ -88,7 +88,7 @@ public function index(Request $request)
         $warehouseSelectionRequired = false;
         $defaultWarehouseId = null;
 
-        if ($user && $user->hasRole('admin')) {
+        if ($user && $user->hasAnyRole(['admin', 'admin_almacen'])) {
             $warehouses = Warehouse::query()
                 ->where('is_active', true)
                 ->orderBy('name')
@@ -175,7 +175,7 @@ public function index(Request $request)
     {
         $user = auth()->user();
 
-        if ($user && $user->hasRole('admin')) {
+        if ($user && $user->hasAnyRole(['admin', 'admin_almacen'])) {
             if ($requestedWarehouseId) {
                 return Warehouse::query()
                     ->where('id', $requestedWarehouseId)
@@ -279,7 +279,7 @@ public function edit(Store $store)
     |--------------------------------------------------------------------------
     */
 
-    if ($user && $user->hasRole('admin')) {
+    if ($user && $user->hasAnyRole(['admin', 'admin_almacen'])) {
 
         $warehouses = Warehouse::query()
             ->where('is_active', true)

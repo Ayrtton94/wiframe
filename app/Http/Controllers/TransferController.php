@@ -24,7 +24,7 @@ class TransferController extends Controller
     public function index(Request $request)
     {
         $user = $request->user();
-        $assignedWarehouseIds = ($user->hasRole('admin') || $user->hasRole('almacen'))
+        $assignedWarehouseIds = ($user->hasAnyRole(['admin', 'admin_almacen', 'almacen']))
             ? null
             : $user->warehouses()->pluck('warehouses.id');
 
@@ -97,7 +97,7 @@ class TransferController extends Controller
         $validated = $request->validated();
 
         $user = $request->user();
-        if (! $user->hasRole('admin')) {
+        if (! $user->hasAnyRole(['admin', 'admin_almacen'])) {
             $assignedWarehouseIds = $user->warehouses()->pluck('warehouses.id');
 
             if (! $assignedWarehouseIds->contains($validated['from_warehouse_id'])) {
@@ -139,7 +139,7 @@ class TransferController extends Controller
     public function show(Request $request, Transfer $transfer)
     {
         $user = $request->user();
-        $assignedWarehouseIds = $user->hasRole('admin')
+        $assignedWarehouseIds = $user->hasAnyRole(['admin', 'admin_almacen'])
             ? null
             : $user->warehouses()->pluck('warehouses.id');
 
@@ -162,13 +162,13 @@ class TransferController extends Controller
 
         $canShip = in_array($transfer->status, ['requested', 'approved'], true)
             && (
-                $user->hasRole('admin')
+                $user->hasAnyRole(['admin', 'admin_almacen'])
                 || $assignedWarehouseIds?->contains($transfer->from_warehouse_id)
             );
 
         $canReceive = $transfer->status === 'shipped'
             && (
-                $user->hasRole('admin')
+                $user->hasAnyRole(['admin', 'admin_almacen'])
                 || $assignedWarehouseIds?->contains($transfer->to_warehouse_id)
             );
 
@@ -187,7 +187,7 @@ class TransferController extends Controller
     public function ship(ShipTransferRequest $request, Transfer $transfer)
     {
         $user = $request->user();
-        if (! $user->hasRole('admin')) {
+        if (! $user->hasAnyRole(['admin', 'admin_almacen'])) {
             $assignedWarehouseIds = $user->warehouses()->pluck('warehouses.id');
 
             if (! $assignedWarehouseIds->contains($transfer->from_warehouse_id)) {
